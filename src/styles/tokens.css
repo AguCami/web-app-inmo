@@ -1,0 +1,184 @@
+/*
+ * Tokens de diseño.
+ * La paleta de series y los grises provienen de una paleta validada para
+ * daltonismo y contraste; el modo oscuro tiene sus propios pasos (no es un
+ * invertido automático del claro).
+ */
+
+:root {
+  color-scheme: light;
+
+  /* Superficies */
+  --plano: #f9f9f7;
+  --superficie: #fcfcfb;
+  --superficie-2: #f2f1ed;
+  --superficie-hover: #eeede8;
+  --nav: #16171a;
+  --nav-activo: #23252a;
+
+  /* Tinta */
+  --tinta: #0b0b0b;
+  --tinta-2: #52514e;
+  --tinta-3: #898781;
+  --tinta-nav: #e6e5e0;
+  --tinta-nav-2: #9b9a93;
+
+  /* Líneas */
+  --borde: #e1e0d9;
+  --borde-fuerte: #c3c2b7;
+  --anillo: rgba(11, 11, 11, 0.1);
+
+  /* Series (orden fijo — nunca se cicla ni se reasigna por ranking) */
+  --serie-1: #2a78d6;
+  --serie-2: #eb6834;
+  --serie-3: #1baf7a;
+  --serie-4: #eda100;
+  --serie-5: #e87ba4;
+  --serie-6: #008300;
+  --serie-7: #4a3aa7;
+  --serie-8: #e34948;
+
+  /* Rampa ordinal (una sola tinta; pasos con separación de luminosidad validada) */
+  --ord-1: #86b6ef;
+  --ord-2: #5598e7;
+  --ord-3: #2a78d6;
+  --ord-4: #1c5cab;
+  --ord-5: #0d366b;
+
+  /* Estado (reservados: nunca se usan como color de serie) */
+  --ok: #0ca30c;
+  --ok-texto: #006300;
+  --alerta: #fab219;
+  --serio: #ec835a;
+  --critico: #d03b3b;
+  /* Fondo y tinta de cada etiqueta de estado (el par se invierte por tema). */
+  --ok-fondo: #e7f6e7;
+  --ok-chip: #006300;
+  --alerta-fondo: #fdf3dd;
+  --alerta-chip: #8a5c00;
+  --serio-fondo: #fceee7;
+  --serio-chip: #9a3f14;
+  --critico-fondo: #fbe9e9;
+  --critico-chip: #b02f2f;
+  --info-fondo: #e4eefb;
+  --info-chip: #1c5cab;
+  --neutro-fondo: #eeede8;
+
+  /* Geometría */
+  --r-sm: 6px;
+  --r: 10px;
+  --r-lg: 14px;
+  --sombra: 0 1px 2px rgba(11, 11, 11, 0.04), 0 1px 3px rgba(11, 11, 11, 0.06);
+  --sombra-flotante: 0 8px 28px rgba(11, 11, 11, 0.16);
+  --ancho-nav: 246px;
+
+  --fuente: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* El modo oscuro del sistema operativo, salvo que el usuario haya fijado claro. */
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme='light'])) {
+    color-scheme: dark;
+
+    --plano: #0d0d0d;
+    --superficie: #1a1a19;
+    --superficie-2: #232321;
+    --superficie-hover: #2c2c2a;
+    --nav: #121211;
+    --nav-activo: #262625;
+
+    --tinta: #ffffff;
+    --tinta-2: #c3c2b7;
+    --tinta-3: #898781;
+    --tinta-nav: #e6e5e0;
+    --tinta-nav-2: #8d8c85;
+
+    --borde: #2c2c2a;
+    --borde-fuerte: #383835;
+    --anillo: rgba(255, 255, 255, 0.1);
+
+    --serie-1: #3987e5;
+    --serie-2: #d95926;
+    --serie-3: #199e70;
+    --serie-4: #c98500;
+    --serie-5: #d55181;
+    --serie-6: #008300;
+    --serie-7: #9085e9;
+    --serie-8: #e66767;
+
+    --ord-1: #184f95;
+    --ord-2: #256abf;
+    --ord-3: #3987e5;
+    --ord-4: #6da7ec;
+    --ord-5: #9ec5f4;
+
+    --ok-texto: #0ca30c;
+    --ok-fondo: #12290f;
+    --ok-chip: #6ede6e;
+    --alerta-fondo: #2e2510;
+    --alerta-chip: #f2c65c;
+    --serio-fondo: #2e1f18;
+    --serio-chip: #f0a483;
+    --critico-fondo: #2e1414;
+    --critico-chip: #f08c8c;
+    --info-fondo: #14243a;
+    --info-chip: #8fbcf0;
+    --neutro-fondo: #262625;
+
+    --sombra: 0 1px 2px rgba(0, 0, 0, 0.5);
+    --sombra-flotante: 0 8px 28px rgba(0, 0, 0, 0.6);
+  }
+}
+
+/* El interruptor manual gana en los dos sentidos. */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --plano: #0d0d0d;
+  --superficie: #1a1a19;
+  --superficie-2: #232321;
+  --superficie-hover: #2c2c2a;
+  --nav: #121211;
+  --nav-activo: #262625;
+
+  --tinta: #ffffff;
+  --tinta-2: #c3c2b7;
+  --tinta-3: #898781;
+  --tinta-nav: #e6e5e0;
+  --tinta-nav-2: #8d8c85;
+
+  --borde: #2c2c2a;
+  --borde-fuerte: #383835;
+  --anillo: rgba(255, 255, 255, 0.1);
+
+  --serie-1: #3987e5;
+  --serie-2: #d95926;
+  --serie-3: #199e70;
+  --serie-4: #c98500;
+  --serie-5: #d55181;
+  --serie-6: #008300;
+  --serie-7: #9085e9;
+  --serie-8: #e66767;
+
+  --ord-1: #184f95;
+  --ord-2: #256abf;
+  --ord-3: #3987e5;
+  --ord-4: #6da7ec;
+  --ord-5: #9ec5f4;
+
+  --ok-texto: #0ca30c;
+  --ok-fondo: #12290f;
+  --ok-chip: #6ede6e;
+  --alerta-fondo: #2e2510;
+  --alerta-chip: #f2c65c;
+  --serio-fondo: #2e1f18;
+  --serio-chip: #f0a483;
+  --critico-fondo: #2e1414;
+  --critico-chip: #f08c8c;
+  --info-fondo: #14243a;
+  --info-chip: #8fbcf0;
+  --neutro-fondo: #262625;
+
+  --sombra: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --sombra-flotante: 0 8px 28px rgba(0, 0, 0, 0.6);
+}

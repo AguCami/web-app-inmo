@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Encabezado } from '../components/Encabezado';
 import { Avatar, Campo, Dato, Item, Modal, Panel, Pastilla, Segmentos, Vacio } from '../components/ui';
 import { IconoGastos, IconoMas } from '../components/iconos';
+import { ConfirmarBorrado } from '../components/Confirmar';
 import { useApp, useDb } from '../data/store';
 import { direccionDe } from '../domain/propiedades';
 import type { CategoriaGasto, Gasto } from '../domain/types';
@@ -48,6 +49,7 @@ export default function Gastos() {
   const [periodo, setPeriodo] = useState(periodoActual());
   const [filtro, setFiltro] = useState<'todos' | 'sin_rendir'>('todos');
   const [editando, setEditando] = useState<Gasto | null>(null);
+  const [aBorrar, setABorrar] = useState<Gasto | null>(null);
 
   const propiedadDe = (id: string) => db.propiedades.find((p) => p.id === id);
 
@@ -170,11 +172,22 @@ export default function Gastos() {
           onEliminar={
             db.gastos.some((g) => g.id === editando.id) && !editando.liquidacionId
               ? () => {
-                  eliminar('gastos', editando.id);
+                  setABorrar(editando);
                   setEditando(null);
                 }
               : undefined
           }
+        />
+      )}
+
+      {aBorrar && (
+        <ConfirmarBorrado
+          coleccion="gastos"
+          id={aBorrar.id}
+          nombre={aBorrar.descripcion}
+          queEs="el gasto"
+          onConfirmar={() => eliminar('gastos', aBorrar.id)}
+          onCerrar={() => setABorrar(null)}
         />
       )}
     </>

@@ -1,4 +1,5 @@
 import type { BaseDatos } from '../domain/types';
+import { sanear } from '../domain/integridad';
 import { crearBaseDemo, VERSION_BD } from './seed';
 
 const CLAVE = 'gestion-alquileres/db/v2';
@@ -13,7 +14,13 @@ export function cargarBase(): BaseDatos {
     const crudo = localStorage.getItem(CLAVE);
     if (crudo) {
       const datos = JSON.parse(crudo) as BaseDatos;
-      if (datos && datos.version === VERSION_BD) return datos;
+      if (datos && datos.version === VERSION_BD) {
+        // Repara bases que quedaron con huérfanos de versiones anteriores,
+        // cuando borrar un contrato no arrastraba sus cuotas.
+        const { db, huboCambios } = sanear(datos);
+        if (huboCambios) guardarBase(db);
+        return db;
+      }
     }
   } catch {
     /* almacenamiento ilegible: se arranca de la demo */

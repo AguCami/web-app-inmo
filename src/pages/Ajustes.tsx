@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { Encabezado } from '../components/Encabezado';
 import { Campo, Dato, Nota, Panel, Pastilla, Segmentos } from '../components/ui';
+import { Confirmar } from '../components/Confirmar';
 import { useApp, useDb } from '../data/store';
 import { exportarJSON, importarJSON } from '../data/db';
 import { ETIQUETA_INDICE, INDICES_CON_SERIE } from '../domain/contratos';
@@ -23,6 +24,7 @@ export default function Ajustes() {
   const [vista, setVista] = useState<Vista>('datos');
   const [indiceVisible, setIndiceVisible] = useState<IndiceConSerie>('IPC_CBA');
   const [aviso, setAviso] = useState<{ tono: 'ok' | 'critico'; texto: string } | null>(null);
+  const [confirmando, setConfirmando] = useState<'demo' | 'vaciar' | null>(null);
   const archivoRef = useRef<HTMLInputElement>(null);
 
   const c = db.configuracion;
@@ -263,26 +265,10 @@ export default function Ajustes() {
               </div>
 
               <div className="fila" style={{ marginTop: 18 }}>
-                <button
-                  className="btn"
-                  onClick={() => {
-                    if (confirm('Esto reemplaza todo por los datos de ejemplo. ¿Seguimos?')) {
-                      cargarDemo();
-                      setAviso({ tono: 'ok', texto: 'Volvieron los datos de ejemplo.' });
-                    }
-                  }}
-                >
+                <button className="btn" onClick={() => setConfirmando('demo')}>
                   Volver al ejemplo
                 </button>
-                <button
-                  className="btn btn--peligro"
-                  onClick={() => {
-                    if (confirm('Esto borra todo lo cargado y deja la app vacía. ¿Seguimos?')) {
-                      vaciar();
-                      setAviso({ tono: 'ok', texto: 'Listo, la app quedó vacía para cargar tus datos.' });
-                    }
-                  }}
-                >
+                <button className="btn btn--peligro" onClick={() => setConfirmando('vaciar')}>
                   Empezar de cero
                 </button>
               </div>
@@ -290,6 +276,40 @@ export default function Ajustes() {
           </div>
         )}
       </div>
+
+      {confirmando === 'demo' && (
+        <Confirmar
+          titulo="¿Volver a los datos de ejemplo?"
+          textoAccion="Sí, reemplazar"
+          onConfirmar={() => {
+            cargarDemo();
+            setAviso({ tono: 'ok', texto: 'Volvieron los datos de ejemplo.' });
+          }}
+          onCerrar={() => setConfirmando(null)}
+        >
+          <p>
+            Se reemplaza <strong>todo lo que tengas cargado</strong> por la administración de ejemplo.
+            Si tenés datos reales, bajá antes una copia.
+          </p>
+        </Confirmar>
+      )}
+
+      {confirmando === 'vaciar' && (
+        <Confirmar
+          titulo="¿Empezar de cero?"
+          textoAccion="Sí, borrar todo"
+          onConfirmar={() => {
+            vaciar();
+            setAviso({ tono: 'ok', texto: 'Listo, la app quedó vacía para cargar tus datos.' });
+          }}
+          onCerrar={() => setConfirmando(null)}
+        >
+          <p>
+            Se borran las {db.propiedades.length} propiedades, los {db.contratos.length} contratos y
+            todas las cuotas, pagos, liquidaciones y gastos. La app queda vacía.
+          </p>
+        </Confirmar>
+      )}
     </>
   );
 }

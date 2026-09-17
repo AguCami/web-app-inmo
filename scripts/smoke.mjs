@@ -109,6 +109,75 @@ for (const [, ruta] of RUTAS) {
 }
 comprobar('sin desborde horizontal en 390 px', !desborda);
 
+/* ── 7. Borrar arrastra lo que dependía, y pide confirmación ─────── */
+const conteos = () =>
+  pagina.evaluate(() => {
+    const db = JSON.parse(localStorage.getItem('gestion-alquileres/db/v2'));
+    return { propiedades: db.propiedades.length, contratos: db.contratos.length,
+             cuotas: db.cuotas.length, pagos: db.pagos.length,
+             liquidaciones: db.liquidaciones.length };
+  });
+
+await pagina.goto(`${BASE}/#/propiedades`, { waitUntil: 'networkidle' });
+const antesDeBorrar = await conteos();
+
+await pagina.locator('.carta').first().click();
+await pagina.waitForSelector('[role="dialog"]');
+await pagina.locator('[role="dialog"] button', { hasText: 'Eliminar' }).click();
+await pagina.waitForTimeout(300);
+comprobar(
+  'borrar pide confirmación',
+  (await pagina.locator('[role="dialog"] h2').textContent())?.startsWith('¿Borrar'),
+);
+
+await pagina.locator('[role="dialog"] button', { hasText: 'Cancelar' }).click();
+await pagina.waitForTimeout(300);
+comprobar(
+  'cancelar no borra nada',
+  JSON.stringify(await conteos()) === JSON.stringify(antesDeBorrar),
+);
+
+// Se borran todas las propiedades: no puede quedar ni una cuota huérfana.
+for (let i = 0; i < 30; i += 1) {
+  if ((await pagina.locator('.carta').count()) === 0) break;
+  await pagina.locator('.carta').first().click();
+  await pagina.waitForSelector('[role="dialog"]');
+  await pagina.locator('[role="dialog"] button', { hasText: 'Eliminar' }).click();
+  await pagina.waitForTimeout(150);
+  await pagina.locator('[role="dialog"] button', { hasText: 'Sí, borrar' }).click();
+  await pagina.waitForTimeout(200);
+}
+const vacia = await conteos();
+comprobar(
+  'borrar arrastra cuotas, pagos y liquidaciones',
+  Object.values(vacia).every((v) => v === 0),
+  JSON.stringify(vacia),
+);
+comprobar('el menú no deja pendientes fantasma', (await pagina.locator('.rail__conteo').count()) === 0);
+
+/* ── 8. Una base inconsistente se repara sola al abrir ───────────── */
+await pagina.evaluate(() => {
+  const CLAVE = 'gestion-alquileres/db/v2';
+  localStorage.removeItem(CLAVE);
+});
+await pagina.reload({ waitUntil: 'networkidle' });
+await pagina.waitForTimeout(400);
+await pagina.evaluate(() => {
+  const CLAVE = 'gestion-alquileres/db/v2';
+  const db = JSON.parse(localStorage.getItem(CLAVE));
+  db.propiedades = [];
+  db.contratos = [];
+  localStorage.setItem(CLAVE, JSON.stringify(db));
+});
+await pagina.reload({ waitUntil: 'networkidle' });
+await pagina.waitForTimeout(400);
+const reparada = await conteos();
+comprobar(
+  'repara sola una base con huérfanos',
+  Object.values(reparada).every((v) => v === 0),
+  JSON.stringify(reparada),
+);
+
 await navegador.close();
 comprobar('sin errores de consola', errores.length === 0, [...new Set(errores)].join(' / '));
 console.log(fallos === 0 ? '\nTodo en orden.' : `\n${fallos} verificaciones fallaron.`);

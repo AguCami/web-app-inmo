@@ -14,19 +14,12 @@ import type {
 } from '../domain/types';
 import { generarCuotasFaltantes } from '../domain/cobranzas';
 import { armarLiquidacion } from '../domain/liquidaciones';
+import { sanear, type ColeccionBorrable } from '../domain/integridad';
 import { hoy, nuevoId, periodoActual } from '../domain/util';
 import { cargarBase, guardarBase } from './db';
 import { baseVacia, crearBaseDemo } from './seed';
 import { combinarIndices, traerIndicesPublicados } from './indices';
 
-type Coleccion =
-  | 'personas'
-  | 'propiedades'
-  | 'contratos'
-  | 'cuotas'
-  | 'pagos'
-  | 'liquidaciones'
-  | 'gastos';
 
 interface EstadoApp {
   db: BaseDatos;
@@ -44,7 +37,7 @@ interface EstadoApp {
   guardarPropiedad: (p: Propiedad) => void;
   guardarContrato: (c: Contrato) => void;
   guardarGasto: (g: Gasto) => void;
-  eliminar: (coleccion: Coleccion, id: ID) => void;
+  eliminar: (coleccion: ColeccionBorrable, id: ID) => void;
 
   emitirCuotas: (hasta?: Periodo) => number;
   anularCuota: (cuotaId: ID) => void;
@@ -117,11 +110,29 @@ export const useApp = create<EstadoApp>((set, get) => {
         ),
       })),
 
+    /**
+     * Borra y arrastra lo que dependía de eso: sin esto, las cuotas de un
+     * contrato borrado quedaban contando en Cobranzas para siempre.
+     */
     eliminar: (coleccion, id) =>
-      mutar((db) => ({
-        ...db,
-        [coleccion]: (db[coleccion] as { id: ID }[]).filter((x) => x.id !== id),
-      })),
+      mutar((db) => {
+        const sinEso = {
+          ...db,
+          [coleccion]: (db[coleccion] as { id: ID }[]).filter((x) => x.id !== id),
+        } as BaseDatos;
+
+        // Una unidad sin contrato activo vuelve a estar disponible.
+        const { db: saneada } = sanear(sinEso);
+        return {
+          ...saneada,
+          propiedades: saneada.propiedades.map((p) =>
+            p.estado === 'alquilada' &&
+            !saneada.contratos.some((c) => c.propiedadId === p.id && c.estado === 'activo')
+              ? { ...p, estado: 'disponible' as const }
+              : p,
+          ),
+        };
+      }),
 
     emitirCuotas: (hasta = periodoActual()) => {
       const db = get().db;

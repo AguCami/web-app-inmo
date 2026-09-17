@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Encabezado } from '../components/Encabezado';
 import { Avatar, Campo, Item, Modal, Paginador, Panel, Pastilla, Segmentos, usePaginado, Vacio } from '../components/ui';
 import { IconoBuscar, IconoMas, IconoPersonas } from '../components/iconos';
+import { ConfirmarBorrado } from '../components/Confirmar';
 import { useApp, useDb } from '../data/store';
 import type { CondicionIVA, Persona, RolPersona } from '../domain/types';
 import { incluyeTexto, nuevoId, plural } from '../domain/util';
@@ -41,6 +42,7 @@ export default function Personas() {
   const [busqueda, setBusqueda] = useState('');
   const [filtro, setFiltro] = useState<'todos' | RolPersona>('todos');
   const [editando, setEditando] = useState<Persona | null>(null);
+  const [aBorrar, setABorrar] = useState<Persona | null>(null);
 
   const lista = useMemo(
     () =>
@@ -156,11 +158,22 @@ export default function Personas() {
           onEliminar={
             db.personas.some((p) => p.id === editando.id) && !vinculos(editando)
               ? () => {
-                  eliminar('personas', editando.id);
+                  setABorrar(editando);
                   setEditando(null);
                 }
               : undefined
           }
+        />
+      )}
+
+      {aBorrar && (
+        <ConfirmarBorrado
+          coleccion="personas"
+          id={aBorrar.id}
+          nombre={aBorrar.nombre}
+          queEs="la persona"
+          onConfirmar={() => eliminar('personas', aBorrar.id)}
+          onCerrar={() => setABorrar(null)}
         />
       )}
     </>

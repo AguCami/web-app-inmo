@@ -12,6 +12,7 @@ import {
   Vacio,
 } from '../components/ui';
 import { IconoContratos, IconoVolver } from '../components/iconos';
+import { ConfirmarBorrado } from '../components/Confirmar';
 import { PagoModal } from '../components/PagoModal';
 import { FormularioContrato, TEXTO_VIGENCIA, TONO_VIGENCIA } from './Contratos';
 import { TEXTO_CUOTA, TONO_CUOTA } from './Cobranzas';
@@ -49,6 +50,7 @@ export default function ContratoDetalle() {
   const [vista, setVista] = useState<Vista>('cuotas');
   const [editando, setEditando] = useState(false);
   const [cobrando, setCobrando] = useState<Cuota | null>(null);
+  const [confirmandoBorrado, setConfirmandoBorrado] = useState(false);
 
   const contrato = db.contratos.find((c) => c.id === id);
 
@@ -323,9 +325,23 @@ export default function ContratoDetalle() {
             setEditando(false);
           }}
           onEliminar={() => {
+            setEditando(false);
+            setConfirmandoBorrado(true);
+          }}
+        />
+      )}
+
+      {confirmandoBorrado && (
+        <ConfirmarBorrado
+          coleccion="contratos"
+          id={contrato.id}
+          nombre={`${contrato.numero} · ${inquilino?.nombre ?? ''}`}
+          queEs="el contrato"
+          onConfirmar={() => {
             eliminar('contratos', contrato.id);
             navegar('/contratos');
           }}
+          onCerrar={() => setConfirmandoBorrado(false)}
         />
       )}
 

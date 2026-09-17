@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Encabezado } from '../components/Encabezado';
-import { Avatar, Campo, Modal, Pastilla, Segmentos, Vacio } from '../components/ui';
+import { Avatar, Campo, Modal, Nota, Pastilla, Segmentos, Vacio } from '../components/ui';
+import { ConfirmarBorrado } from '../components/Confirmar';
 import { IconoBuscar, IconoMas, IconoPropiedades } from '../components/iconos';
 import { useApp, useDb } from '../data/store';
 import { montoVigente } from '../domain/contratos';
@@ -56,6 +57,7 @@ export default function Propiedades() {
   const [busqueda, setBusqueda] = useState('');
   const [filtro, setFiltro] = useState<'todas' | EstadoPropiedad>('todas');
   const [editando, setEditando] = useState<Propiedad | null>(null);
+  const [aBorrar, setABorrar] = useState<Propiedad | null>(null);
 
   const nombreDe = (id: string) => db.personas.find((p) => p.id === id)?.nombre ?? '—';
   const contratoDe = (propiedadId: string) =>
@@ -130,11 +132,7 @@ export default function Propiedades() {
               ].filter(Boolean) as string[];
 
               return (
-                <button
-                  key={p.id}
-                  className="carta"
-                  onClick={() => (contrato ? navegar(`/contratos/${contrato.id}`) : setEditando(p))}
-                >
+                <button key={p.id} className="carta" onClick={() => setEditando(p)}>
                   <div className="carta__cab">
                     <Avatar nombre={p.codigo} />
                     <div className="crece">
@@ -177,6 +175,8 @@ export default function Propiedades() {
       {editando && (
         <FormularioPropiedad
           propiedad={editando}
+          contratoActivoId={contratoDe(editando.id)?.id}
+          onVerContrato={(id) => navegar(`/contratos/${id}`)}
           onCerrar={() => setEditando(null)}
           onGuardar={(p) => {
             guardar(p);
@@ -185,11 +185,22 @@ export default function Propiedades() {
           onEliminar={
             db.propiedades.some((p) => p.id === editando.id)
               ? () => {
-                  eliminar('propiedades', editando.id);
+                  setABorrar(editando);
                   setEditando(null);
                 }
               : undefined
           }
+        />
+      )}
+
+      {aBorrar && (
+        <ConfirmarBorrado
+          coleccion="propiedades"
+          id={aBorrar.id}
+          nombre={`${aBorrar.codigo} · ${direccionDe(aBorrar)}`}
+          queEs="la propiedad"
+          onConfirmar={() => eliminar('propiedades', aBorrar.id)}
+          onCerrar={() => setABorrar(null)}
         />
       )}
     </>
@@ -198,11 +209,15 @@ export default function Propiedades() {
 
 function FormularioPropiedad({
   propiedad,
+  contratoActivoId,
+  onVerContrato,
   onGuardar,
   onCerrar,
   onEliminar,
 }: {
   propiedad: Propiedad;
+  contratoActivoId?: string;
+  onVerContrato: (id: string) => void;
   onGuardar: (p: Propiedad) => void;
   onCerrar: () => void;
   onEliminar?: () => void;
@@ -232,6 +247,18 @@ function FormularioPropiedad({
         </>
       }
     >
+      {contratoActivoId && (
+        <Nota titulo="Esta unidad está alquilada">
+          <button
+            className="btn btn--suave btn--chico"
+            style={{ marginTop: 8 }}
+            onClick={() => onVerContrato(contratoActivoId)}
+          >
+            Ver el contrato
+          </button>
+        </Nota>
+      )}
+
       <div className="grid grid--form">
         <Campo etiqueta="Código">
           <input value={f.codigo} onChange={(e) => set('codigo', e.target.value)} placeholder="NC-15" />

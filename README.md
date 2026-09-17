@@ -70,6 +70,19 @@ Apretar «Generar» dos veces no duplica nada.
 **Los honorarios salen del alquiler cobrado, no de la cuota entera.** Las
 expensas se las lleva el consorcio: cobrarles comisión sería cobrar de más.
 
+**Borrar arrastra lo que dependía.** La base es un objeto plano en el navegador,
+sin claves foráneas: si el borrado filtrara una sola colección, las cuotas de un
+contrato borrado seguirían contando para siempre. `domain/integridad.ts` es la
+única fuente de verdad sobre qué depende de qué — corre después de cada borrado
+y también al abrir la app, así repara sola cualquier base que haya quedado
+inconsistente.
+
+Antes de borrar hay confirmación, y dice cuánto se lleva puesto. Ese detalle se
+calcula simulando el borrado con el mismo código que después lo ejecuta, así lo
+que promete el cartel es exactamente lo que pasa.
+
+![Confirmación de borrado](docs/confirmar.png)
+
 ## El IPC de Córdoba, actualizado solo
 
 La app es un sitio estático. El navegador no puede pedirle los datos al organismo

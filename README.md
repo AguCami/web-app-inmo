@@ -26,6 +26,17 @@ Otros comandos:
 | `npm run typecheck` | Solo TypeScript |
 | `npm run smoke` | Verificación de humo con Playwright (requiere `preview` levantado) |
 
+### Publicarla en GitHub Pages
+
+Ya está el workflow (`.github/workflows/deploy.yml`). Falta un solo paso a mano,
+una única vez:
+
+> **Settings → Pages → Build and deployment → Source: «GitHub Actions»**
+
+Con eso, cada push compila y publica. La app usa rutas relativas y `HashRouter`,
+así que anda igual en la raíz del dominio o en un subdirectorio, y no necesita
+configuración de rewrites.
+
 La primera vez la app se carga con una **inmobiliaria de demostración**
 completa: 45 contratos de alquiler activos, 14 meses de cobranzas y
 liquidaciones, operaciones de venta escrituradas y en curso, gastos y todo el

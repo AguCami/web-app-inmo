@@ -1,0 +1,63 @@
+# Publica la app en GitHub Pages en cada push.
+#
+# Requisito único, y se hace una sola vez a mano:
+#   Settings → Pages → Build and deployment → Source: "GitHub Actions"
+#
+# La app se compila con base relativa (`base: './'` en vite.config.ts) y usa
+# HashRouter, así que funciona igual en la raíz del dominio o en un subdirectorio
+# como /web-app-inmo/, y no necesita configuración de rewrites en el servidor.
+name: Publicar en GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+      - claude/real-estate-accounting-app-581e8v
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Un despliegue por vez; si llega uno nuevo, se deja terminar el que está en curso.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+env:
+  # La verificación de humo usa Playwright, pero compilar no necesita navegadores.
+  PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+
+jobs:
+  construir:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Compilar
+        run: npm run build
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  publicar:
+    needs: construir
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.despliegue.outputs.page_url }}
+    steps:
+      - id: despliegue
+        uses: actions/deploy-pages@v4

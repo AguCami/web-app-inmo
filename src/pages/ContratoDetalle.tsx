@@ -13,6 +13,14 @@ import {
 } from '../components/ui';
 import { IconoContratos, IconoVolver } from '../components/iconos';
 import { ConfirmarBorrado } from '../components/Confirmar';
+import { ChipsAdjuntos, ListaAdjuntos, SubirArchivos } from '../components/Adjuntos';
+import {
+  MarcaNovedad,
+  NOMBRE_NOVEDAD,
+  NovedadModal,
+  novedadNueva,
+  TONO_NOVEDAD,
+} from '../components/NovedadModal';
 import { PagoModal } from '../components/PagoModal';
 import { FormularioContrato, TEXTO_VIGENCIA, TONO_VIGENCIA } from './Contratos';
 import { TEXTO_CUOTA, TONO_CUOTA } from './Cobranzas';
@@ -27,7 +35,7 @@ import {
 } from '../domain/cobranzas';
 import { cronogramaAjustes, ETIQUETA_INDICE, montoVigente, vigenciaContrato } from '../domain/contratos';
 import { direccionDe } from '../domain/propiedades';
-import type { Cuota } from '../domain/types';
+import type { Cuota, Novedad } from '../domain/types';
 import {
   formatearFecha,
   formatearMoneda,
@@ -37,7 +45,7 @@ import {
   plural,
 } from '../domain/util';
 
-type Vista = 'cuotas' | 'ajustes' | 'ficha';
+type Vista = 'cuotas' | 'ajustes' | 'archivos' | 'novedades' | 'ficha';
 
 export default function ContratoDetalle() {
   const { id } = useParams();
@@ -51,6 +59,7 @@ export default function ContratoDetalle() {
   const [editando, setEditando] = useState(false);
   const [cobrando, setCobrando] = useState<Cuota | null>(null);
   const [confirmandoBorrado, setConfirmandoBorrado] = useState(false);
+  const [novedadAbierta, setNovedadAbierta] = useState<Novedad | null>(null);
 
   const contrato = db.contratos.find((c) => c.id === id);
 
@@ -66,6 +75,16 @@ export default function ContratoDetalle() {
     () => resumenCobranza(cuotas, db.contratos, db.pagos),
     [cuotas, db.contratos, db.pagos],
   );
+  // Los archivos del legajo son los que no cuelgan de una novedad.
+  const documentos = useMemo(
+    () => db.adjuntos.filter((a) => a.contratoId === id && !a.novedadId),
+    [db.adjuntos, id],
+  );
+  const novedades = useMemo(
+    () => db.novedades.filter((n) => n.contratoId === id).sort((a, b) => b.fecha.localeCompare(a.fecha)),
+    [db.novedades, id],
+  );
+  const sinResolver = novedades.filter((n) => !n.resuelta).length;
 
   if (!contrato) {
     return (
@@ -143,6 +162,11 @@ export default function ContratoDetalle() {
             opciones={[
               { id: 'cuotas', texto: `Cuotas (${cuotas.length})` },
               { id: 'ajustes', texto: `Actualizaciones (${cronograma.length})` },
+              {
+                id: 'novedades',
+                texto: `Novedades (${novedades.length}${sinResolver ? `, ${sinResolver} abiertas` : ''})`,
+              },
+              { id: 'archivos', texto: `Archivos (${documentos.length})` },
               { id: 'ficha', texto: 'Datos' },
             ]}
           />
@@ -249,6 +273,80 @@ export default function ContratoDetalle() {
           </Panel>
         )}
 
+        {vista === 'archivos' && (
+          <Panel
+            titulo="Legajo del contrato"
+            subtitulo="El contrato firmado, el inventario, el acta de entrega: lo que haga falta tener a mano"
+          >
+            <SubirArchivos contratoId={contrato.id} />
+            {documentos.length > 0 && (
+              <div className="pila" style={{ gap: 6, marginTop: 14 }}>
+                <ListaAdjuntos adjuntos={documentos} />
+              </div>
+            )}
+            <p className="mini tenue" style={{ marginTop: 14 }}>
+              Los archivos se guardan en este navegador, igual que el resto de los datos, y entran en la copia
+              de seguridad que bajás desde Ajustes.
+            </p>
+          </Panel>
+        )}
+
+        {vista === 'novedades' && (
+          <Panel
+            titulo="Bitácora"
+            subtitulo="Lo que pasa con la unidad, con fecha: reclamos, arreglos, inspecciones, avisos"
+            acciones={
+              <button
+                className="btn btn--primario btn--chico no-imprimir"
+                onClick={() => setNovedadAbierta(novedadNueva(contrato.id))}
+              >
+                + Asentar novedad
+              </button>
+            }
+          >
+            {novedades.length === 0 ? (
+              <Vacio
+                titulo="Todavía no hay nada asentado"
+                detalle="Cuando el inquilino avise de algo, dejalo acá con fecha: después nadie se acuerda de cuándo fue."
+              />
+            ) : (
+              <div className="pila" style={{ gap: 10 }}>
+                {novedades.map((n) => (
+                  <div className="novedad" key={n.id}>
+                    <MarcaNovedad tipo={n.tipo} />
+                    <div className="novedad__cuerpo">
+                      <div className="novedad__cab">
+                        <span className="novedad__titulo">{n.titulo}</span>
+                        <Pastilla tono={TONO_NOVEDAD[n.tipo]}>{NOMBRE_NOVEDAD[n.tipo]}</Pastilla>
+                        {n.resuelta ? (
+                          <Pastilla tono="ok">Resuelta</Pastilla>
+                        ) : (
+                          <Pastilla tono="alerta">Abierta</Pastilla>
+                        )}
+                      </div>
+                      {n.detalle && <p className="novedad__detalle">{n.detalle}</p>}
+                      <ChipsAdjuntos novedadId={n.id} />
+                      <div className="novedad__pie">
+                        <span className="mini tenue">
+                          {formatearFecha(n.fecha)}
+                          {n.registradoPor && ` · lo reportó ${n.registradoPor}`}
+                        </span>
+                        <button
+                          className="btn btn--fantasma btn--chico no-imprimir"
+                          style={{ marginLeft: 'auto' }}
+                          onClick={() => setNovedadAbierta(n)}
+                        >
+                          Abrir
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Panel>
+        )}
+
         {vista === 'ficha' && (
           <div className="grid grid--2">
             <Panel titulo="Quiénes son" comoLista>
@@ -346,6 +444,10 @@ export default function ContratoDetalle() {
       )}
 
       {cobrando && <PagoModal cuota={cobrando} onCerrar={() => setCobrando(null)} />}
+
+      {novedadAbierta && (
+        <NovedadModal novedad={novedadAbierta} onCerrar={() => setNovedadAbierta(null)} />
+      )}
     </>
   );
 }

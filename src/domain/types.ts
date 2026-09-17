@@ -208,6 +208,49 @@ export interface Liquidacion {
   notas?: string;
 }
 
+/* ──────────────── Archivos y bitácora del contrato ────────────────── */
+
+/**
+ * Ficha de un archivo adjunto. El contenido binario no vive acá: va a
+ * IndexedDB con esta misma `id`, porque un PDF no entra en localStorage.
+ */
+export interface Adjunto {
+  id: ID;
+  contratoId: ID;
+  /** Si está, el archivo pertenece a esa novedad y no al legajo del contrato. */
+  novedadId?: ID;
+  nombre: string;
+  /** Tipo MIME, para saber si se puede mostrar o hay que bajarlo. */
+  tipo: string;
+  tamano: number;
+  fecha: ISODate;
+  descripcion?: string;
+}
+
+export type TipoNovedad =
+  | 'observacion'
+  | 'reclamo'
+  | 'arreglo'
+  | 'inspeccion'
+  | 'aviso';
+
+/**
+ * Una entrada de la bitácora del contrato: el inquilino avisa de una
+ * filtración, se hace una inspección, se manda una intimación. Queda con
+ * fecha, y puede llevar fotos o documentos colgados.
+ */
+export interface Novedad {
+  id: ID;
+  contratoId: ID;
+  fecha: ISODate;
+  tipo: TipoNovedad;
+  titulo: string;
+  detalle?: string;
+  /** Quién lo asentó o quién lo reportó. */
+  registradoPor?: string;
+  resuelta: boolean;
+}
+
 /* ───────────────────────── Gastos de la unidad ────────────────────── */
 
 export type CategoriaGasto = 'mantenimiento' | 'expensas' | 'impuestos' | 'servicios' | 'otros';
@@ -265,5 +308,7 @@ export interface BaseDatos {
   pagos: Pago[];
   liquidaciones: Liquidacion[];
   gastos: Gasto[];
+  adjuntos: Adjunto[];
+  novedades: Novedad[];
   indices: ValorIndice[];
 }

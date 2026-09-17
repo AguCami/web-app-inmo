@@ -126,7 +126,63 @@ comprobar(
   `${ofrecidosAntes.length - 1} → ${ofrecidosDespues.length - 1} inquilinos`,
 );
 
-/* ── 7. Sin desborde horizontal en el celular ────────────────────── */
+/* ── 7. Archivos del contrato y bitácora ─────────────────────────── */
+await pagina.goto(`${BASE}/#/contratos`, { waitUntil: 'networkidle' });
+await pagina.locator('.carta').first().click();
+await pagina.waitForTimeout(300);
+
+await pagina.locator('.segmentos button', { hasText: 'Archivos' }).click();
+await pagina.waitForTimeout(300);
+await pagina.locator('input[type="file"]').first().setInputFiles({
+  name: 'contrato-firmado.pdf',
+  mimeType: 'application/pdf',
+  buffer: Buffer.from('%PDF-1.4\ntrailer<</Root 1 0 R>>', 'utf8'),
+});
+await pagina.waitForTimeout(700);
+comprobar(
+  'se puede adjuntar un PDF al contrato',
+  (await pagina.locator('.item', { hasText: 'contrato-firmado.pdf' }).count()) === 1,
+);
+
+// El binario tiene que ir a IndexedDB: en localStorage no entra.
+const enIndexedDB = await pagina.evaluate(
+  () =>
+    new Promise((ok) => {
+      const req = indexedDB.open('gestion-alquileres');
+      req.onsuccess = () => {
+        const tx = req.result.transaction('archivos', 'readonly');
+        const todo = tx.objectStore('archivos').getAllKeys();
+        todo.onsuccess = () => ok(todo.result.length);
+      };
+      req.onerror = () => ok(0);
+    }),
+);
+comprobar('el archivo se guarda en IndexedDB, no en localStorage', enIndexedDB === 1);
+
+await pagina.locator('.segmentos button', { hasText: 'Novedades' }).click();
+await pagina.waitForTimeout(300);
+const novedadesAntes = await pagina.locator('.novedad').count();
+await pagina.locator('button', { hasText: 'Asentar novedad' }).click();
+await pagina.waitForSelector('[role="dialog"]');
+await pagina.locator('[role="dialog"] input').first().fill('Se filtra agua por la ventana');
+await pagina.locator('[role="dialog"] button', { hasText: 'Guardar' }).click();
+await pagina.waitForTimeout(400);
+comprobar(
+  'se puede asentar una novedad',
+  (await pagina.locator('.novedad').count()) === novedadesAntes + 1,
+);
+
+await pagina.goto(`${BASE}/#/`, { waitUntil: 'networkidle' });
+await pagina.waitForTimeout(400);
+comprobar(
+  'la novedad abierta sale en el inicio',
+  (await pagina
+    .locator('.panel', { hasText: 'Sin resolver' })
+    .locator('.item', { hasText: 'Se filtra agua' })
+    .count()) === 1,
+);
+
+/* ── 8. Sin desborde horizontal en el celular ────────────────────── */
 const movil = await navegador.newPage({ viewport: { width: 390, height: 844 } });
 let desborda = false;
 for (const [, ruta] of RUTAS) {
@@ -137,10 +193,10 @@ for (const [, ruta] of RUTAS) {
 }
 comprobar('sin desborde horizontal en 390 px', !desborda);
 
-/* ── 8. Borrar arrastra lo que dependía, y pide confirmación ─────── */
+/* ── 9. Borrar arrastra lo que dependía, y pide confirmación ─────── */
 const conteos = () =>
   pagina.evaluate(() => {
-    const db = JSON.parse(localStorage.getItem('gestion-alquileres/db/v2'));
+    const db = JSON.parse(localStorage.getItem('gestion-alquileres/db/v3'));
     return { propiedades: db.propiedades.length, contratos: db.contratos.length,
              cuotas: db.cuotas.length, pagos: db.pagos.length,
              liquidaciones: db.liquidaciones.length };
@@ -183,15 +239,29 @@ comprobar(
 );
 comprobar('el menú no deja pendientes fantasma', (await pagina.locator('.rail__conteo').count()) === 0);
 
-/* ── 9. Una base inconsistente se repara sola al abrir ───────────── */
+const archivosQueQuedan = await pagina.evaluate(
+  () =>
+    new Promise((ok) => {
+      const req = indexedDB.open('gestion-alquileres');
+      req.onsuccess = () => {
+        const tx = req.result.transaction('archivos', 'readonly');
+        const todo = tx.objectStore('archivos').getAllKeys();
+        todo.onsuccess = () => ok(todo.result.length);
+      };
+      req.onerror = () => ok(-1);
+    }),
+);
+comprobar('borrar también limpia los archivos de IndexedDB', archivosQueQuedan === 0, `${archivosQueQuedan} quedan`);
+
+/* ── 10. Una base inconsistente se repara sola al abrir ──────────── */
 await pagina.evaluate(() => {
-  const CLAVE = 'gestion-alquileres/db/v2';
+  const CLAVE = 'gestion-alquileres/db/v3';
   localStorage.removeItem(CLAVE);
 });
 await pagina.reload({ waitUntil: 'networkidle' });
 await pagina.waitForTimeout(400);
 await pagina.evaluate(() => {
-  const CLAVE = 'gestion-alquileres/db/v2';
+  const CLAVE = 'gestion-alquileres/db/v3';
   const db = JSON.parse(localStorage.getItem(CLAVE));
   db.propiedades = [];
   db.contratos = [];

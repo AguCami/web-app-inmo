@@ -20,6 +20,8 @@ export interface Saneamiento {
   db: BaseDatos;
   /** Cuántos registros huérfanos se quitaron de cada colección. */
   quitados: Record<string, number>;
+  /** Ids de adjuntos que quedaron sin dueño: hay que borrar su binario de IndexedDB. */
+  archivosHuerfanos: ID[];
   huboCambios: boolean;
 }
 
@@ -44,6 +46,20 @@ export function sanear(base: BaseDatos): Saneamiento {
   const idsCuotas = new Set(cuotas.map((c) => c.id));
   const pagos = base.pagos.filter((p) => idsCuotas.has(p.cuotaId));
   anotar('pagos', base.pagos.length, pagos.length);
+
+  const novedades = base.novedades.filter((n) => idsContratos.has(n.contratoId));
+  anotar('novedades', base.novedades.length, novedades.length);
+
+  // Un adjunto cuelga del contrato, y a veces además de una novedad: si se cae
+  // cualquiera de los dos, el archivo ya no tiene dónde mostrarse.
+  const idsNovedades = new Set(novedades.map((n) => n.id));
+  const adjuntos = base.adjuntos.filter(
+    (a) => idsContratos.has(a.contratoId) && (!a.novedadId || idsNovedades.has(a.novedadId)),
+  );
+  anotar('adjuntos', base.adjuntos.length, adjuntos.length);
+
+  const idsAdjuntos = new Set(adjuntos.map((a) => a.id));
+  const archivosHuerfanos = base.adjuntos.filter((a) => !idsAdjuntos.has(a.id)).map((a) => a.id);
 
   const gastos = base.gastos.filter((g) => idsPropiedades.has(g.propiedadId));
   anotar('gastos', base.gastos.length, gastos.length);
@@ -71,9 +87,16 @@ export function sanear(base: BaseDatos): Saneamiento {
     pagos,
     gastos: gastosLimpios,
     liquidaciones,
+    novedades,
+    adjuntos,
   };
 
-  return { db, quitados, huboCambios: Object.keys(quitados).length > 0 };
+  return {
+    db,
+    quitados,
+    archivosHuerfanos,
+    huboCambios: Object.keys(quitados).length > 0,
+  };
 }
 
 /**
@@ -112,6 +135,8 @@ export interface Impacto {
   pagos: number;
   gastos: number;
   liquidaciones: number;
+  novedades: number;
+  adjuntos: number;
 }
 
 /**
@@ -134,5 +159,7 @@ export function impactoDeBorrar(base: BaseDatos, coleccion: ColeccionBorrable, i
     pagos: base.pagos.length - db.pagos.length,
     gastos: base.gastos.length - db.gastos.length,
     liquidaciones: base.liquidaciones.length - db.liquidaciones.length,
+    novedades: base.novedades.length - db.novedades.length,
+    adjuntos: base.adjuntos.length - db.adjuntos.length,
   };
 }

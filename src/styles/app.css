@@ -139,7 +139,7 @@ a { color: var(--acento); text-decoration-thickness: 1px; text-underline-offset:
 /* ──────────────────────────── Grillas ───────────────────────────── */
 
 .grid { display: grid; gap: 14px; }
-.grid--resumen { grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
+.grid--resumen { grid-template-columns: repeat(auto-fit, minmax(232px, 1fr)); }
 .grid--cartas { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
 .grid--2 { grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); align-items: start; }
 .grid--form { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
@@ -167,7 +167,7 @@ a { color: var(--acento); text-decoration-thickness: 1px; text-underline-offset:
   letter-spacing: -0.02em;
   line-height: 1.2;
   margin-top: 2px;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 .dato__pie { font-size: 12.5px; color: var(--tinta-3); margin-top: 4px; }
 
@@ -482,6 +482,100 @@ select.suelto { width: auto; border-radius: var(--r-pill); background: var(--pan
   flex-wrap: wrap;
   padding: 12px 16px 4px;
 }
+
+/* ──────────────────── Adjuntos y bitácora ───────────────────────── */
+
+.soltar {
+  border: 2px dashed var(--borde-fuerte);
+  border-radius: var(--r-lg);
+  padding: 26px 20px;
+  text-align: center;
+  color: var(--tinta-2);
+  background: var(--panel-2);
+  transition: border-color 140ms ease, background 140ms ease;
+  cursor: pointer;
+  display: block;
+  width: 100%;
+  font: inherit;
+}
+.soltar:hover { border-color: var(--acento); background: var(--acento-suave); }
+.soltar--encima { border-color: var(--acento); background: var(--acento-suave); color: var(--acento-tinta); }
+.soltar strong { display: block; font-family: var(--fuente-titulo); font-size: 15px; margin-bottom: 3px; }
+.soltar span { font-size: 12.5px; color: var(--tinta-3); }
+.soltar__icono {
+  width: 44px;
+  height: 44px;
+  border-radius: 15px;
+  background: var(--panel);
+  display: grid;
+  place-items: center;
+  margin: 0 auto 12px;
+  color: var(--acento);
+}
+
+/* Etiqueta cuadrada con la extensión: se lee mejor que un ícono genérico */
+.archivo-tipo {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  background: var(--panel-2);
+  color: var(--tinta-2);
+}
+.archivo-tipo--pdf { background: var(--critico-fondo); color: var(--critico); }
+.archivo-tipo--img { background: var(--tono-1-fondo); color: var(--tono-1); }
+.archivo-tipo--doc { background: var(--tono-3-fondo); color: var(--tono-3); }
+
+/* Marca de tipo: un ícono vale más que unas iniciales sacadas del título */
+.marca-novedad {
+  width: 40px;
+  height: 40px;
+  border-radius: 13px;
+  display: grid;
+  place-items: center;
+  flex: none;
+}
+.marca-novedad--neutro { background: var(--neutro-fondo); color: var(--neutro); }
+.marca-novedad--alerta { background: var(--alerta-fondo); color: var(--alerta); }
+.marca-novedad--ok { background: var(--ok-fondo); color: var(--ok); }
+.marca-novedad--acento { background: var(--acento-suave); color: var(--acento-tinta); }
+.marca-novedad--critico { background: var(--critico-fondo); color: var(--critico); }
+
+.novedad {
+  display: flex;
+  gap: 14px;
+  padding: 14px;
+  border-radius: var(--r);
+  background: var(--panel-2);
+}
+.novedad__cuerpo { flex: 1; min-width: 0; }
+.novedad__cab { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.novedad__titulo { font-weight: 650; font-size: 14.5px; }
+.novedad__detalle { font-size: 13.5px; color: var(--tinta-2); margin-top: 5px; white-space: pre-wrap; }
+.novedad__pie { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+.novedad__adjuntos { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.adjunto-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--r-pill);
+  background: var(--panel);
+  border: 1px solid var(--borde);
+  font: inherit;
+  font-size: 12px;
+  color: var(--tinta-2);
+  cursor: pointer;
+  max-width: 100%;
+}
+.adjunto-chip:hover { border-color: var(--acento); color: var(--acento-tinta); }
+.adjunto-chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* ────────────────────────── Responsivo ──────────────────────────── */
 

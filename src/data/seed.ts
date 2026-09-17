@@ -3,6 +3,7 @@ import type {
   Contrato,
   Cuota,
   Gasto,
+  Novedad,
   Pago,
   Persona,
   Propiedad,
@@ -13,7 +14,7 @@ import { periodosDelContrato } from '../domain/contratos';
 import { hoy, nuevoId, periodoActual, redondear, sumarMeses, sumarPeriodos } from '../domain/util';
 import { construirIndices } from './indices';
 
-export const VERSION_BD = 2;
+export const VERSION_BD = 3;
 
 /** Generador determinístico: la demo se ve igual en cada carga. */
 function crearAzar(semilla: number) {
@@ -156,6 +157,55 @@ function construirGastos(): Gasto[] {
   });
 }
 
+/* ─────────────────────────── Bitácora ─────────────────────────────── */
+
+function construirNovedades(): Novedad[] {
+  const base = hoy();
+  return [
+    {
+      id: 'n01',
+      contratoId: 'c02',
+      fecha: sumarMeses(base, 0).slice(0, 8) + '04',
+      tipo: 'reclamo',
+      titulo: 'El termotanque pierde agua',
+      detalle:
+        'Avisó la inquilina por teléfono. Pierde por la base y moja el lavadero. Se pidió presupuesto a Gas del Centro.',
+      registradoPor: 'Carolina Paz Medina',
+      resuelta: true,
+    },
+    {
+      id: 'n02',
+      contratoId: 'c04',
+      fecha: sumarMeses(base, -1).slice(0, 8) + '18',
+      tipo: 'arreglo',
+      titulo: 'Se impermeabilizó la terraza',
+      detalle:
+        'Trabajo terminado. Garantía de 3 años por escrito, el comprobante está adjunto al gasto del mes pasado.',
+      resuelta: true,
+    },
+    {
+      id: 'n03',
+      contratoId: 'c03',
+      fecha: sumarMeses(base, 0).slice(0, 8) + '09',
+      tipo: 'aviso',
+      titulo: 'Segunda intimación por falta de pago',
+      detalle:
+        'Se envió carta documento por las cuotas atrasadas. Acusaron recibo. Quedaron en pasar por la oficina esta semana.',
+      resuelta: false,
+    },
+    {
+      id: 'n04',
+      contratoId: 'c07',
+      fecha: sumarMeses(base, 0).slice(0, 8) + '02',
+      tipo: 'inspeccion',
+      titulo: 'Inspección semestral',
+      detalle:
+        'La unidad está en buen estado. Marcas de humedad en el placard del dormitorio chico, a revisar en la próxima visita.',
+      resuelta: false,
+    },
+  ];
+}
+
 /* ──────────────────────── Base de demostración ────────────────────── */
 
 export function crearBaseDemo(): BaseDatos {
@@ -235,6 +285,8 @@ export function crearBaseDemo(): BaseDatos {
     pagos,
     liquidaciones: [],
     gastos: construirGastos(),
+    adjuntos: [],
+    novedades: construirNovedades(),
     indices,
   };
 
@@ -291,6 +343,8 @@ export function baseVacia(): BaseDatos {
     pagos: [],
     liquidaciones: [],
     gastos: [],
+    adjuntos: [],
+    novedades: [],
     indices: construirIndices(),
   };
 }

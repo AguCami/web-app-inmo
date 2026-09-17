@@ -1,11 +1,13 @@
 import { create } from 'zustand';
 import type {
+  Adjunto,
   BaseDatos,
   Contrato,
   Cuota,
   Gasto,
   ID,
   Liquidacion,
+  Novedad,
   Pago,
   Periodo,
   Persona,
@@ -16,6 +18,7 @@ import { generarCuotasFaltantes } from '../domain/cobranzas';
 import { armarLiquidacion } from '../domain/liquidaciones';
 import { sanear, type ColeccionBorrable } from '../domain/integridad';
 import { hoy, nuevoId, periodoActual } from '../domain/util';
+import { borrarArchivos, guardarArchivo, MAXIMO_POR_ARCHIVO } from './archivos';
 import { cargarBase, guardarBase } from './db';
 import { baseVacia, crearBaseDemo } from './seed';
 import { combinarIndices, traerIndicesPublicados } from './indices';
@@ -34,6 +37,11 @@ interface EstadoApp {
   sincronizarIndices: () => Promise<void>;
 
   guardarPersona: (p: Persona) => void;
+  guardarNovedad: (n: Novedad) => void;
+  eliminarNovedad: (id: ID) => void;
+  /** Sube un archivo y lo cuelga del contrato, o de una novedad suya. */
+  adjuntar: (contratoId: ID, archivo: File, opciones?: { novedadId?: ID; descripcion?: string }) => Promise<void>;
+  eliminarAdjunto: (id: ID) => void;
   guardarPropiedad: (p: Propiedad) => void;
   guardarContrato: (c: Contrato) => void;
   guardarGasto: (g: Gasto) => void;
@@ -95,6 +103,50 @@ export const useApp = create<EstadoApp>((set, get) => {
     },
 
     guardarPersona: (p) => mutar((db) => ({ ...db, personas: upsert(db.personas, p) })),
+
+    guardarNovedad: (n) => mutar((db) => ({ ...db, novedades: upsert(db.novedades, n) })),
+
+    /** Borrar la novedad se lleva sus archivos: los deja `sanear`, acá se purga el binario. */
+    eliminarNovedad: (id) =>
+      mutar((db) => {
+        const archivos = db.adjuntos.filter((a) => a.novedadId === id).map((a) => a.id);
+        void borrarArchivos(archivos);
+        return {
+          ...db,
+          novedades: db.novedades.filter((n) => n.id !== id),
+          adjuntos: db.adjuntos.filter((a) => a.novedadId !== id),
+        };
+      }),
+
+    adjuntar: async (contratoId, archivo, opciones) => {
+      if (archivo.size > MAXIMO_POR_ARCHIVO) {
+        throw new Error(
+          `«${archivo.name}» pesa demasiado. El máximo por archivo es 20 MB.`,
+        );
+      }
+
+      const id = nuevoId('adj');
+      // Primero el binario: si IndexedDB falla, no queda una ficha sin archivo.
+      await guardarArchivo(id, archivo);
+
+      const adjunto: Adjunto = {
+        id,
+        contratoId,
+        novedadId: opciones?.novedadId,
+        nombre: archivo.name,
+        tipo: archivo.type || 'application/octet-stream',
+        tamano: archivo.size,
+        fecha: hoy(),
+        descripcion: opciones?.descripcion,
+      };
+      mutar((db) => ({ ...db, adjuntos: [...db.adjuntos, adjunto] }));
+    },
+
+    eliminarAdjunto: (id) =>
+      mutar((db) => {
+        void borrarArchivos([id]);
+        return { ...db, adjuntos: db.adjuntos.filter((a) => a.id !== id) };
+      }),
     guardarPropiedad: (p) => mutar((db) => ({ ...db, propiedades: upsert(db.propiedades, p) })),
     guardarGasto: (g) => mutar((db) => ({ ...db, gastos: upsert(db.gastos, g) })),
 
@@ -122,7 +174,8 @@ export const useApp = create<EstadoApp>((set, get) => {
         } as BaseDatos;
 
         // Una unidad sin contrato activo vuelve a estar disponible.
-        const { db: saneada } = sanear(sinEso);
+        const { db: saneada, archivosHuerfanos } = sanear(sinEso);
+        void borrarArchivos(archivosHuerfanos);
         return {
           ...saneada,
           propiedades: saneada.propiedades.map((p) =>

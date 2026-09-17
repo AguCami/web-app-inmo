@@ -37,7 +37,7 @@ Ya está el workflow de GitHub Pages. Falta un solo paso a mano, una vez:
 |---|---|
 | **Inicio** | Cuánto se cobró del mes, quién debe, qué contratos ajustan o vencen, qué unidades están vacías |
 | **Cobranzas** | La cuota de cada inquilino del mes, con el botón de cobrar y los punitorios ya calculados |
-| **Contratos** | Alta, cronograma de actualizaciones y todas las cuotas del contrato |
+| **Contratos** | Alta, cronograma de actualizaciones, cuotas, el legajo de archivos y la bitácora |
 | **Propiedades** | La cartera, con su estado y el alquiler vigente |
 | **Liquidaciones** | Lo que hay que transferirle a cada propietario: cobrado menos honorarios menos gastos |
 | **Gastos** | Arreglos y servicios de cada unidad, para descontarlos de la liquidación |
@@ -66,6 +66,21 @@ Córdoba no es válido. Cada contrato elige el suyo y la app respeta esa elecci�
 fracción de la cuota está rindiendo. Si el inquilino pagó la mitad, se rinde la
 mitad; cuando paga el resto, una liquidación complementaria toma la diferencia.
 Apretar «Generar» dos veces no duplica nada.
+
+**Los PDF no van en `localStorage`.** Guarda solo texto y el límite ronda los
+5 MB para toda la base: un contrato escaneado ya lo revienta. Los binarios van a
+IndexedDB y en la base principal queda nada más que la ficha del archivo. El
+respaldo que bajás de Ajustes los lleva adentro, así que una copia no es una
+copia a medias.
+
+![Legajo del contrato](docs/archivos.png)
+
+**La bitácora del contrato es la memoria de la unidad.** El inquilino avisa de
+una filtración, se hace una inspección, se manda una intimación: queda asentado
+con fecha, tipo y detalle, con fotos o presupuestos colgados. Lo que quedó
+abierto aparece en Inicio, porque es lo primero que se olvida.
+
+![Bitácora del contrato](docs/bitacora.png)
 
 **Los honorarios salen del alquiler cobrado, no de la cuota entera.** Las
 expensas se las lleva el consorcio: cobrarles comisión sería cobrar de más.

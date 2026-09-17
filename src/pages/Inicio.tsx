@@ -9,6 +9,7 @@ import {
   IconoPropiedades,
   IconoTendencia,
 } from '../components/iconos';
+import { MarcaNovedad } from '../components/NovedadModal';
 import { useDb } from '../data/store';
 import { alertas, deudores, resumenDelMes, serieCobranza } from '../domain/resumen';
 import { direccionDe } from '../domain/propiedades';
@@ -31,6 +32,16 @@ export default function Inicio() {
   const serie = useMemo(() => serieCobranza(db, ultimosPeriodos(periodo, 6)), [db, periodo]);
   const alerta = useMemo(() => alertas(db), [db]);
   const conDeuda = useMemo(() => deudores(db).slice(0, 5), [db]);
+  // Lo que quedó abierto en la bitácora de cualquier contrato: filtraciones sin
+  // arreglar, reclamos sin cerrar. Es lo primero que se olvida.
+  const sinResolver = useMemo(
+    () =>
+      db.novedades
+        .filter((n) => !n.resuelta)
+        .sort((a, b) => a.fecha.localeCompare(b.fecha))
+        .slice(0, 5),
+    [db.novedades],
+  );
 
   const propiedadDe = (id: string) => db.propiedades.find((p) => p.id === id);
   const personaDe = (id: string) => db.personas.find((p) => p.id === id);
@@ -172,6 +183,30 @@ export default function Inicio() {
         </Panel>
 
         <div className="grid grid--2">
+          <Panel
+            titulo="Sin resolver"
+            subtitulo={sinResolver.length ? 'Asentado en la bitácora y todavía abierto' : undefined}
+            comoLista
+          >
+            {sinResolver.length === 0 ? (
+              <Vacio titulo="Nada pendiente" detalle="No quedó ninguna novedad abierta en los contratos." />
+            ) : (
+              sinResolver.map((n) => {
+                const contrato = db.contratos.find((c) => c.id === n.contratoId);
+                const prop = contrato ? propiedadDe(contrato.propiedadId) : undefined;
+                return (
+                  <Item
+                    key={n.id}
+                    onClick={() => navegar(`/contratos/${n.contratoId}`)}
+                    avatar={<MarcaNovedad tipo={n.tipo} />}
+                    titulo={n.titulo}
+                    sub={`${prop?.codigo ?? ''} · desde el ${formatearFecha(n.fecha)}`}
+                  />
+                );
+              })
+            )}
+          </Panel>
+
           <Panel titulo="Contratos por vencer" subtitulo="Dentro de los próximos 90 días" comoLista>
             {alerta.contratosPorVencer.length === 0 ? (
               <Vacio

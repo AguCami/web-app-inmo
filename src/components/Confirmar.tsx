@@ -82,6 +82,8 @@ export function ConfirmarBorrado({
   if (impacto.liquidaciones) {
     arrastra.push(plural(impacto.liquidaciones, 'liquidación', 'liquidaciones'));
   }
+  if (impacto.novedades) arrastra.push(plural(impacto.novedades, 'novedad', 'novedades'));
+  if (impacto.adjuntos) arrastra.push(plural(impacto.adjuntos, 'archivo', 'archivos'));
 
   return (
     <Confirmar

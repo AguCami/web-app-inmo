@@ -121,6 +121,7 @@ export default function Personas() {
                           {NOMBRE_ROL[r]}
                         </Pastilla>
                       ))}
+                      {!p.activo && <Pastilla tono="alerta">Archivada</Pastilla>}
                     </>
                   }
                   sub={
@@ -268,10 +269,16 @@ function FormularioPersona({
         <input value={f.domicilio ?? ''} onChange={(e) => set('domicilio', e.target.value)} />
       </Campo>
 
-      <label className="fila" style={{ gap: 8 }}>
-        <input type="checkbox" checked={f.activo} onChange={(e) => set('activo', e.target.checked)} />
-        Activa
-      </label>
+      <div className="campo">
+        <label className="fila" style={{ gap: 8 }}>
+          <input type="checkbox" checked={f.activo} onChange={(e) => set('activo', e.target.checked)} />
+          Sigue operando
+        </label>
+        <span className="campo__ayuda">
+          Destildalo cuando el inquilino se va o el propietario retira su unidad: deja de aparecer al cargar
+          contratos nuevos, pero se le conserva todo el historial.
+        </span>
+      </div>
     </Modal>
   );
 }

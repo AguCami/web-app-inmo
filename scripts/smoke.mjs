@@ -98,7 +98,35 @@ await pagina.locator('.buscador input').fill('Prueba Automatizada');
 await pagina.waitForTimeout(300);
 comprobar('alta de persona', (await pagina.locator('.item').count()) === 1);
 
-/* ── 6. Sin desborde horizontal en el celular ────────────────────── */
+/* ── 6. Archivar una persona la saca de los desplegables ─────────── */
+const inquilinosOfrecidos = async () => {
+  await pagina.goto(`${BASE}/#/contratos`, { waitUntil: 'networkidle' });
+  await pagina.locator('button', { hasText: 'Nuevo contrato' }).click();
+  await pagina.waitForSelector('[role="dialog"]');
+  // El segundo select del formulario es el de Inquilino.
+  const opciones = await pagina.locator('[role="dialog"] select').nth(1).locator('option').allTextContents();
+  await pagina.locator('[role="dialog"] button', { hasText: 'Cancelar' }).click();
+  await pagina.waitForTimeout(200);
+  return opciones;
+};
+
+const ofrecidosAntes = await inquilinosOfrecidos();
+await pagina.goto(`${BASE}/#/personas`, { waitUntil: 'networkidle' });
+await pagina.locator('.buscador input').fill('Guadalupe Sosa');
+await pagina.waitForTimeout(300);
+await pagina.locator('.item').first().click();
+await pagina.waitForSelector('[role="dialog"]');
+await pagina.locator('[role="dialog"] input[type="checkbox"]').last().uncheck();
+await pagina.locator('[role="dialog"] button', { hasText: 'Guardar' }).click();
+await pagina.waitForTimeout(300);
+const ofrecidosDespues = await inquilinosOfrecidos();
+comprobar(
+  'archivar una persona la saca de los desplegables',
+  !ofrecidosDespues.includes('Guadalupe Sosa') && ofrecidosDespues.length === ofrecidosAntes.length - 1,
+  `${ofrecidosAntes.length - 1} → ${ofrecidosDespues.length - 1} inquilinos`,
+);
+
+/* ── 7. Sin desborde horizontal en el celular ────────────────────── */
 const movil = await navegador.newPage({ viewport: { width: 390, height: 844 } });
 let desborda = false;
 for (const [, ruta] of RUTAS) {
@@ -109,7 +137,7 @@ for (const [, ruta] of RUTAS) {
 }
 comprobar('sin desborde horizontal en 390 px', !desborda);
 
-/* ── 7. Borrar arrastra lo que dependía, y pide confirmación ─────── */
+/* ── 8. Borrar arrastra lo que dependía, y pide confirmación ─────── */
 const conteos = () =>
   pagina.evaluate(() => {
     const db = JSON.parse(localStorage.getItem('gestion-alquileres/db/v2'));
@@ -155,7 +183,7 @@ comprobar(
 );
 comprobar('el menú no deja pendientes fantasma', (await pagina.locator('.rail__conteo').count()) === 0);
 
-/* ── 8. Una base inconsistente se repara sola al abrir ───────────── */
+/* ── 9. Una base inconsistente se repara sola al abrir ───────────── */
 await pagina.evaluate(() => {
   const CLAVE = 'gestion-alquileres/db/v2';
   localStorage.removeItem(CLAVE);

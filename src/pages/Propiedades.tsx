@@ -225,7 +225,9 @@ function FormularioPropiedad({
   const db = useDb();
   const [f, setF] = useState<Propiedad>(propiedad);
   const set = <K extends keyof Propiedad>(k: K, v: Propiedad[K]) => setF((x) => ({ ...x, [k]: v }));
-  const propietarios = db.personas.filter((p) => p.roles.includes('propietario'));
+  const propietarios = db.personas.filter(
+    (p) => p.roles.includes('propietario') && (p.activo || p.id === propiedad.propietarioId),
+  );
   const valido = f.codigo.trim() && f.calle.trim() && f.propietarioId;
 
   return (

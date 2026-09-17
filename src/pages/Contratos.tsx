@@ -225,7 +225,11 @@ export function FormularioContrato({
   const propiedades = db.propiedades.filter(
     (p) => p.estado !== 'alquilada' || p.id === contrato.propiedadId,
   );
-  const inquilinos = db.personas.filter((p) => p.roles.includes('inquilino'));
+  // Solo se ofrecen las personas activas, más la ya elegida en este contrato:
+  // si no, editar un contrato viejo perdería a su inquilino archivado.
+  const inquilinos = db.personas.filter(
+    (p) => p.roles.includes('inquilino') && (p.activo || p.id === contrato.inquilinoId),
+  );
   const valido = f.numero.trim() && f.propiedadId && f.inquilinoId && f.montoInicial > 0;
 
   return (

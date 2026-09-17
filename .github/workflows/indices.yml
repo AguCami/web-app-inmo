@@ -1,0 +1,48 @@
+# Trae el IPC de Córdoba del portal de datos abiertos y lo publica en el repo.
+#
+# La app es un sitio estático: el navegador no puede pedirle los datos al
+# organismo (CORS, y el sitio puede estar caído). Entonces el que consulta es
+# Actions, una vez por día: si hay un valor nuevo lo escribe en
+# public/indices.json, lo commitea, y el push dispara el deploy.
+#
+# Si la fuente cambia de formato el script falla y este workflow queda en rojo,
+# que es lo que queremos: mejor enterarse que publicar un índice mal leído.
+name: Actualizar índices
+
+on:
+  schedule:
+    # Todos los días a las 12:00 UTC (9 de la mañana en Argentina).
+    - cron: '0 12 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: indices
+  cancel-in-progress: false
+
+jobs:
+  actualizar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Consultar el organismo
+        run: node scripts/actualizar-indices.mjs
+
+      - name: Publicar si cambió algo
+        run: |
+          if [ -z "$(git status --porcelain public/indices.json)" ]; then
+            echo "Sin cambios que commitear."
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/indices.json
+          git commit -m "Actualizar serie del IPC de Córdoba"
+          git push

@@ -1,14 +1,14 @@
-# Inmo Contable
+# Gestión de Alquileres
 
-Web app de **contabilidad y seguimiento para una inmobiliaria** que administra
-alquileres e intermedia en ventas. Pensada para el mercado argentino: doble
-moneda, actualización de alquileres por ICL/IPC/Casa Propia, punitorios por
-mora, liquidaciones a propietarios y libro diario por partida doble.
+Web app para administrar alquileres: contratos, actualizaciones por índice,
+cobranza mes a mes y liquidación a los propietarios. Pensada para Córdoba,
+Argentina: incluye el **IPC de Córdoba** como índice de actualización, junto al
+ICL del BCRA, el IPC nacional y el porcentaje fijo.
 
-Es **local-first**: no hay servidor ni cuentas. Los datos viven en el navegador
-del usuario y se respaldan en un archivo JSON.
+No hay servidor ni cuentas: los datos viven en el navegador y se respaldan en un
+archivo.
 
-![Tablero](docs/tablero.png)
+![Pantalla de inicio](docs/inicio.png)
 
 ## Arrancar
 
@@ -17,118 +17,116 @@ npm install
 npm run dev        # http://localhost:5173
 ```
 
-Otros comandos:
-
 | Comando | Qué hace |
 |---|---|
 | `npm run build` | Chequea tipos y compila a `dist/` (sitio estático) |
 | `npm run preview` | Sirve `dist/` en http://127.0.0.1:4173 |
-| `npm run typecheck` | Solo TypeScript |
 | `npm run smoke` | Verificación de humo con Playwright (requiere `preview` levantado) |
+| `npm run indices` | Trae el IPC de Córdoba publicado y actualiza `public/indices.json` |
 
-### Publicarla en GitHub Pages
+Arranca con una administración de ejemplo: 14 unidades, 12 contratos activos, un
+año de cobranzas y liquidaciones. Desde **Ajustes → Respaldo** se vacía para
+cargar datos reales.
 
-Ya está el workflow (`.github/workflows/deploy.yml`). Falta un solo paso a mano,
-una única vez:
+Ya está el workflow de GitHub Pages. Falta un solo paso a mano, una vez:
+**Settings → Pages → Source: «GitHub Actions»**.
 
-> **Settings → Pages → Build and deployment → Source: «GitHub Actions»**
+## Las pantallas
 
-Con eso, cada push compila y publica. La app usa rutas relativas y `HashRouter`,
-así que anda igual en la raíz del dominio o en un subdirectorio, y no necesita
-configuración de rewrites.
-
-La primera vez la app se carga con una **inmobiliaria de demostración**
-completa: 45 contratos de alquiler activos, 14 meses de cobranzas y
-liquidaciones, operaciones de venta escrituradas y en curso, gastos y todo el
-libro diario derivado. Desde **Configuración → Datos y respaldo** se puede
-vaciar la base para empezar a cargar datos reales, o volver a la demo.
-
-## Qué hace
-
-| Módulo | Qué resuelve |
+| Pantalla | Para qué |
 |---|---|
-| **Tablero** | Ingresos, resultado, tasa de cobranza, morosidad, ocupación y pipeline, con series de 6/12/24 meses |
-| **Propiedades** | Cartera con estado, destino, precios y vínculo al contrato vigente |
-| **Personas** | Propietarios, inquilinos, compradores, garantes, agentes y proveedores (una persona puede tener varios roles) |
-| **Contratos** | Alta, cronograma de actualizaciones y emisión de cuotas |
-| **Cobranzas** | Grilla mensual, registro de pagos, punitorios calculados, antigüedad de deuda |
-| **Liquidaciones** | Rendición a propietarios: cobrado menos honorarios menos gastos, con circuito borrador → aprobada → pagada |
-| **Operaciones** | Pipeline de venta por etapa, honorarios y reparto entre agentes |
-| **Gastos** | Gastos propios y gastos a recuperar del propietario, con IVA |
-| **Tesorería** | Cuentas en pesos y dólares, saldos y libro de caja consolidado |
-| **Libros** | Diario, mayor, sumas y saldos, estado de resultados y plan de cuentas |
-| **Reportes** | Aporte por propiedad, morosidad, producción por agente, cartera por propietario, exportación CSV |
-| **Agenda** | Tareas propias más los vencimientos que salen solos de los contratos |
+| **Inicio** | Cuánto se cobró del mes, quién debe, qué contratos ajustan o vencen, qué unidades están vacías |
+| **Cobranzas** | La cuota de cada inquilino del mes, con el botón de cobrar y los punitorios ya calculados |
+| **Contratos** | Alta, cronograma de actualizaciones y todas las cuotas del contrato |
+| **Propiedades** | La cartera, con su estado y el alquiler vigente |
+| **Liquidaciones** | Lo que hay que transferirle a cada propietario: cobrado menos honorarios menos gastos |
+| **Gastos** | Arreglos y servicios de cada unidad, para descontarlos de la liquidación |
+| **Personas** | Propietarios, inquilinos y garantes |
+| **Ajustes** | Tus datos, los índices mes a mes y el respaldo |
 
-## Las tres decisiones que explican el resto
+## Las decisiones que explican el resto
 
-**1. La plata del inquilino no es ingreso de la inmobiliaria.** Al emitir la
-cuota nace un crédito contra el inquilino (`1.2.01`) y, por el mismo importe,
-una deuda con el propietario (`2.1.01`). Recién al liquidar se reconoce el
-honorario de administración como ingreso (`4.1.01`). Eso mantiene separados los
-fondos de terceros del resultado propio, que es donde la mayoría de las
-planillas de Excel se rompen.
-
-**2. El alquiler vigente se calcula, no se guarda.** El contrato guarda el monto
+**El alquiler vigente se calcula, no se guarda.** El contrato guarda el monto
 inicial, el índice y cada cuántos meses ajusta. El cronograma sale de encadenar
-los coeficientes del índice publicado. Cuando el BCRA publica el ICL definitivo
-se carga en Configuración y todos los contratos se recalculan solos, incluidas
-las proyecciones a futuro.
+los coeficientes del índice publicado:
 
-![Cronograma de actualizaciones de un contrato](docs/cronograma.png)
+```
+monto(k) = monto(k−1) × índice(períodoTramo k) / índice(períodoTramo k−1)
+```
 
-**3. Se liquida lo cobrado, y de a partes.** Cada ítem de liquidación guarda qué
-fracción de la cuota está rindiendo. Si un inquilino pagó la mitad, se liquida
-la mitad; cuando paga el resto, una liquidación complementaria toma la
-diferencia. Generar liquidaciones dos veces no duplica nada.
+Cuando entra el dato definitivo del mes, todos los contratos que usan ese índice
+se recalculan solos, incluidas las proyecciones a futuro.
 
-Los detalles del modelo, el circuito contable completo y lo que falta para
-producción están en [`docs/DISENO.md`](docs/DISENO.md).
+![Cronograma de actualizaciones](docs/cronograma.png)
+
+**El índice es por contrato.** Si el contrato dice ICL, actualizar por IPC de
+Córdoba no es válido. Cada contrato elige el suyo y la app respeta esa elección.
+
+**Se liquida lo cobrado, y de a partes.** Cada ítem de liquidación guarda qué
+fracción de la cuota está rindiendo. Si el inquilino pagó la mitad, se rinde la
+mitad; cuando paga el resto, una liquidación complementaria toma la diferencia.
+Apretar «Generar» dos veces no duplica nada.
+
+**Los honorarios salen del alquiler cobrado, no de la cuota entera.** Las
+expensas se las lleva el consorcio: cobrarles comisión sería cobrar de más.
+
+## El IPC de Córdoba, actualizado solo
+
+La app es un sitio estático. El navegador no puede pedirle los datos al organismo
+—CORS, y el sitio puede estar caído justo cuando alguien abre la app— así que el
+que consulta es GitHub Actions:
+
+```
+cron diario  →  scripts/actualizar-indices.mjs  →  public/indices.json  →  deploy
+                (portal de datos abiertos                    ↓
+                 de la Provincia de Córdoba)        la app lo lee al abrir
+                                                    y lo mezcla con lo local
+```
+
+Si el organismo cambia el formato, el script **falla y no escribe nada**: el
+workflow queda en rojo, que es mejor que publicar un índice mal leído. Y siempre
+se puede corregir cualquier mes a mano desde Ajustes.
+
+> **Estado:** el parseo todavía no se probó contra la fuente real — el entorno
+> donde se escribió tiene bloqueado el dominio del organismo. La primera corrida
+> en Actions va a mostrar exactamente qué devuelve el portal.
 
 ## Cómo está armado
 
 ```
 src/
-├── domain/          Reglas del negocio, sin React ni almacenamiento
+├── domain/          Las reglas, sin React ni almacenamiento
 │   ├── types.ts         Modelo de datos
-│   ├── util.ts          Fechas, períodos, dinero, formato es-AR
+│   ├── util.ts          Fechas, períodos, plata, formato es-AR
 │   ├── contratos.ts     Cronograma de ajustes, índices, vigencia
 │   ├── cobranzas.ts     Emisión de cuotas, punitorios, mora
 │   ├── liquidaciones.ts Rendición a propietarios (incremental)
-│   ├── ventas.ts        Honorarios, embudo, reparto entre agentes
-│   ├── planCuentas.ts   Plan de cuentas y mapeos de imputación
-│   ├── contabilidad.ts  Asientos automáticos, mayor, balance, resultados
-│   └── reportes.ts      Series del tablero, tesorería, rentabilidad
-├── data/            Persistencia y datos de demostración
-├── components/      Kit de UI y gráficos
-├── pages/           Una pantalla por módulo
+│   └── resumen.ts       Los números de Inicio
+├── data/            Persistencia, índices y datos de ejemplo
+├── components/      Kit de interfaz e íconos
+├── pages/           Una pantalla por sección
 └── styles/          Tokens de diseño y hoja principal
 ```
 
-Todo lo que es cálculo vive en `domain/` como funciones puras sobre la base de
-datos: son las que conviene tener cubiertas con tests y las que se mudan tal
-cual el día que haya backend.
+Todo el cálculo vive en `domain/` como funciones puras sobre la base de datos.
+Son las que conviene cubrir con tests y las que se mudan tal cual el día que haya
+backend.
 
-**Stack:** React 18 + TypeScript + Vite, Zustand para el estado, Recharts para
-los gráficos, CSS propio con tokens. Sin framework de UI.
+**Stack:** React 18 + TypeScript + Vite, Zustand, CSS propio con tokens. Sin
+librería de componentes y sin librería de gráficos.
 
-## Accesibilidad y presentación
+## Detalles de la interfaz
 
-- Modo claro y oscuro, cada uno con su propia paleta (no es un invertido
-  automático). El interruptor está arriba a la derecha.
-- La paleta de series está validada para daltonismo y contraste; el orden de
-  colores es fijo y nunca se recicla por ranking.
-- **Todo gráfico tiene su gemelo en tabla**: el color nunca es el único canal
-  que transporta información.
-- Las etiquetas de estado llevan siempre texto, no solo color.
-- Responsivo hasta 390 px y con hoja de estilos de impresión para liquidaciones,
-  fichas de contrato y libros.
+- Modo claro y oscuro, cada uno con su propia paleta. El interruptor está arriba
+  a la derecha.
+- Listas de tarjetas en vez de grillas: se lee como una app, no como una planilla.
+- Los estados siempre llevan texto además de color.
+- Anda hasta 390 px de ancho y tiene hoja de impresión para contratos y
+  liquidaciones.
 
-## Límites conocidos
+## Lo que no hace
 
-- **Un solo usuario, un solo navegador.** No hay login, permisos ni sincronización.
-- **Los índices y la cotización se cargan a mano.** No hay integración con BCRA,
-  INDEC ni AFIP.
-- **No emite comprobantes fiscales.** No hay facturación electrónica ni libro IVA.
-- **La demo es sintética.** Los índices y la serie del dólar son plausibles, no
-  reales: hay que reemplazarlos antes de usar la app con datos de verdad.
+- **Un solo usuario, un solo navegador.** No hay login ni sincronización.
+- **No emite comprobantes fiscales** ni tiene libro IVA.
+- **Los valores de índice que trae la demo son inventados** (plausibles, pero
+  inventados). Hay que reemplazarlos antes de usarla en serio.

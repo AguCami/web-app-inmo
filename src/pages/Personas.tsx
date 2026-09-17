@@ -1,22 +1,20 @@
 import { useMemo, useState } from 'react';
 import { Encabezado } from '../components/Encabezado';
-import { Campo, Chip, Modal, Paginador, Tabla, Tarjeta, usePaginado, Vacio } from '../components/ui';
+import { Avatar, Campo, Item, Modal, Paginador, Panel, Pastilla, Segmentos, usePaginado, Vacio } from '../components/ui';
+import { IconoBuscar, IconoMas, IconoPersonas } from '../components/iconos';
 import { useApp, useDb } from '../data/store';
 import type { CondicionIVA, Persona, RolPersona } from '../domain/types';
-import { incluyeTexto, nuevoId } from '../domain/util';
+import { incluyeTexto, nuevoId, plural } from '../domain/util';
 
-const ROLES: RolPersona[] = ['propietario', 'inquilino', 'comprador', 'garante', 'agente', 'proveedor'];
+const ROLES: RolPersona[] = ['propietario', 'inquilino', 'garante'];
 
-export const ETIQUETA_ROL: Record<RolPersona, string> = {
+export const NOMBRE_ROL: Record<RolPersona, string> = {
   propietario: 'Propietario',
   inquilino: 'Inquilino',
-  comprador: 'Comprador',
   garante: 'Garante',
-  agente: 'Agente',
-  proveedor: 'Proveedor',
 };
 
-export const ETIQUETA_IVA: Record<CondicionIVA, string> = {
+export const NOMBRE_IVA: Record<CondicionIVA, string> = {
   responsable_inscripto: 'Responsable inscripto',
   monotributo: 'Monotributo',
   exento: 'Exento',
@@ -41,43 +39,54 @@ export default function Personas() {
   const eliminar = useApp((e) => e.eliminar);
 
   const [busqueda, setBusqueda] = useState('');
-  const [filtroRol, setFiltroRol] = useState<RolPersona | 'todos'>('todos');
+  const [filtro, setFiltro] = useState<'todos' | RolPersona>('todos');
   const [editando, setEditando] = useState<Persona | null>(null);
 
-  const filtradas = useMemo(
+  const lista = useMemo(
     () =>
       db.personas
-        .filter((p) => filtroRol === 'todos' || p.roles.includes(filtroRol))
+        .filter((p) => filtro === 'todos' || p.roles.includes(filtro))
         .filter((p) => incluyeTexto([p.nombre, p.documento, p.email, p.telefono], busqueda))
         .sort((a, b) => a.nombre.localeCompare(b.nombre)),
-    [db.personas, filtroRol, busqueda],
+    [db.personas, filtro, busqueda],
   );
+  const pag = usePaginado(lista, 30);
 
-  const pag = usePaginado(filtradas, 40);
-
-  /** Cuántas propiedades o contratos tiene atrás cada persona. */
+  /** Qué tiene atrás cada persona, para no borrar algo que está en uso. */
   const vinculos = (p: Persona) => {
     const props = db.propiedades.filter((x) => x.propietarioId === p.id).length;
     const contratos = db.contratos.filter((x) => x.inquilinoId === p.id).length;
-    const ops = db.operaciones.filter((x) => x.compradorId === p.id || x.vendedorId === p.id).length;
     const partes: string[] = [];
-    if (props) partes.push(`${props} propiedad${props > 1 ? 'es' : ''}`);
-    if (contratos) partes.push(`${contratos} contrato${contratos > 1 ? 's' : ''}`);
-    if (ops) partes.push(`${ops} operación${ops > 1 ? 'es' : ''}`);
-    return partes.join(' · ') || '—';
+    if (props) partes.push(plural(props, 'propiedad', 'propiedades'));
+    if (contratos) partes.push(plural(contratos, 'contrato', 'contratos'));
+    return partes.join(' · ');
   };
+
+  const cuenta = (rol: RolPersona) => db.personas.filter((p) => p.roles.includes(rol)).length;
 
   return (
     <>
-      <Encabezado titulo="Personas" bajada="Propietarios, inquilinos, compradores, agentes y proveedores">
+      <Encabezado titulo="Personas" bajada="Propietarios, inquilinos y garantes">
         <button className="btn btn--primario no-imprimir" onClick={() => setEditando(personaNueva())}>
-          + Nueva persona
+          <IconoMas tam={17} />
+          Nueva persona
         </button>
       </Encabezado>
 
-      <div className="contenido pila">
+      <div className="contenido">
         <div className="fila no-imprimir">
+          <Segmentos
+            etiqueta="Filtrar personas"
+            valor={filtro}
+            onCambio={setFiltro}
+            opciones={[
+              { id: 'todos', texto: `Todas (${db.personas.length})` },
+              { id: 'propietario', texto: `Propietarios (${cuenta('propietario')})` },
+              { id: 'inquilino', texto: `Inquilinos (${cuenta('inquilino')})` },
+            ]}
+          />
           <div className="buscador">
+            <IconoBuscar tam={17} />
             <input
               type="search"
               placeholder="Buscar por nombre, documento o contacto"
@@ -86,76 +95,54 @@ export default function Personas() {
               aria-label="Buscar personas"
             />
           </div>
-          <select
-            value={filtroRol}
-            onChange={(e) => setFiltroRol(e.target.value as RolPersona | 'todos')}
-            style={{ width: 'auto' }}
-            aria-label="Filtrar por rol"
-          >
-            <option value="todos">Todos los roles</option>
-            {ROLES.map((r) => (
-              <option key={r} value={r}>{ETIQUETA_ROL[r]}</option>
-            ))}
-          </select>
         </div>
 
-        <Tarjeta ajustado>
-          {filtradas.length === 0 ? (
-            <Vacio icono="👤" titulo="No hay personas cargadas" detalle="Cargá propietarios e inquilinos para poder armar contratos." />
+        <Panel comoLista>
+          {lista.length === 0 ? (
+            <Vacio
+              icono={<IconoPersonas tam={24} />}
+              titulo="No hay personas cargadas"
+              detalle="Cargá propietarios e inquilinos para poder armar contratos."
+            />
           ) : (
-            <Tabla>
-              <thead>
-                <tr>
-                  <th>Nombre</th>
-                  <th>Roles</th>
-                  <th>Documento</th>
-                  <th>Contacto</th>
-                  <th>Condición IVA</th>
-                  <th>Vínculos</th>
-                  <th />
-                </tr>
-              </thead>
-              <tbody>
-                {pag.visibles.map((p) => (
-                  <tr key={p.id}>
-                    <td className="principal-celda">
+            <>
+              {pag.visibles.map((p) => (
+                <Item
+                  key={p.id}
+                  onClick={() => setEditando(p)}
+                  avatar={<Avatar nombre={p.nombre} />}
+                  titulo={
+                    <>
                       {p.nombre}
-                      {!p.activo && <span className="tabla__sub">inactivo</span>}
-                    </td>
-                    <td>
-                      <span className="fila" style={{ gap: 4 }}>
-                        {p.roles.map((r) => (
-                          <Chip key={r} tono={r === 'agente' ? 'info' : 'neutro'}>{ETIQUETA_ROL[r]}</Chip>
-                        ))}
-                      </span>
-                    </td>
-                    <td className="num">
+                      {p.roles.map((r) => (
+                        <Pastilla key={r} tono={r === 'propietario' ? 'acento' : 'neutro'}>
+                          {NOMBRE_ROL[r]}
+                        </Pastilla>
+                      ))}
+                    </>
+                  }
+                  sub={
+                    <>
                       {p.tipoDoc} {p.documento}
-                    </td>
-                    <td>
-                      {p.email ?? '—'}
-                      {p.telefono && <span className="tabla__sub">{p.telefono}</span>}
-                    </td>
-                    <td>{ETIQUETA_IVA[p.condicionIVA]}</td>
-                    <td className="tenue mini">{vinculos(p)}</td>
-                    <td className="num no-imprimir">
-                      <button className="btn btn--chico btn--fantasma" onClick={() => setEditando(p)}>Editar</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </Tabla>
+                      {p.telefono && ` · ${p.telefono}`}
+                      {p.email && ` · ${p.email}`}
+                    </>
+                  }
+                  fin={<span className="mini tenue">{vinculos(p)}</span>}
+                />
+              ))}
+              <Paginador
+                pagina={pag.pagina}
+                paginas={pag.paginas}
+                desde={pag.desde}
+                hasta={pag.hasta}
+                total={pag.total}
+                etiqueta="personas"
+                onCambio={pag.setPagina}
+              />
+            </>
           )}
-          <Paginador
-            pagina={pag.pagina}
-            paginas={pag.paginas}
-            desde={pag.desde}
-            hasta={pag.hasta}
-            total={pag.total}
-            etiqueta="personas"
-            onCambio={pag.setPagina}
-          />
-        </Tarjeta>
+        </Panel>
       </div>
 
       {editando && (
@@ -167,7 +154,7 @@ export default function Personas() {
             setEditando(null);
           }}
           onEliminar={
-            db.personas.some((p) => p.id === editando.id)
+            db.personas.some((p) => p.id === editando.id) && !vinculos(editando)
               ? () => {
                   eliminar('personas', editando.id);
                   setEditando(null);
@@ -204,9 +191,11 @@ function FormularioPersona({
       pie={
         <>
           {onEliminar && (
-            <button className="btn btn--peligro" onClick={onEliminar} style={{ marginRight: 'auto' }}>Eliminar</button>
+            <button className="btn btn--peligro" onClick={onEliminar} style={{ marginRight: 'auto' }}>
+              Eliminar
+            </button>
           )}
-          <button className="btn" onClick={onCerrar}>Cancelar</button>
+          <button className="btn btn--fantasma" onClick={onCerrar}>Cancelar</button>
           <button
             className="btn btn--primario"
             disabled={!f.nombre.trim() || f.roles.length === 0}
@@ -221,24 +210,19 @@ function FormularioPersona({
         <input value={f.nombre} onChange={(e) => set('nombre', e.target.value)} />
       </Campo>
 
-      <Campo etiqueta="Roles" ayuda="Una misma persona puede ser propietario e inquilino a la vez.">
-        <div className="fila">
+      <Campo etiqueta="Qué es" ayuda="Una misma persona puede ser propietaria de una unidad e inquilina de otra.">
+        <div className="fila" style={{ gap: 8 }}>
           {ROLES.map((r) => (
-            <label key={r} className="chip" style={{ cursor: 'pointer' }}>
-              <input
-                type="checkbox"
-                checked={f.roles.includes(r)}
-                onChange={() => alternarRol(r)}
-                style={{ marginRight: 4 }}
-              />
-              {ETIQUETA_ROL[r]}
+            <label key={r} className="pastilla" style={{ cursor: 'pointer', gap: 7, padding: '6px 12px' }}>
+              <input type="checkbox" checked={f.roles.includes(r)} onChange={() => alternarRol(r)} />
+              {NOMBRE_ROL[r]}
             </label>
           ))}
         </div>
       </Campo>
 
       <div className="grid grid--form">
-        <Campo etiqueta="Tipo de documento">
+        <Campo etiqueta="Documento">
           <select value={f.tipoDoc} onChange={(e) => set('tipoDoc', e.target.value as Persona['tipoDoc'])}>
             <option value="DNI">DNI</option>
             <option value="CUIT">CUIT</option>
@@ -249,20 +233,20 @@ function FormularioPersona({
         <Campo etiqueta="Número">
           <input value={f.documento} onChange={(e) => set('documento', e.target.value)} />
         </Campo>
-        <Campo etiqueta="Condición frente al IVA">
-          <select value={f.condicionIVA} onChange={(e) => set('condicionIVA', e.target.value as CondicionIVA)}>
-            {(Object.keys(ETIQUETA_IVA) as CondicionIVA[]).map((c) => (
-              <option key={c} value={c}>{ETIQUETA_IVA[c]}</option>
-            ))}
-          </select>
-        </Campo>
         <Campo etiqueta="Teléfono">
           <input value={f.telefono ?? ''} onChange={(e) => set('telefono', e.target.value)} />
         </Campo>
         <Campo etiqueta="Email">
           <input type="email" value={f.email ?? ''} onChange={(e) => set('email', e.target.value)} />
         </Campo>
-        <Campo etiqueta="CBU / CVU" ayuda="Se usa para pagar las liquidaciones.">
+        <Campo etiqueta="Condición frente al IVA">
+          <select value={f.condicionIVA} onChange={(e) => set('condicionIVA', e.target.value as CondicionIVA)}>
+            {(Object.keys(NOMBRE_IVA) as CondicionIVA[]).map((c) => (
+              <option key={c} value={c}>{NOMBRE_IVA[c]}</option>
+            ))}
+          </select>
+        </Campo>
+        <Campo etiqueta="CBU o alias" ayuda="Para transferirle la liquidación.">
           <input value={f.cbu ?? ''} onChange={(e) => set('cbu', e.target.value)} />
         </Campo>
       </div>
@@ -271,20 +255,9 @@ function FormularioPersona({
         <input value={f.domicilio ?? ''} onChange={(e) => set('domicilio', e.target.value)} />
       </Campo>
 
-      {f.roles.includes('agente') && (
-        <Campo etiqueta="% de comisión del agente" ayuda="Parte de los honorarios de venta que le corresponde por defecto.">
-          <input
-            className="entrada-num"
-            type="number"
-            value={f.comisionAgentePct ?? 30}
-            onChange={(e) => set('comisionAgentePct', Number(e.target.value))}
-          />
-        </Campo>
-      )}
-
-      <label className="fila" style={{ gap: 6 }}>
+      <label className="fila" style={{ gap: 8 }}>
         <input type="checkbox" checked={f.activo} onChange={(e) => set('activo', e.target.checked)} />
-        Activo
+        Activa
       </label>
     </Modal>
   );

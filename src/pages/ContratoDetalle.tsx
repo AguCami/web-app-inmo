@@ -1,9 +1,20 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Encabezado } from '../components/Encabezado';
-import { Chip, Datos, Kpi, Pestanas, Tabla, Tarjeta, Vacio, type TonoChip } from '../components/ui';
+import {
+  Avatar,
+  Dato,
+  Item,
+  Panel,
+  Pastilla,
+  Progreso,
+  Segmentos,
+  Vacio,
+} from '../components/ui';
+import { IconoContratos, IconoVolver } from '../components/iconos';
 import { PagoModal } from '../components/PagoModal';
-import { ETIQUETA_VIGENCIA, FormularioContrato, TONO_VIGENCIA } from './Contratos';
+import { FormularioContrato, TEXTO_VIGENCIA, TONO_VIGENCIA } from './Contratos';
+import { TEXTO_CUOTA, TONO_CUOTA } from './Cobranzas';
 import { useApp, useDb } from '../data/store';
 import {
   cobradoDeCuota,
@@ -13,13 +24,9 @@ import {
   resumenCobranza,
   saldoDeCuota,
 } from '../domain/cobranzas';
-import {
-  cronogramaAjustes,
-  ETIQUETA_INDICE,
-  montoVigente,
-  vigenciaContrato,
-} from '../domain/contratos';
-import type { Cuota, EstadoCuota } from '../domain/types';
+import { cronogramaAjustes, ETIQUETA_INDICE, montoVigente, vigenciaContrato } from '../domain/contratos';
+import { direccionDe } from '../domain/propiedades';
+import type { Cuota } from '../domain/types';
 import {
   formatearFecha,
   formatearMoneda,
@@ -29,21 +36,7 @@ import {
   plural,
 } from '../domain/util';
 
-export const TONO_CUOTA: Record<EstadoCuota, TonoChip> = {
-  pagada: 'ok',
-  pendiente: 'info',
-  parcial: 'alerta',
-  vencida: 'critico',
-  anulada: 'neutro',
-};
-
-export const ETIQUETA_CUOTA: Record<EstadoCuota, string> = {
-  pagada: 'Pagada',
-  pendiente: 'Pendiente',
-  parcial: 'Pago parcial',
-  vencida: 'Vencida',
-  anulada: 'Anulada',
-};
+type Vista = 'cuotas' | 'ajustes' | 'ficha';
 
 export default function ContratoDetalle() {
   const { id } = useParams();
@@ -53,7 +46,7 @@ export default function ContratoDetalle() {
   const eliminar = useApp((e) => e.eliminar);
   const anular = useApp((e) => e.anularCuota);
 
-  const [pestana, setPestana] = useState<'cuotas' | 'cronograma' | 'ficha'>('cuotas');
+  const [vista, setVista] = useState<Vista>('cuotas');
   const [editando, setEditando] = useState(false);
   const [cobrando, setCobrando] = useState<Cuota | null>(null);
 
@@ -77,7 +70,13 @@ export default function ContratoDetalle() {
       <>
         <Encabezado titulo="Contrato" />
         <div className="contenido">
-          <Vacio icono="🔍" titulo="No encontramos ese contrato" accion={<Link to="/contratos">Volver al listado</Link>} />
+          <div className="panel">
+            <Vacio
+              icono={<IconoContratos tam={24} />}
+              titulo="No encontramos ese contrato"
+              accion={<Link to="/contratos" className="btn">Volver al listado</Link>}
+            />
+          </div>
         </div>
       </>
     );
@@ -91,199 +90,226 @@ export default function ContratoDetalle() {
   return (
     <>
       <Encabezado
-        titulo={`Contrato ${contrato.numero}`}
-        bajada={`${propiedad?.codigo ?? ''} · ${propiedad?.calle ?? ''} ${propiedad?.numero ?? ''} · ${inquilino?.nombre ?? ''}`}
+        titulo={inquilino?.nombre ?? 'Contrato'}
+        bajada={`${contrato.numero} · ${propiedad?.codigo ?? ''} ${propiedad ? direccionDe(propiedad) : ''}`}
       >
+        <button className="btn btn--fantasma no-imprimir" onClick={() => navegar('/contratos')}>
+          <IconoVolver tam={17} />
+          Volver
+        </button>
         <button className="btn no-imprimir" onClick={() => window.print()}>Imprimir</button>
         <button className="btn btn--primario no-imprimir" onClick={() => setEditando(true)}>Editar</button>
       </Encabezado>
 
-      <div className="contenido pila">
-        <div className="grid grid--kpis">
-          <Kpi
-            etiqueta="Alquiler vigente"
+      <div className="contenido">
+        <div className="grid grid--resumen">
+          <Dato
+            etiqueta="Alquiler de este mes"
             valor={formatearMoneda(montoVigente(contrato, periodoActual(), db.indices), contrato.moneda)}
-            pie={`ajusta por ${ETIQUETA_INDICE[contrato.indiceAjuste]} cada ${contrato.mesesAjuste} meses`}
+            pie={`${ETIQUETA_INDICE[contrato.indiceAjuste]} · cada ${contrato.mesesAjuste} meses`}
           />
-          <Kpi
-            etiqueta="Cobrado sobre emitido"
+          <Dato
+            etiqueta="Cobrado del contrato"
             valor={formatearPorcentaje(resumen.tasaCobranza)}
-            tono={resumen.tasaCobranza >= 90 ? 'ok' : resumen.tasaCobranza >= 70 ? 'alerta' : 'critico'}
+            tono={resumen.tasaCobranza >= 95 ? 'ok' : resumen.tasaCobranza >= 75 ? 'alerta' : 'critico'}
             pie={`${formatearMoneda(resumen.cobrado, contrato.moneda)} de ${formatearMoneda(resumen.emitido, contrato.moneda)}`}
-          />
-          <Kpi
+          >
+            <Progreso valor={resumen.tasaCobranza} etiqueta="Cobrado del contrato" />
+          </Dato>
+          <Dato
             etiqueta="Deuda vencida"
             valor={formatearMoneda(resumen.vencido, contrato.moneda)}
             tono={resumen.vencido > 0 ? 'critico' : 'ok'}
-            pie={`${resumen.cuotasVencidas} cuotas · punitorios ${formatearMoneda(resumen.punitorios, contrato.moneda)}`}
+            pie={
+              resumen.vencido > 0
+                ? `${plural(resumen.cuotasVencidas, 'cuota', 'cuotas')} · ${formatearMoneda(resumen.punitorios, contrato.moneda)} de punitorios`
+                : 'sin atrasos'
+            }
           />
-          <Kpi
+          <Dato
             etiqueta="Vigencia"
-            valor={<Chip tono={TONO_VIGENCIA[vig]}>{ETIQUETA_VIGENCIA[vig]}</Chip>}
-            chico
+            valor={<Pastilla tono={TONO_VIGENCIA[vig]}>{TEXTO_VIGENCIA[vig]}</Pastilla>}
             pie={`${formatearFecha(contrato.fechaInicio)} → ${formatearFecha(contrato.fechaFin)}`}
           />
         </div>
 
-        <Pestanas
-          valor={pestana}
-          onCambio={setPestana}
-          opciones={[
-            { id: 'cuotas', etiqueta: 'Cuotas', pastilla: cuotas.length },
-            { id: 'cronograma', etiqueta: 'Cronograma de ajustes', pastilla: cronograma.length },
-            { id: 'ficha', etiqueta: 'Ficha del contrato' },
-          ]}
-        />
+        <div className="fila no-imprimir">
+          <Segmentos
+            etiqueta="Ver"
+            valor={vista}
+            onCambio={setVista}
+            opciones={[
+              { id: 'cuotas', texto: `Cuotas (${cuotas.length})` },
+              { id: 'ajustes', texto: `Actualizaciones (${cronograma.length})` },
+              { id: 'ficha', texto: 'Datos' },
+            ]}
+          />
+        </div>
 
-        {pestana === 'cuotas' && (
-          <Tarjeta ajustado>
+        {vista === 'cuotas' && (
+          <Panel comoLista>
             {cuotas.length === 0 ? (
-              <Vacio icono="🧾" titulo="Todavía no se emitieron cuotas" detalle="Usá «Emitir cuotas del período» en el listado de contratos." />
+              <Vacio titulo="Todavía no hay cuotas emitidas" detalle="Emitilas desde la pantalla de Cobranzas." />
             ) : (
-              <Tabla>
-                <thead>
-                  <tr>
-                    <th>Período</th>
-                    <th>Vencimiento</th>
-                    <th>Detalle</th>
-                    <th className="num">Total</th>
-                    <th className="num">Cobrado</th>
-                    <th className="num">Saldo</th>
-                    <th>Estado</th>
-                    <th />
-                  </tr>
-                </thead>
-                <tbody>
-                  {cuotas.map((c) => {
-                    const estado = estadoDeCuota(c, db.pagos);
-                    const saldo = saldoDeCuota(c, db.pagos);
-                    const mora = diasDeMora(c, db.pagos);
-                    return (
-                      <tr key={c.id}>
-                        <td className="principal-celda">{formatearPeriodo(c.periodo, true)}</td>
-                        <td>{formatearFecha(c.vencimiento)}</td>
-                        <td className="mini tenue">
-                          {c.items.map((i) => `${i.descripcion} ${formatearMoneda(i.monto, c.moneda)}`).join(' · ')}
-                        </td>
-                        <td className="num">{formatearMoneda(c.total, c.moneda)}</td>
-                        <td className="num">{formatearMoneda(cobradoDeCuota(c, db.pagos), c.moneda)}</td>
-                        <td className={`num ${saldo > 0 ? 'neg' : ''}`}>{formatearMoneda(saldo, c.moneda)}</td>
-                        <td>
-                          <Chip tono={TONO_CUOTA[estado]}>{ETIQUETA_CUOTA[estado]}</Chip>
-                          {mora > 0 && (
-                            <span className="tabla__sub">
-                              {plural(mora, 'día', 'días')} · punitorios{' '}
-                              {formatearMoneda(punitoriosDeCuota(c, contrato, db.pagos), c.moneda)}
-                            </span>
-                          )}
-                        </td>
-                        <td className="num no-imprimir">
-                          {saldo > 0.01 && estado !== 'anulada' && (
-                            <button className="btn btn--chico" onClick={() => setCobrando(c)}>Cobrar</button>
-                          )}
-                          {estado !== 'anulada' && cobradoDeCuota(c, db.pagos) === 0 && (
-                            <button className="btn btn--chico btn--fantasma" onClick={() => anular(c.id)}>Anular</button>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </Tabla>
+              cuotas.map((c) => {
+                const estado = estadoDeCuota(c, db.pagos);
+                const saldo = saldoDeCuota(c, db.pagos);
+                const mora = diasDeMora(c, db.pagos);
+                return (
+                  <Item
+                    key={c.id}
+                    titulo={
+                      <>
+                        {formatearPeriodo(c.periodo, true)}
+                        <Pastilla tono={TONO_CUOTA[estado]}>{TEXTO_CUOTA[estado]}</Pastilla>
+                      </>
+                    }
+                    sub={
+                      <>
+                        Vence {formatearFecha(c.vencimiento)} ·{' '}
+                        {c.items.map((i) => `${i.descripcion} ${formatearMoneda(i.monto, c.moneda)}`).join(' + ')}
+                        {mora > 0 &&
+                          ` · ${plural(mora, 'día', 'días')}, ${formatearMoneda(punitoriosDeCuota(c, contrato, db.pagos), c.moneda)} de punitorios`}
+                      </>
+                    }
+                    monto={
+                      saldo > 0.01 ? (
+                        <span className="neg">{formatearMoneda(saldo, c.moneda)}</span>
+                      ) : (
+                        <span className="tenue">{formatearMoneda(c.total, c.moneda)}</span>
+                      )
+                    }
+                    montoPie={saldo > 0.01 ? 'saldo' : `cobrado ${formatearMoneda(cobradoDeCuota(c, db.pagos), c.moneda)}`}
+                    fin={
+                      <div className="fila no-imprimir" style={{ gap: 6 }}>
+                        {saldo > 0.01 && estado !== 'anulada' && (
+                          <button className="btn btn--primario btn--chico" onClick={() => setCobrando(c)}>
+                            Cobrar
+                          </button>
+                        )}
+                        {estado !== 'anulada' && cobradoDeCuota(c, db.pagos) === 0 && (
+                          <button className="btn btn--fantasma btn--chico" onClick={() => anular(c.id)}>
+                            Anular
+                          </button>
+                        )}
+                      </div>
+                    }
+                  />
+                );
+              })
             )}
-          </Tarjeta>
+          </Panel>
         )}
 
-        {pestana === 'cronograma' && (
-          <Tarjeta
-            titulo="Cronograma de actualizaciones"
-            subtitulo={`Índice ${ETIQUETA_INDICE[contrato.indiceAjuste]} · el coeficiente encadena cada tramo con el anterior`}
-            ajustado
+        {vista === 'ajustes' && (
+          <Panel
+            titulo="Cómo se actualiza el alquiler"
+            subtitulo={`${ETIQUETA_INDICE[contrato.indiceAjuste]} · cada tramo encadena el coeficiente con el anterior`}
           >
-            <Tabla>
-              <thead>
-                <tr>
-                  <th>Tramo</th>
-                  <th>Desde</th>
-                  <th>Hasta</th>
-                  <th className="num">Coeficiente</th>
-                  <th className="num">Variación</th>
-                  <th className="num">Alquiler</th>
-                  <th>Situación</th>
-                </tr>
-              </thead>
-              <tbody>
-                {cronograma.map((t, i) => {
-                  const actual = t.periodoDesde <= periodoActual() && periodoActual() <= t.periodoHasta;
-                  const futuro = t.periodoDesde > periodoActual();
-                  return (
-                    <tr key={t.periodoDesde}>
-                      <td className="principal-celda">#{i + 1}</td>
-                      <td>{formatearPeriodo(t.periodoDesde, true)}</td>
-                      <td>{formatearPeriodo(t.periodoHasta, true)}</td>
-                      <td className="num">{i === 0 ? '—' : t.coeficiente.toFixed(4).replace('.', ',')}</td>
-                      <td className="num">{i === 0 ? '—' : `+${t.variacionPct.toFixed(2).replace('.', ',')} %`}</td>
-                      <td className="num principal-celda">{formatearMoneda(t.monto, contrato.moneda)}</td>
-                      <td>
-                        {actual ? <Chip tono="ok">Vigente</Chip> : futuro ? <Chip tono="info">Proyectado</Chip> : <Chip>Cumplido</Chip>}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </Tabla>
-            <p className="grafico__nota" style={{ padding: '0 16px 12px' }}>
-              Los tramos futuros se proyectan con el último índice publicado; se recalculan solos cuando cargás el dato
-              definitivo en Configuración.
+            <div className="linea">
+              {cronograma.map((t, i) => {
+                const hoyPeriodo = periodoActual();
+                const vigente = t.periodoDesde <= hoyPeriodo && hoyPeriodo <= t.periodoHasta;
+                const futuro = t.periodoDesde > hoyPeriodo;
+                return (
+                  <div
+                    key={t.periodoDesde}
+                    className={`tramo${vigente ? ' tramo--vigente' : futuro ? ' tramo--futuro' : ''}`}
+                  >
+                    <div className="tramo__eje">
+                      <span className="tramo__punto" />
+                      <span className="tramo__linea" />
+                    </div>
+                    <div className="tramo__cuerpo">
+                      <div className="fila" style={{ gap: 8 }}>
+                        <strong style={{ fontFamily: 'var(--fuente-titulo)', fontSize: 16 }}>
+                          {formatearMoneda(t.monto, contrato.moneda)}
+                        </strong>
+                        {i > 0 && (
+                          <Pastilla tono="acento">+{t.variacionPct.toFixed(2).replace('.', ',')} %</Pastilla>
+                        )}
+                        {vigente && <Pastilla tono="ok">Rige ahora</Pastilla>}
+                        {futuro && <Pastilla>Proyectado</Pastilla>}
+                      </div>
+                      <div className="mini tenue" style={{ marginTop: 2 }}>
+                        {formatearPeriodo(t.periodoDesde, true)} a {formatearPeriodo(t.periodoHasta, true)}
+                        {i > 0 && ` · coeficiente ${t.coeficiente.toFixed(4).replace('.', ',')}`}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <p className="mini tenue" style={{ marginTop: 14 }}>
+              Los tramos futuros se proyectan con el último índice publicado y se recalculan solos en cuanto entra
+              el dato definitivo.
             </p>
-          </Tarjeta>
+          </Panel>
         )}
 
-        {pestana === 'ficha' && (
+        {vista === 'ficha' && (
           <div className="grid grid--2">
-            <Tarjeta titulo="Partes">
-              <Datos
-                items={[
-                  { et: 'Inquilino', val: inquilino?.nombre ?? '—' },
-                  { et: 'Documento', val: `${inquilino?.tipoDoc ?? ''} ${inquilino?.documento ?? ''}` },
-                  { et: 'Contacto', val: inquilino?.telefono ?? inquilino?.email ?? '—' },
-                  { et: 'Propietario', val: propietario?.nombre ?? '—' },
-                  { et: 'CBU del propietario', val: propietario?.cbu ?? '—' },
-                  { et: 'Propiedad', val: propiedad ? `${propiedad.codigo} — ${propiedad.calle} ${propiedad.numero}` : '—' },
-                ]}
+            <Panel titulo="Quiénes son" comoLista>
+              <Item
+                avatar={<Avatar nombre={inquilino?.nombre ?? '—'} />}
+                titulo={inquilino?.nombre ?? '—'}
+                sub={`Inquilino · ${inquilino?.tipoDoc ?? ''} ${inquilino?.documento ?? ''}`}
+                fin={<span className="mini tenue">{inquilino?.telefono ?? inquilino?.email ?? ''}</span>}
               />
-            </Tarjeta>
-            <Tarjeta titulo="Condiciones">
-              <Datos
-                items={[
-                  { et: 'Alquiler inicial', val: formatearMoneda(contrato.montoInicial, contrato.moneda) },
-                  { et: 'Actualización', val: `${ETIQUETA_INDICE[contrato.indiceAjuste]} cada ${contrato.mesesAjuste} meses` },
-                  { et: 'Honorarios de administración', val: `${contrato.comisionAdminPct} %` },
-                  { et: 'Punitorio diario', val: `${contrato.punitorioDiarioPct} %` },
-                  { et: 'Depósito en garantía', val: formatearMoneda(contrato.depositoGarantia, contrato.moneda) },
-                  { et: 'Día de vencimiento', val: `día ${contrato.diaVencimiento} de cada mes` },
-                ]}
+              <Item
+                avatar={<Avatar nombre={propietario?.nombre ?? '—'} />}
+                titulo={propietario?.nombre ?? '—'}
+                sub={`Propietario · ${propietario?.cbu ? `CBU ${propietario.cbu}` : 'sin CBU cargado'}`}
+                fin={<span className="mini tenue">{propietario?.telefono ?? ''}</span>}
               />
+              {propiedad && (
+                <Item
+                  avatar={<Avatar nombre={propiedad.codigo} />}
+                  titulo={`${propiedad.codigo} · ${direccionDe(propiedad)}`}
+                  sub={`${propiedad.barrio}${propiedad.m2 ? ` · ${propiedad.m2} m²` : ''}`}
+                />
+              )}
+            </Panel>
+
+            <Panel titulo="Condiciones">
+              <div className="pila" style={{ gap: 10 }}>
+                {[
+                  ['Alquiler inicial', formatearMoneda(contrato.montoInicial, contrato.moneda)],
+                  ['Actualización', `${ETIQUETA_INDICE[contrato.indiceAjuste]}, cada ${contrato.mesesAjuste} meses`],
+                  ['Tus honorarios', `${contrato.comisionAdminPct} % del alquiler cobrado`],
+                  ['Punitorio', `${contrato.punitorioDiarioPct} % por día de atraso`],
+                  ['Depósito', formatearMoneda(contrato.depositoGarantia, contrato.moneda)],
+                  ['Vence', `el día ${contrato.diaVencimiento} de cada mes`],
+                ].map(([et, val]) => (
+                  <div className="fila" key={et} style={{ justifyContent: 'space-between', gap: 12 }}>
+                    <span className="tenue mini">{et}</span>
+                    <strong style={{ fontSize: 13.5 }}>{val}</strong>
+                  </div>
+                ))}
+              </div>
+
               {contrato.conceptosFijos.length > 0 && (
                 <>
-                  <h3 style={{ marginTop: 16, marginBottom: 6 }}>Conceptos adicionales</h3>
-                  <Tabla compacta>
-                    <tbody>
-                      {contrato.conceptosFijos.map((cf) => (
-                        <tr key={cf.id}>
-                          <td>{cf.descripcion}</td>
-                          <td className="num">{formatearMoneda(cf.monto, contrato.moneda)}</td>
-                          <td className="mini tenue">
-                            {cf.aCuentaDelPropietario ? 'se rinde al propietario' : 'a cargo del inquilino'}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </Tabla>
+                  <h3 style={{ marginTop: 18, marginBottom: 8 }}>Además del alquiler</h3>
+                  <div className="pila" style={{ gap: 8 }}>
+                    {contrato.conceptosFijos.map((cf) => (
+                      <div className="fila" key={cf.id} style={{ justifyContent: 'space-between' }}>
+                        <span className="mini">
+                          {cf.descripcion}
+                          <span className="tenue">
+                            {' '}
+                            — {cf.aCuentaDelPropietario ? 'se le rinde al propietario' : 'a cargo del inquilino'}
+                          </span>
+                        </span>
+                        <strong style={{ fontSize: 13.5 }}>{formatearMoneda(cf.monto, contrato.moneda)}</strong>
+                      </div>
+                    ))}
+                  </div>
                 </>
               )}
-              {contrato.notas && <p className="mini tenue" style={{ marginTop: 12 }}>{contrato.notas}</p>}
-            </Tarjeta>
+
+              {contrato.notas && <p className="mini tenue" style={{ marginTop: 16 }}>{contrato.notas}</p>}
+            </Panel>
           </div>
         )}
       </div>

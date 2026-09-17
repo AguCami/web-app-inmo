@@ -80,8 +80,7 @@ export function armarLiquidacion(
 
   const gastos = ctx.gastos.filter(
     (g) =>
-      g.reintegrablePorPropietario &&
-      g.propiedadId &&
+      g.seLeDescuentaAlPropietario &&
       idsPropiedades.has(g.propiedadId) &&
       !g.liquidacionId &&
       g.fecha.slice(0, 7) <= periodo,
@@ -141,7 +140,7 @@ export function armarLiquidacion(
     items.push({
       descripcion: `${propiedad?.codigo ?? ''} · ${g.descripcion}`.trim(),
       tipo: 'gasto',
-      monto: -redondear(g.total),
+      monto: -redondear(g.monto),
       referenciaId: g.id,
     });
   }
@@ -159,7 +158,6 @@ export function armarLiquidacion(
     neto: redondear(sumar(items, (i) => i.monto)),
     comisionTotal,
     estado: 'borrador',
-    cuentaId: undefined,
   };
 }
 
@@ -180,8 +178,7 @@ export function propietariosConMovimiento(periodo: Periodo, ctx: ContextoLiquida
 
 export const ETIQUETA_ITEM_LIQUIDACION: Record<ItemLiquidacion['tipo'], string> = {
   alquiler_cobrado: 'Alquiler cobrado',
-  comision_admin: 'Honorarios',
-  gasto: 'Gasto',
-  retencion: 'Retención',
+  comision_admin: 'Honorarios de administración',
+  gasto: 'Gasto de la unidad',
   ajuste: 'Ajuste',
 };

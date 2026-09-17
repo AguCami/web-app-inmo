@@ -8,5 +8,5 @@ export function direccionDe(p: Pick<Propiedad, 'calle' | 'numero' | 'piso' | 'de
 }
 
 export function direccionCompleta(p: Propiedad): string {
-  return `${direccionDe(p)}, ${p.localidad}`;
+  return `${direccionDe(p)}, ${p.barrio}`;
 }

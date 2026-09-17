@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Encabezado } from '../components/Encabezado';
-import { Campo, Chip, Modal, Paginador, Tabla, Tarjeta, usePaginado, Vacio, type TonoChip } from '../components/ui';
+import { Avatar, Campo, Modal, Pastilla, Segmentos, Vacio } from '../components/ui';
+import { IconoBuscar, IconoContratos, IconoMas } from '../components/iconos';
 import { useApp, useDb } from '../data/store';
 import {
   ETIQUETA_INDICE,
@@ -10,37 +11,36 @@ import {
   vigenciaContrato,
   type VigenciaContrato,
 } from '../domain/contratos';
+import { direccionDe } from '../domain/propiedades';
 import type { Contrato, IndiceAjuste } from '../domain/types';
 import {
   formatearFecha,
   formatearMoneda,
   formatearPeriodo,
-  hoy,
   incluyeTexto,
   nuevoId,
   periodoActual,
-  plural,
   sumarMeses,
 } from '../domain/util';
 
-export const TONO_VIGENCIA: Record<VigenciaContrato, TonoChip> = {
+export const TONO_VIGENCIA: Record<VigenciaContrato, 'ok' | 'alerta' | 'critico' | 'acento'> = {
   vigente: 'ok',
   por_vencer: 'alerta',
   vencido: 'critico',
-  no_iniciado: 'info',
+  no_iniciado: 'acento',
 };
 
-export const ETIQUETA_VIGENCIA: Record<VigenciaContrato, string> = {
+export const TEXTO_VIGENCIA: Record<VigenciaContrato, string> = {
   vigente: 'Vigente',
   por_vencer: 'Por vencer',
   vencido: 'Vencido',
-  no_iniciado: 'No iniciado',
+  no_iniciado: 'Por empezar',
 };
 
-export function contratoNuevo(comisionDefault: number, punitorioDefault: number): Contrato {
+export function contratoNuevo(comision: number, punitorio: number): Contrato {
   const inicio = `${periodoActual()}-01`;
   return {
-    id: nuevoId('con'),
+    id: nuevoId('c'),
     numero: `LOC-${new Date().getFullYear()}-`,
     propiedadId: '',
     inquilinoId: '',
@@ -50,10 +50,10 @@ export function contratoNuevo(comisionDefault: number, punitorioDefault: number)
     montoInicial: 0,
     moneda: 'ARS',
     diaVencimiento: 10,
-    indiceAjuste: 'ICL',
+    indiceAjuste: 'IPC_CBA',
     mesesAjuste: 3,
-    comisionAdminPct: comisionDefault,
-    punitorioDiarioPct: punitorioDefault,
+    comisionAdminPct: comision,
+    punitorioDiarioPct: punitorio,
     depositoGarantia: 0,
     conceptosFijos: [],
     estado: 'activo',
@@ -62,149 +62,132 @@ export function contratoNuevo(comisionDefault: number, punitorioDefault: number)
 
 export default function Contratos() {
   const db = useDb();
-  const guardar = useApp((e) => e.guardarContrato);
-  const emitir = useApp((e) => e.emitirCuotas);
   const navegar = useNavigate();
+  const guardar = useApp((e) => e.guardarContrato);
 
   const [busqueda, setBusqueda] = useState('');
-  const [soloActivos, setSoloActivos] = useState(true);
+  const [filtro, setFiltro] = useState<'activos' | 'todos'>('activos');
   const [editando, setEditando] = useState<Contrato | null>(null);
-  const [mensaje, setMensaje] = useState('');
 
   const propiedadDe = (id: string) => db.propiedades.find((p) => p.id === id);
   const personaDe = (id: string) => db.personas.find((p) => p.id === id);
 
-  const filtrados = useMemo(
+  const lista = useMemo(
     () =>
       db.contratos
-        .filter((c) => !soloActivos || c.estado === 'activo')
-        .filter((c) =>
-          incluyeTexto(
-            [c.numero, propiedadDe(c.propiedadId)?.codigo, propiedadDe(c.propiedadId)?.calle, personaDe(c.inquilinoId)?.nombre],
+        .filter((c) => filtro === 'todos' || c.estado === 'activo')
+        .filter((c) => {
+          const prop = propiedadDe(c.propiedadId);
+          return incluyeTexto(
+            [c.numero, prop?.codigo, prop?.calle, prop?.barrio, personaDe(c.inquilinoId)?.nombre],
             busqueda,
-          ),
-        )
+          );
+        })
         .sort((a, b) => a.fechaFin.localeCompare(b.fechaFin)),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [db.contratos, db.propiedades, db.personas, soloActivos, busqueda],
+    [db.contratos, db.propiedades, db.personas, filtro, busqueda],
   );
 
-  const pag = usePaginado(filtrados, 40);
+  const activos = db.contratos.filter((c) => c.estado === 'activo').length;
 
   return (
     <>
-      <Encabezado titulo="Contratos de alquiler" bajada={`${db.contratos.filter((c) => c.estado === 'activo').length} contratos activos`}>
-        <button
-          className="btn no-imprimir"
-          onClick={() => {
-            const n = emitir();
-            setMensaje(
-              n
-                ? `Se emitió ${plural(n, 'cuota nueva', 'cuotas nuevas')}.`
-                : 'No había cuotas pendientes de emitir.',
-            );
-          }}
-        >
-          Emitir cuotas del período
-        </button>
+      <Encabezado titulo="Contratos" bajada={`${activos} activos de ${db.contratos.length} en total`}>
         <button
           className="btn btn--primario no-imprimir"
           onClick={() =>
-            setEditando(contratoNuevo(db.configuracion.comisionAdminPctDefault, db.configuracion.punitorioDiarioPctDefault))
+            setEditando(
+              contratoNuevo(
+                db.configuracion.comisionAdminPctDefault,
+                db.configuracion.punitorioDiarioPctDefault,
+              ),
+            )
           }
         >
-          + Nuevo contrato
+          <IconoMas tam={17} />
+          Nuevo contrato
         </button>
       </Encabezado>
 
-      <div className="contenido pila">
-        {mensaje && <div className="aviso aviso--ok"><span aria-hidden="true">✅</span><div>{mensaje}</div></div>}
-
+      <div className="contenido">
         <div className="fila no-imprimir">
+          <Segmentos
+            etiqueta="Filtrar contratos"
+            valor={filtro}
+            onCambio={setFiltro}
+            opciones={[
+              { id: 'activos', texto: 'Activos' },
+              { id: 'todos', texto: 'Todos' },
+            ]}
+          />
           <div className="buscador">
+            <IconoBuscar tam={17} />
             <input
               type="search"
-              placeholder="Buscar por número, propiedad o inquilino"
+              placeholder="Buscar por inquilino, propiedad o número"
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
               aria-label="Buscar contratos"
             />
           </div>
-          <label className="fila" style={{ gap: 6 }}>
-            <input type="checkbox" checked={soloActivos} onChange={(e) => setSoloActivos(e.target.checked)} />
-            Solo activos
-          </label>
         </div>
 
-        <Tarjeta ajustado>
-          {filtrados.length === 0 ? (
-            <Vacio icono="📄" titulo="No hay contratos" detalle="Cargá un contrato para empezar a emitir cuotas." />
-          ) : (
-            <Tabla>
-              <thead>
-                <tr>
-                  <th>Contrato</th>
-                  <th>Propiedad</th>
-                  <th>Inquilino</th>
-                  <th>Vigencia</th>
-                  <th>Ajuste</th>
-                  <th className="num">Alquiler vigente</th>
-                  <th className="num">Próximo ajuste</th>
-                </tr>
-              </thead>
-              <tbody>
-                {pag.visibles.map((c) => {
-                  const prop = propiedadDe(c.propiedadId);
-                  const vig = vigenciaContrato(c);
-                  const ajuste = proximoAjuste(c, db.indices);
-                  return (
-                    <tr key={c.id} className="fila-clic" onClick={() => navegar(`/contratos/${c.id}`)}>
-                      <td className="principal-celda">
-                        <Link to={`/contratos/${c.id}`} onClick={(e) => e.stopPropagation()}>{c.numero}</Link>
-                        <span className="tabla__sub">desde {formatearFecha(c.fechaInicio)}</span>
-                      </td>
-                      <td>
-                        {prop?.codigo ?? '—'}
-                        <span className="tabla__sub">{prop ? `${prop.calle} ${prop.numero}` : ''}</span>
-                      </td>
-                      <td>{personaDe(c.inquilinoId)?.nombre ?? '—'}</td>
-                      <td>
-                        <Chip tono={TONO_VIGENCIA[vig]}>{ETIQUETA_VIGENCIA[vig]}</Chip>
-                        <span className="tabla__sub">hasta {formatearFecha(c.fechaFin)}</span>
-                      </td>
-                      <td className="mini">
-                        {ETIQUETA_INDICE[c.indiceAjuste]}
-                        <span className="tabla__sub">cada {c.mesesAjuste} meses</span>
-                      </td>
-                      <td className="num">{formatearMoneda(montoVigente(c, periodoActual(), db.indices), c.moneda)}</td>
-                      <td className="num">
-                        {ajuste ? (
-                          <>
-                            {formatearPeriodo(ajuste.periodo, true)}
-                            <span className="tabla__sub">
-                              {formatearMoneda(ajuste.montoNuevo, c.moneda)} (+{ajuste.variacionPct.toFixed(1).replace('.', ',')} %)
-                            </span>
-                          </>
-                        ) : (
-                          <span className="tenue">—</span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </Tabla>
-          )}
-          <Paginador
-            pagina={pag.pagina}
-            paginas={pag.paginas}
-            desde={pag.desde}
-            hasta={pag.hasta}
-            total={pag.total}
-            etiqueta="contratos"
-            onCambio={pag.setPagina}
-          />
-        </Tarjeta>
+        {lista.length === 0 ? (
+          <div className="panel">
+            <Vacio
+              icono={<IconoContratos tam={24} />}
+              titulo="No hay contratos"
+              detalle="Cargá el primero para empezar a emitir cuotas."
+            />
+          </div>
+        ) : (
+          <div className="grid grid--cartas">
+            {lista.map((c) => {
+              const prop = propiedadDe(c.propiedadId);
+              const inquilino = personaDe(c.inquilinoId);
+              const vig = vigenciaContrato(c);
+              const ajuste = proximoAjuste(c, db.indices);
+
+              return (
+                <button key={c.id} className="carta" onClick={() => navegar(`/contratos/${c.id}`)}>
+                  <div className="carta__cab">
+                    <Avatar nombre={inquilino?.nombre ?? '—'} />
+                    <div className="crece">
+                      <div className="carta__titulo">{inquilino?.nombre ?? 'Sin inquilino'}</div>
+                      <div className="carta__sub">
+                        {prop?.codigo} · {prop ? direccionDe(prop) : '—'}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="carta__rasgos">
+                    <Pastilla tono={TONO_VIGENCIA[vig]}>{TEXTO_VIGENCIA[vig]}</Pastilla>
+                    <span className="rasgo">{ETIQUETA_INDICE[c.indiceAjuste]}</span>
+                    <span className="rasgo">cada {c.mesesAjuste} m.</span>
+                    <span className="rasgo">vence {formatearFecha(c.fechaFin)}</span>
+                  </div>
+
+                  <div className="carta__pie">
+                    <div className="carta__monto">
+                      {formatearMoneda(montoVigente(c, periodoActual(), db.indices), c.moneda)}
+                      <small>alquiler de este mes</small>
+                    </div>
+                    {ajuste && (
+                      <div style={{ textAlign: 'right' }}>
+                        <Pastilla tono="acento">
+                          +{ajuste.variacionPct.toFixed(1).replace('.', ',')} %
+                        </Pastilla>
+                        <div className="mini tenue" style={{ marginTop: 3 }}>
+                          {formatearPeriodo(ajuste.periodo, true)}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {editando && (
@@ -222,6 +205,8 @@ export default function Contratos() {
   );
 }
 
+/* ─────────────────────── Formulario de contrato ──────────────────── */
+
 export function FormularioContrato({
   contrato,
   onGuardar,
@@ -238,16 +223,10 @@ export function FormularioContrato({
   const set = <K extends keyof Contrato>(k: K, v: Contrato[K]) => setF((x) => ({ ...x, [k]: v }));
 
   const propiedades = db.propiedades.filter(
-    (p) => p.destino !== 'venta' && (p.estado !== 'alquilada' || p.id === contrato.propiedadId),
+    (p) => p.estado !== 'alquilada' || p.id === contrato.propiedadId,
   );
   const inquilinos = db.personas.filter((p) => p.roles.includes('inquilino'));
   const valido = f.numero.trim() && f.propiedadId && f.inquilinoId && f.montoInicial > 0;
-
-  const agregarConcepto = () =>
-    set('conceptosFijos', [
-      ...f.conceptosFijos,
-      { id: nuevoId('cf'), descripcion: 'Expensas', monto: 0, aCuentaDelPropietario: false },
-    ]);
 
   return (
     <Modal
@@ -257,10 +236,14 @@ export function FormularioContrato({
       pie={
         <>
           {onEliminar && (
-            <button className="btn btn--peligro" onClick={onEliminar} style={{ marginRight: 'auto' }}>Eliminar</button>
+            <button className="btn btn--peligro" onClick={onEliminar} style={{ marginRight: 'auto' }}>
+              Eliminar
+            </button>
           )}
-          <button className="btn" onClick={onCerrar}>Cancelar</button>
-          <button className="btn btn--primario" disabled={!valido} onClick={() => onGuardar(f)}>Guardar</button>
+          <button className="btn btn--fantasma" onClick={onCerrar}>Cancelar</button>
+          <button className="btn btn--primario" disabled={!valido} onClick={() => onGuardar(f)}>
+            Guardar
+          </button>
         </>
       }
     >
@@ -270,15 +253,15 @@ export function FormularioContrato({
         </Campo>
         <Campo etiqueta="Propiedad">
           <select value={f.propiedadId} onChange={(e) => set('propiedadId', e.target.value)}>
-            <option value="">Seleccionar…</option>
+            <option value="">Elegir…</option>
             {propiedades.map((p) => (
-              <option key={p.id} value={p.id}>{p.codigo} — {p.calle} {p.numero}</option>
+              <option key={p.id} value={p.id}>{p.codigo} — {direccionDe(p)}</option>
             ))}
           </select>
         </Campo>
         <Campo etiqueta="Inquilino">
           <select value={f.inquilinoId} onChange={(e) => set('inquilinoId', e.target.value)}>
-            <option value="">Seleccionar…</option>
+            <option value="">Elegir…</option>
             {inquilinos.map((p) => (
               <option key={p.id} value={p.id}>{p.nombre}</option>
             ))}
@@ -286,7 +269,6 @@ export function FormularioContrato({
         </Campo>
         <Campo etiqueta="Estado">
           <select value={f.estado} onChange={(e) => set('estado', e.target.value as Contrato['estado'])}>
-            <option value="borrador">Borrador</option>
             <option value="activo">Activo</option>
             <option value="finalizado">Finalizado</option>
             <option value="rescindido">Rescindido</option>
@@ -295,122 +277,160 @@ export function FormularioContrato({
       </div>
 
       <div className="grid grid--form">
-        <Campo etiqueta="Inicio">
+        <Campo etiqueta="Empieza">
           <input type="date" value={f.fechaInicio} onChange={(e) => set('fechaInicio', e.target.value)} />
         </Campo>
-        <Campo etiqueta="Fin">
+        <Campo etiqueta="Termina">
           <input type="date" value={f.fechaFin} onChange={(e) => set('fechaFin', e.target.value)} />
         </Campo>
         <Campo etiqueta="Alquiler inicial">
-          <input className="entrada-num" type="number" value={f.montoInicial || ''} onChange={(e) => set('montoInicial', Number(e.target.value))} />
+          <input
+            className="entrada-num"
+            type="number"
+            value={f.montoInicial || ''}
+            onChange={(e) => set('montoInicial', Number(e.target.value))}
+          />
         </Campo>
-        <Campo etiqueta="Día de vencimiento">
-          <input className="entrada-num" type="number" min={1} max={31} value={f.diaVencimiento} onChange={(e) => set('diaVencimiento', Number(e.target.value))} />
+        <Campo etiqueta="Vence el día">
+          <input
+            className="entrada-num"
+            type="number"
+            min={1}
+            max={31}
+            value={f.diaVencimiento}
+            onChange={(e) => set('diaVencimiento', Number(e.target.value))}
+          />
         </Campo>
       </div>
 
       <div className="grid grid--form">
-        <Campo etiqueta="Índice de actualización">
+        <Campo etiqueta="Se actualiza por" ayuda="Tiene que ser el índice que dice el contrato firmado.">
           <select value={f.indiceAjuste} onChange={(e) => set('indiceAjuste', e.target.value as IndiceAjuste)}>
             {(Object.keys(ETIQUETA_INDICE) as IndiceAjuste[]).map((i) => (
               <option key={i} value={i}>{ETIQUETA_INDICE[i]}</option>
             ))}
           </select>
         </Campo>
-        <Campo etiqueta="Ajusta cada (meses)">
-          <input className="entrada-num" type="number" min={1} max={12} value={f.mesesAjuste} onChange={(e) => set('mesesAjuste', Number(e.target.value))} />
+        <Campo etiqueta="Cada cuántos meses">
+          <input
+            className="entrada-num"
+            type="number"
+            min={1}
+            max={12}
+            value={f.mesesAjuste}
+            onChange={(e) => set('mesesAjuste', Number(e.target.value))}
+          />
         </Campo>
         {f.indiceAjuste === 'PORCENTAJE_FIJO' && (
-          <Campo etiqueta="% fijo por ajuste">
-            <input className="entrada-num" type="number" value={f.porcentajeFijo ?? 0} onChange={(e) => set('porcentajeFijo', Number(e.target.value))} />
+          <Campo etiqueta="Porcentaje por ajuste">
+            <input
+              className="entrada-num"
+              type="number"
+              value={f.porcentajeFijo ?? 0}
+              onChange={(e) => set('porcentajeFijo', Number(e.target.value))}
+            />
           </Campo>
         )}
-        <Campo etiqueta="Honorarios de administración (%)">
-          <input className="entrada-num" type="number" step="0.5" value={f.comisionAdminPct} onChange={(e) => set('comisionAdminPct', Number(e.target.value))} />
+        <Campo etiqueta="Tus honorarios (%)">
+          <input
+            className="entrada-num"
+            type="number"
+            step="0.5"
+            value={f.comisionAdminPct}
+            onChange={(e) => set('comisionAdminPct', Number(e.target.value))}
+          />
         </Campo>
-        <Campo etiqueta="Punitorio diario (%)">
-          <input className="entrada-num" type="number" step="0.01" value={f.punitorioDiarioPct} onChange={(e) => set('punitorioDiarioPct', Number(e.target.value))} />
+        <Campo etiqueta="Punitorio por día (%)">
+          <input
+            className="entrada-num"
+            type="number"
+            step="0.01"
+            value={f.punitorioDiarioPct}
+            onChange={(e) => set('punitorioDiarioPct', Number(e.target.value))}
+          />
         </Campo>
         <Campo etiqueta="Depósito en garantía">
-          <input className="entrada-num" type="number" value={f.depositoGarantia || ''} onChange={(e) => set('depositoGarantia', Number(e.target.value))} />
+          <input
+            className="entrada-num"
+            type="number"
+            value={f.depositoGarantia || ''}
+            onChange={(e) => set('depositoGarantia', Number(e.target.value))}
+          />
         </Campo>
       </div>
 
       <div>
-        <div className="fila" style={{ marginBottom: 6 }}>
-          <strong className="crece">Conceptos que se facturan con el alquiler</strong>
-          <button className="btn btn--chico" onClick={agregarConcepto}>+ Agregar</button>
+        <div className="fila" style={{ marginBottom: 8 }}>
+          <strong className="crece">Se cobra junto con el alquiler</strong>
+          <button
+            className="btn btn--suave btn--chico"
+            onClick={() =>
+              set('conceptosFijos', [
+                ...f.conceptosFijos,
+                { id: nuevoId('cf'), descripcion: 'Expensas', monto: 0, aCuentaDelPropietario: false },
+              ])
+            }
+          >
+            <IconoMas tam={15} />
+            Agregar
+          </button>
         </div>
         {f.conceptosFijos.length === 0 ? (
-          <p className="tenue mini">Sin conceptos adicionales. Típicamente: expensas, ABL o seguro.</p>
+          <p className="mini tenue">Nada más que el alquiler. Lo habitual acá son las expensas o el ABL.</p>
         ) : (
-          <Tabla compacta>
-            <thead>
-              <tr>
-                <th>Descripción</th>
-                <th className="num">Monto</th>
-                <th>A cuenta del propietario</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {f.conceptosFijos.map((cf, i) => (
-                <tr key={cf.id}>
-                  <td>
-                    <input
-                      value={cf.descripcion}
-                      onChange={(e) => {
-                        const copia = [...f.conceptosFijos];
-                        copia[i] = { ...cf, descripcion: e.target.value };
-                        set('conceptosFijos', copia);
-                      }}
-                    />
-                  </td>
-                  <td className="num">
-                    <input
-                      className="entrada-num"
-                      type="number"
-                      value={cf.monto || ''}
-                      onChange={(e) => {
-                        const copia = [...f.conceptosFijos];
-                        copia[i] = { ...cf, monto: Number(e.target.value) };
-                        set('conceptosFijos', copia);
-                      }}
-                    />
-                  </td>
-                  <td>
-                    <input
-                      type="checkbox"
-                      checked={cf.aCuentaDelPropietario}
-                      onChange={(e) => {
-                        const copia = [...f.conceptosFijos];
-                        copia[i] = { ...cf, aCuentaDelPropietario: e.target.checked };
-                        set('conceptosFijos', copia);
-                      }}
-                    />
-                  </td>
-                  <td className="num">
-                    <button
-                      className="btn btn--chico btn--fantasma"
-                      onClick={() => set('conceptosFijos', f.conceptosFijos.filter((x) => x.id !== cf.id))}
-                    >
-                      ✕
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </Tabla>
+          <div className="pila" style={{ gap: 8 }}>
+            {f.conceptosFijos.map((cf, i) => (
+              <div className="fila" key={cf.id} style={{ gap: 8 }}>
+                <input
+                  className="crece"
+                  value={cf.descripcion}
+                  aria-label="Descripción del concepto"
+                  onChange={(e) => {
+                    const copia = [...f.conceptosFijos];
+                    copia[i] = { ...cf, descripcion: e.target.value };
+                    set('conceptosFijos', copia);
+                  }}
+                />
+                <input
+                  className="entrada-num"
+                  style={{ width: 130, flex: 'none' }}
+                  type="number"
+                  value={cf.monto || ''}
+                  aria-label="Monto del concepto"
+                  onChange={(e) => {
+                    const copia = [...f.conceptosFijos];
+                    copia[i] = { ...cf, monto: Number(e.target.value) };
+                    set('conceptosFijos', copia);
+                  }}
+                />
+                <label className="mini tenue fila" style={{ gap: 6, flex: 'none' }}>
+                  <input
+                    type="checkbox"
+                    checked={cf.aCuentaDelPropietario}
+                    onChange={(e) => {
+                      const copia = [...f.conceptosFijos];
+                      copia[i] = { ...cf, aCuentaDelPropietario: e.target.checked };
+                      set('conceptosFijos', copia);
+                    }}
+                  />
+                  se le rinde
+                </label>
+                <button
+                  className="btn btn--fantasma btn--chico"
+                  aria-label="Quitar concepto"
+                  onClick={() => set('conceptosFijos', f.conceptosFijos.filter((x) => x.id !== cf.id))}
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
         )}
       </div>
 
       <Campo etiqueta="Notas">
         <textarea value={f.notas ?? ''} onChange={(e) => set('notas', e.target.value)} />
       </Campo>
-
-      <p className="tenue mini">
-        Fecha de referencia para los cálculos: {formatearFecha(hoy())}.
-      </p>
     </Modal>
   );
 }

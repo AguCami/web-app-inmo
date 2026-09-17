@@ -6,7 +6,7 @@ import './styles/app.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    {/* HashRouter: la app es estática y tiene que andar abierta desde el disco. */}
+    {/* HashRouter: es un sitio estático, sin servidor que reescriba rutas. */}
     <HashRouter>
       <App />
     </HashRouter>

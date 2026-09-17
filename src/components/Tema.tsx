@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
+import { IconoAuto, IconoLuna, IconoSol } from './iconos';
 
 type Tema = 'auto' | 'claro' | 'oscuro';
-const CLAVE = 'inmo-contable/tema';
+const CLAVE = 'gestion-alquileres/tema';
 
 function leer(): Tema {
   try {
@@ -27,17 +28,17 @@ export function InterruptorTema() {
   }, [tema]);
 
   const siguiente: Record<Tema, Tema> = { auto: 'claro', claro: 'oscuro', oscuro: 'auto' };
-  const icono: Record<Tema, string> = { auto: '🌓', claro: '☀️', oscuro: '🌙' };
-  const nombre: Record<Tema, string> = { auto: 'Automático', claro: 'Claro', oscuro: 'Oscuro' };
+  const nombre: Record<Tema, string> = { auto: 'automático', claro: 'claro', oscuro: 'oscuro' };
+  const Icono = tema === 'claro' ? IconoSol : tema === 'oscuro' ? IconoLuna : IconoAuto;
 
   return (
     <button
-      className="btn btn--chico btn--fantasma no-imprimir"
+      className="btn btn--fantasma btn--icono no-imprimir"
       onClick={() => setTema(siguiente[tema])}
-      title={`Tema: ${nombre[tema]}`}
-      aria-label={`Cambiar tema. Actual: ${nombre[tema]}`}
+      title={`Tema ${nombre[tema]}`}
+      aria-label={`Cambiar tema. Ahora está en ${nombre[tema]}`}
     >
-      <span aria-hidden="true">{icono[tema]}</span>
+      <Icono />
     </button>
   );
 }

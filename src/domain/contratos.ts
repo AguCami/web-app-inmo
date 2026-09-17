@@ -30,12 +30,6 @@ export function valorIndice(
   return { valor: valorMasCercano(indices, periodo, (i) => i[tipo]), estimado: true };
 }
 
-export function cotizacionUSD(indices: ValorIndice[], periodo: Periodo): number {
-  const exacto = indices.find((i) => i.periodo === periodo);
-  if (exacto) return exacto.usd;
-  return valorMasCercano(indices, periodo, (i) => i.usd);
-}
-
 /**
  * Para un período sin dato se arrastra el último publicado; si el período es
  * anterior al comienzo de la serie se usa el primero. Devolver 1 acá sería
@@ -150,9 +144,15 @@ export function vigenciaContrato(c: Contrato, fecha: ISODate = hoy()): VigenciaC
 }
 
 export const ETIQUETA_INDICE: Record<IndiceAjuste, string> = {
-  ICL: 'ICL (BCRA)',
-  IPC: 'IPC (INDEC)',
+  ICL: 'ICL · BCRA',
+  IPC: 'IPC nacional · INDEC',
+  IPC_CBA: 'IPC Córdoba',
   CASA_PROPIA: 'Casa Propia',
-  PORCENTAJE_FIJO: '% fijo',
+  PORCENTAJE_FIJO: 'Porcentaje fijo',
   SIN_AJUSTE: 'Sin ajuste',
 };
+
+/** Los índices que se leen de una serie publicada (los otros no llevan tabla). */
+export const INDICES_CON_SERIE = ['ICL', 'IPC', 'IPC_CBA', 'CASA_PROPIA'] as const;
+
+export type IndiceConSerie = (typeof INDICES_CON_SERIE)[number];

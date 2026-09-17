@@ -1,94 +1,163 @@
-import type { ReactNode } from 'react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { IconoAlerta, IconoCerrar, IconoCheck, IconoInfo } from './iconos';
 
-/* ───────────────────────────── Tarjeta ───────────────────────────── */
+/* ───────────────────────────── Panel ────────────────────────────── */
 
-export function Tarjeta({
+export function Panel({
   titulo,
   subtitulo,
   acciones,
   children,
-  ajustado,
+  comoLista,
 }: {
   titulo?: ReactNode;
   subtitulo?: ReactNode;
   acciones?: ReactNode;
   children: ReactNode;
-  ajustado?: boolean;
+  /** Deja que los hijos sean ítems de lista, con su propio espaciado. */
+  comoLista?: boolean;
 }) {
   return (
-    <section className="tarjeta">
+    <section className="panel">
       {(titulo || acciones) && (
-        <header className="tarjeta__cab">
-          <div style={{ flex: 1, minWidth: 140 }}>
+        <header className="panel__cab">
+          <div>
             {titulo && <h2>{titulo}</h2>}
-            {subtitulo && <p className="tarjeta__sub">{subtitulo}</p>}
+            {subtitulo && <p className="panel__sub">{subtitulo}</p>}
           </div>
           {acciones}
         </header>
       )}
-      <div className={ajustado ? 'tarjeta__cuerpo tarjeta__cuerpo--ajustado' : 'tarjeta__cuerpo'}>
-        {children}
-      </div>
+      <div className={comoLista ? 'panel__lista' : 'panel__cuerpo'}>{children}</div>
     </section>
   );
 }
 
-/* ──────────────────────────── Stat tile ──────────────────────────── */
+/* ────────────────────────── Tarjeta de dato ─────────────────────── */
 
-export function Kpi({
+export function Dato({
   etiqueta,
   valor,
   pie,
-  delta,
   tono = 'neutro',
-  chico,
+  children,
 }: {
   etiqueta: string;
   valor: ReactNode;
   pie?: ReactNode;
-  /** Variación respecto del período anterior, en %. */
-  delta?: number | null;
-  tono?: 'neutro' | 'ok' | 'alerta' | 'critico';
-  chico?: boolean;
+  tono?: 'neutro' | 'ok' | 'alerta' | 'critico' | 'acento';
+  children?: ReactNode;
 }) {
   const color =
-    tono === 'ok' ? 'var(--ok-texto)' : tono === 'critico' ? 'var(--critico)' : tono === 'alerta' ? 'var(--serie-4)' : undefined;
+    tono === 'ok'
+      ? 'var(--ok)'
+      : tono === 'critico'
+        ? 'var(--critico)'
+        : tono === 'alerta'
+          ? 'var(--alerta)'
+          : tono === 'acento'
+            ? 'var(--acento)'
+            : undefined;
 
   return (
-    <div className="kpi">
-      <div className="kpi__etiqueta">{etiqueta}</div>
-      <div className={chico ? 'kpi__valor kpi__valor--chico' : 'kpi__valor'} style={{ color }}>
-        {valor}
-      </div>
-      <div className="kpi__pie">
-        {delta !== undefined && delta !== null && Number.isFinite(delta) && (
-          <span className={`kpi__delta ${delta >= 0 ? 'kpi__delta--sube' : 'kpi__delta--baja'}`}>
-            {delta >= 0 ? '▲' : '▼'} {Math.abs(delta).toFixed(1).replace('.', ',')} %
-          </span>
-        )}
-        {delta !== undefined && delta !== null && pie ? ' · ' : null}
-        {pie}
-      </div>
-    </div>
+    <article className="dato">
+      <span className="dato__et">{etiqueta}</span>
+      <span className="dato__valor" style={{ color }}>{valor}</span>
+      {children}
+      {pie && <span className="dato__pie">{pie}</span>}
+    </article>
   );
 }
 
-/* ─────────────────────────────── Chip ────────────────────────────── */
+/* ──────────────────────────── Pastilla ──────────────────────────── */
 
-export type TonoChip = 'neutro' | 'ok' | 'alerta' | 'serio' | 'critico' | 'info';
+export type Tono = 'neutro' | 'ok' | 'alerta' | 'critico' | 'acento';
 
-/** El color nunca va solo: siempre acompaña al texto de la etiqueta. */
-export function Chip({ tono = 'neutro', children }: { tono?: TonoChip; children: ReactNode }) {
+/** El color nunca va solo: siempre acompaña al texto. */
+export function Pastilla({ tono = 'neutro', children }: { tono?: Tono; children: ReactNode }) {
   return (
-    <span className={`chip${tono === 'neutro' ? '' : ` chip--${tono}`}`}>
-      <span className="chip__punto" aria-hidden="true" />
+    <span className={`pastilla${tono === 'neutro' ? '' : ` pastilla--${tono}`}`}>
+      <span className="pastilla__punto" aria-hidden="true" />
       {children}
     </span>
   );
 }
 
-/* ─────────────────────────────── Campo ───────────────────────────── */
+/* ───────────────────────────── Avatar ───────────────────────────── */
+
+/** Tono estable por nombre: la misma persona tiene siempre el mismo color. */
+function tonoDe(texto: string): 1 | 2 | 3 | 4 {
+  let suma = 0;
+  for (let i = 0; i < texto.length; i += 1) suma = (suma + texto.charCodeAt(i)) % 997;
+  return ((suma % 4) + 1) as 1 | 2 | 3 | 4;
+}
+
+export function iniciales(nombre: string): string {
+  const partes = nombre.trim().split(/\s+/).filter((p) => p.length > 2);
+  if (partes.length === 0) return nombre.slice(0, 2).toUpperCase();
+  if (partes.length === 1) return partes[0].slice(0, 2).toUpperCase();
+  return (partes[0][0] + partes[1][0]).toUpperCase();
+}
+
+export function Avatar({ nombre, chico }: { nombre: string; chico?: boolean }) {
+  return (
+    <span
+      className={`avatar avatar--t${tonoDe(nombre)}${chico ? ' avatar--chico' : ''}`}
+      title={nombre}
+      aria-hidden="true"
+    >
+      {iniciales(nombre)}
+    </span>
+  );
+}
+
+/* ─────────────────────── Ítem de lista ──────────────────────────── */
+
+export function Item({
+  avatar,
+  titulo,
+  sub,
+  monto,
+  montoPie,
+  fin,
+  onClick,
+}: {
+  avatar?: ReactNode;
+  titulo: ReactNode;
+  sub?: ReactNode;
+  monto?: ReactNode;
+  montoPie?: ReactNode;
+  fin?: ReactNode;
+  onClick?: () => void;
+}) {
+  const contenido = (
+    <>
+      {avatar}
+      <span className="item__cuerpo">
+        <span className="item__titulo">{titulo}</span>
+        {sub && <span className="item__sub">{sub}</span>}
+      </span>
+      {monto !== undefined && (
+        <span className="item__monto">
+          {monto}
+          {montoPie && <small>{montoPie}</small>}
+        </span>
+      )}
+      {fin && <span className="item__fin">{fin}</span>}
+    </>
+  );
+
+  if (onClick) {
+    return (
+      <button type="button" className="item" onClick={onClick}>
+        {contenido}
+      </button>
+    );
+  }
+  return <div className="item">{contenido}</div>;
+}
+
+/* ───────────────────────────── Campo ────────────────────────────── */
 
 /** El label envuelve al control, así queda asociado sin necesidad de ids. */
 export function Campo({
@@ -109,16 +178,18 @@ export function Campo({
   );
 }
 
-/* ─────────────────────────────── Modal ───────────────────────────── */
+/* ───────────────────────────── Modal ────────────────────────────── */
 
 export function Modal({
   titulo,
+  subtitulo,
   children,
   pie,
   onCerrar,
   ancho,
 }: {
   titulo: string;
+  subtitulo?: ReactNode;
   children: ReactNode;
   pie?: ReactNode;
   onCerrar: () => void;
@@ -137,11 +208,20 @@ export function Modal({
 
   return (
     <div className="modal-fondo" onMouseDown={(e) => e.target === e.currentTarget && onCerrar()}>
-      <div className={ancho ? 'modal modal--ancho' : 'modal'} role="dialog" aria-modal="true" aria-label={titulo} ref={ref}>
+      <div
+        className={ancho ? 'modal modal--ancho' : 'modal'}
+        role="dialog"
+        aria-modal="true"
+        aria-label={titulo}
+        ref={ref}
+      >
         <header className="modal__cab">
-          <h2>{titulo}</h2>
-          <button className="btn btn--fantasma btn--chico" onClick={onCerrar} aria-label="Cerrar">
-            ✕
+          <div>
+            <h2>{titulo}</h2>
+            {subtitulo && <p className="panel__sub">{subtitulo}</p>}
+          </div>
+          <button className="btn btn--fantasma btn--icono" onClick={onCerrar} aria-label="Cerrar">
+            <IconoCerrar />
           </button>
         </header>
         <div className="modal__cuerpo">{children}</div>
@@ -151,66 +231,68 @@ export function Modal({
   );
 }
 
-/* ──────────────────────────── Estado vacío ───────────────────────── */
+/* ──────────────────────────── Estado vacío ──────────────────────── */
 
-export function Vacio({ icono = '📭', titulo, detalle, accion }: { icono?: string; titulo: string; detalle?: string; accion?: ReactNode }) {
+export function Vacio({
+  icono,
+  titulo,
+  detalle,
+  accion,
+}: {
+  icono?: ReactNode;
+  titulo: string;
+  detalle?: string;
+  accion?: ReactNode;
+}) {
   return (
     <div className="vacio">
-      <span className="vacio__icono" aria-hidden="true">{icono}</span>
+      <div className="vacio__icono">{icono ?? <IconoCheck tam={24} />}</div>
       <strong>{titulo}</strong>
       {detalle && <p>{detalle}</p>}
-      {accion}
+      {accion && <div style={{ marginTop: 14 }}>{accion}</div>}
     </div>
   );
 }
 
-/* ────────────────────────────── Pestañas ─────────────────────────── */
+/* ─────────────────────────── Segmentos ──────────────────────────── */
 
-export function Pestanas<T extends string>({
+export function Segmentos<T extends string>({
   opciones,
   valor,
   onCambio,
+  etiqueta,
 }: {
-  opciones: { id: T; etiqueta: string; pastilla?: number }[];
+  opciones: { id: T; texto: string }[];
   valor: T;
   onCambio: (v: T) => void;
+  etiqueta: string;
 }) {
   return (
-    <div className="pestanas" role="tablist">
+    <div className="segmentos" role="group" aria-label={etiqueta}>
       {opciones.map((o) => (
-        <button
-          key={o.id}
-          role="tab"
-          aria-selected={o.id === valor}
-          onClick={() => onCambio(o.id)}
-        >
-          {o.etiqueta}
-          {o.pastilla !== undefined && o.pastilla > 0 && (
-            <span className="tenue num"> ({o.pastilla})</span>
-          )}
+        <button key={o.id} aria-pressed={o.id === valor} onClick={() => onCambio(o.id)}>
+          {o.texto}
         </button>
       ))}
     </div>
   );
 }
 
-/* ─────────────────────────────── Aviso ───────────────────────────── */
+/* ───────────────────────────── Nota ─────────────────────────────── */
 
-export function Aviso({
+export function Nota({
   tono = 'neutro',
-  icono,
   titulo,
   children,
 }: {
   tono?: 'neutro' | 'ok' | 'alerta' | 'critico';
-  icono?: string;
   titulo?: string;
   children?: ReactNode;
 }) {
-  const iconoPorTono = { neutro: 'ℹ️', ok: '✅', alerta: '⚠️', critico: '⛔' } as const;
+  const Icono = tono === 'ok' ? IconoCheck : tono === 'neutro' ? IconoInfo : IconoAlerta;
   return (
-    <div className={`aviso${tono === 'neutro' ? '' : ` aviso--${tono}`}`} role={tono === 'critico' ? 'alert' : undefined}>
-      <span aria-hidden="true">{icono ?? iconoPorTono[tono]}</span>
+    <div className={`nota${tono === 'neutro' ? '' : ` nota--${tono}`}`} role={tono === 'critico' ? 'alert' : undefined}>
+      <Icono tam={17} />
       <div>
         {titulo && <strong>{titulo}</strong>}
         {children}
@@ -219,47 +301,58 @@ export function Aviso({
   );
 }
 
-/* ─────────────────────── Ficha de datos (clave/valor) ────────────── */
+/* ──────────────────────────── Progreso ──────────────────────────── */
 
-export function Datos({ items }: { items: { et: string; val: ReactNode }[] }) {
-  return (
-    <div className="datos">
-      {items.map((i) => (
-        <div key={i.et}>
-          <div className="dato__et">{i.et}</div>
-          <div className="dato__val">{i.val}</div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-/* ───────────────────────── Tabla con scroll ──────────────────────── */
-
-export function Tabla({ children, compacta }: { children: ReactNode; compacta?: boolean }) {
-  return (
-    <div className="tabla-envoltorio">
-      <table className={compacta ? 'tabla tabla--compacta' : 'tabla'}>{children}</table>
-    </div>
-  );
-}
-
-export function Progreso({ valor, tono }: { valor: number; tono?: string }) {
+export function Progreso({ valor, etiqueta }: { valor: number; etiqueta: string }) {
   const ancho = Math.max(0, Math.min(100, valor));
   return (
-    <div className="barra-progreso" role="img" aria-label={`${ancho.toFixed(0)} %`}>
-      <span style={{ width: `${ancho}%`, background: tono }} />
+    <div
+      className="progreso"
+      role="img"
+      aria-label={`${etiqueta}: ${ancho.toFixed(0)} %`}
+      style={{ marginTop: 10 }}
+    >
+      <span style={{ width: `${ancho}%` }} />
     </div>
   );
 }
 
-/* ───────────────────────────── Paginado ─────────────────────────── */
+/* ────────────────── Mini serie de barras (tendencia) ────────────── */
 
-/**
- * Los listados contables llegan a miles de filas: sin paginar, el navegador
- * arma páginas de decenas de miles de píxeles y la tabla se vuelve inusable.
- */
-export function usePaginado<T>(items: T[], porPagina = 50) {
+export function Serie({
+  datos,
+  formato,
+}: {
+  datos: { etiqueta: string; titulo: string; total: number; parte: number }[];
+  formato: (v: number) => string;
+}) {
+  const maximo = Math.max(1, ...datos.map((d) => d.total));
+  return (
+    <div>
+      <div className="serie">
+        {datos.map((d) => (
+          <div
+            key={d.etiqueta}
+            className="serie__barra"
+            style={{ height: `${Math.max(8, (d.total / maximo) * 100)}%` }}
+            title={`${d.titulo}: cobrado ${formato(d.parte)} de ${formato(d.total)}`}
+          >
+            <span style={{ height: `${d.total > 0 ? Math.min(100, (d.parte / d.total) * 100) : 0}%` }} />
+          </div>
+        ))}
+      </div>
+      <div className="serie__pie">
+        {datos.map((d) => (
+          <span key={d.etiqueta}>{d.etiqueta}</span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ──────────────────────────── Paginado ──────────────────────────── */
+
+export function usePaginado<T>(items: T[], porPagina = 24) {
   const [pagina, setPagina] = useState(0);
   const paginas = Math.max(1, Math.ceil(items.length / porPagina));
   const actual = Math.min(pagina, paginas - 1);
@@ -302,26 +395,13 @@ export function Paginador({
       <span className="mini tenue">
         {desde}–{hasta} de {total} {etiqueta}
       </span>
-      <span className="fila" style={{ gap: 4 }}>
-        <button className="btn btn--chico" disabled={pagina === 0} onClick={() => onCambio(0)} aria-label="Primera página">
-          «
-        </button>
+      <span className="fila" style={{ gap: 6 }}>
         <button className="btn btn--chico" disabled={pagina === 0} onClick={() => onCambio(pagina - 1)}>
           Anterior
         </button>
-        <span className="mini num" style={{ padding: '0 6px' }}>
-          {pagina + 1} / {paginas}
-        </span>
+        <span className="mini tenue num">{pagina + 1} / {paginas}</span>
         <button className="btn btn--chico" disabled={pagina >= paginas - 1} onClick={() => onCambio(pagina + 1)}>
           Siguiente
-        </button>
-        <button
-          className="btn btn--chico"
-          disabled={pagina >= paginas - 1}
-          onClick={() => onCambio(paginas - 1)}
-          aria-label="Última página"
-        >
-          »
         </button>
       </span>
     </div>

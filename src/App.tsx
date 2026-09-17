@@ -1,127 +1,102 @@
+import { useEffect, useMemo } from 'react';
 import { NavLink, Route, Routes } from 'react-router-dom';
-import { useMemo } from 'react';
-import { useDb } from './data/store';
+import {
+  IconoAjustes,
+  IconoCobranzas,
+  IconoContratos,
+  IconoGastos,
+  IconoLiquidaciones,
+  IconoPanel,
+  IconoPersonas,
+  IconoPropiedades,
+} from './components/iconos';
+import { useApp, useDb } from './data/store';
 import { saldoDeCuota } from './domain/cobranzas';
 import { hoy, periodoActual } from './domain/util';
 
-import Tablero from './pages/Tablero';
+import Inicio from './pages/Inicio';
 import Propiedades from './pages/Propiedades';
-import Personas from './pages/Personas';
 import Contratos from './pages/Contratos';
 import ContratoDetalle from './pages/ContratoDetalle';
 import Cobranzas from './pages/Cobranzas';
 import Liquidaciones from './pages/Liquidaciones';
-import Ventas from './pages/Ventas';
+import Personas from './pages/Personas';
 import Gastos from './pages/Gastos';
-import Tesoreria from './pages/Tesoreria';
-import Contabilidad from './pages/Contabilidad';
-import Reportes from './pages/Reportes';
-import Agenda from './pages/Agenda';
-import Configuracion from './pages/Configuracion';
-
-interface EntradaNav {
-  a: string;
-  icono: string;
-  texto: string;
-  pastilla?: number;
-}
+import Ajustes from './pages/Ajustes';
 
 export default function App() {
   const db = useDb();
+  const sincronizarIndices = useApp((e) => e.sincronizarIndices);
 
-  const alertas = useMemo(() => {
+  // Al abrir, se busca la serie de índices que publica la tarea programada.
+  // Si no está, la app sigue con la que tiene guardada.
+  useEffect(() => {
+    void sincronizarIndices();
+  }, [sincronizarIndices]);
+
+  const pendientes = useMemo(() => {
     const vencidas = db.cuotas.filter(
       (c) => c.estado !== 'anulada' && saldoDeCuota(c, db.pagos) > 0.01 && c.vencimiento < hoy(),
     ).length;
-    const tareasHoy = db.tareas.filter((t) => !t.completada && t.fecha <= hoy()).length;
-    const liquidacionesBorrador = db.liquidaciones.filter((l) => l.estado === 'borrador').length;
-    return { vencidas, tareasHoy, liquidacionesBorrador };
+    const sinPagar = db.liquidaciones.filter((l) => l.estado !== 'pagada').length;
+    return { vencidas, sinPagar };
   }, [db]);
 
-  const grupos: { titulo: string; items: EntradaNav[] }[] = [
-    {
-      titulo: 'Gestión',
-      items: [
-        { a: '/', icono: '◈', texto: 'Tablero' },
-        { a: '/propiedades', icono: '🏠', texto: 'Propiedades' },
-        { a: '/personas', icono: '👥', texto: 'Personas' },
-        { a: '/agenda', icono: '🗓', texto: 'Agenda', pastilla: alertas.tareasHoy },
-      ],
-    },
-    {
-      titulo: 'Alquileres',
-      items: [
-        { a: '/contratos', icono: '📄', texto: 'Contratos' },
-        { a: '/cobranzas', icono: '💵', texto: 'Cobranzas', pastilla: alertas.vencidas },
-        { a: '/liquidaciones', icono: '📤', texto: 'Liquidaciones', pastilla: alertas.liquidacionesBorrador },
-      ],
-    },
-    {
-      titulo: 'Ventas',
-      items: [{ a: '/ventas', icono: '🤝', texto: 'Operaciones' }],
-    },
-    {
-      titulo: 'Contabilidad',
-      items: [
-        { a: '/gastos', icono: '🧾', texto: 'Gastos' },
-        { a: '/tesoreria', icono: '🏦', texto: 'Tesorería' },
-        { a: '/contabilidad', icono: '📚', texto: 'Libros' },
-        { a: '/reportes', icono: '📈', texto: 'Reportes' },
-      ],
-    },
-    {
-      titulo: 'Sistema',
-      items: [{ a: '/configuracion', icono: '⚙️', texto: 'Configuración' }],
-    },
+  const enlaces = [
+    { a: '/', Icono: IconoPanel, texto: 'Inicio' },
+    { a: '/cobranzas', Icono: IconoCobranzas, texto: 'Cobranzas', conteo: pendientes.vencidas },
+    { a: '/contratos', Icono: IconoContratos, texto: 'Contratos' },
+    { a: '/propiedades', Icono: IconoPropiedades, texto: 'Propiedades' },
+    { a: '/liquidaciones', Icono: IconoLiquidaciones, texto: 'Liquidaciones', conteo: pendientes.sinPagar },
+    { a: '/gastos', Icono: IconoGastos, texto: 'Gastos' },
+    { a: '/personas', Icono: IconoPersonas, texto: 'Personas' },
+    { a: '/ajustes', Icono: IconoAjustes, texto: 'Ajustes' },
   ];
 
   return (
     <div className="app">
-      <nav className="nav no-imprimir" aria-label="Navegación principal">
-        <div className="nav__marca">
-          <strong>{db.configuracion.nombreFantasia || 'Inmo Contable'}</strong>
-          <span>{db.configuracion.matricula}</span>
+      <nav className="rail no-imprimir" aria-label="Navegación principal">
+        <div className="marca">
+          <span className="marca__logo" aria-hidden="true">
+            <IconoPanel tam={19} />
+          </span>
+          <span className="marca__texto">
+            <strong>{db.configuracion.nombre || 'Alquileres'}</strong>
+            <span>Gestión de alquileres</span>
+          </span>
         </div>
 
-        {grupos.map((g) => (
-          <div className="nav__grupo" key={g.titulo}>
-            <div className="nav__grupo-titulo">{g.titulo}</div>
-            {g.items.map((i) => (
-              <NavLink
-                key={i.a}
-                to={i.a}
-                end={i.a === '/'}
-                className={({ isActive }) => `nav__link${isActive ? ' nav__link--activo' : ''}`}
-              >
-                <span className="icono" aria-hidden="true">{i.icono}</span>
-                {i.texto}
-                {i.pastilla ? <span className="nav__pastilla">{i.pastilla}</span> : null}
-              </NavLink>
-            ))}
-          </div>
+        {enlaces.map(({ a, Icono, texto, conteo }) => (
+          <NavLink
+            key={a}
+            to={a}
+            end={a === '/'}
+            className={({ isActive }) => `rail__link${isActive ? ' rail__link--activo' : ''}`}
+          >
+            <Icono />
+            <span className="texto">{texto}</span>
+            {conteo ? <span className="rail__conteo">{conteo}</span> : null}
+          </NavLink>
         ))}
 
-        <div className="nav__pie">
-          Período {periodoActual()} · datos guardados en este navegador
+        <div className="rail__pie">
+          Período {periodoActual()}
+          <br />
+          Los datos se guardan en este navegador.
         </div>
       </nav>
 
       <main className="principal">
         <Routes>
-          <Route path="/" element={<Tablero />} />
-          <Route path="/propiedades" element={<Propiedades />} />
-          <Route path="/personas" element={<Personas />} />
-          <Route path="/agenda" element={<Agenda />} />
+          <Route path="/" element={<Inicio />} />
+          <Route path="/cobranzas" element={<Cobranzas />} />
           <Route path="/contratos" element={<Contratos />} />
           <Route path="/contratos/:id" element={<ContratoDetalle />} />
-          <Route path="/cobranzas" element={<Cobranzas />} />
+          <Route path="/propiedades" element={<Propiedades />} />
           <Route path="/liquidaciones" element={<Liquidaciones />} />
-          <Route path="/ventas" element={<Ventas />} />
           <Route path="/gastos" element={<Gastos />} />
-          <Route path="/tesoreria" element={<Tesoreria />} />
-          <Route path="/contabilidad" element={<Contabilidad />} />
-          <Route path="/reportes" element={<Reportes />} />
-          <Route path="/configuracion" element={<Configuracion />} />
+          <Route path="/personas" element={<Personas />} />
+          <Route path="/ajustes" element={<Ajustes />} />
         </Routes>
       </main>
     </div>

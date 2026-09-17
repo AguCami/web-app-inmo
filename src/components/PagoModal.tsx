@@ -1,16 +1,15 @@
 import { useState } from 'react';
-import { Campo, Modal } from './ui';
+import { Campo, Modal, Nota } from './ui';
 import { useApp, useDb } from '../data/store';
 import { punitoriosDeCuota, saldoDeCuota } from '../domain/cobranzas';
 import type { Cuota, MedioPago } from '../domain/types';
-import { formatearFecha, formatearMoneda, formatearPeriodo, hoy } from '../domain/util';
+import { formatearFecha, formatearMoneda, formatearPeriodo, hoy, plural } from '../domain/util';
 
-const MEDIOS: { id: MedioPago; etiqueta: string }[] = [
-  { id: 'transferencia', etiqueta: 'Transferencia' },
-  { id: 'efectivo', etiqueta: 'Efectivo' },
-  { id: 'cheque', etiqueta: 'Cheque' },
-  { id: 'debito_automatico', etiqueta: 'Débito automático' },
-  { id: 'mercadopago', etiqueta: 'Mercado Pago' },
+const MEDIOS: { id: MedioPago; texto: string }[] = [
+  { id: 'transferencia', texto: 'Transferencia' },
+  { id: 'efectivo', texto: 'Efectivo' },
+  { id: 'debito_automatico', texto: 'Débito automático' },
+  { id: 'mercadopago', texto: 'Mercado Pago' },
 ];
 
 /** Alta de cobranza sobre una cuota, con los punitorios ya calculados. */
@@ -19,30 +18,35 @@ export function PagoModal({ cuota, onCerrar }: { cuota: Cuota; onCerrar: () => v
   const registrar = useApp((e) => e.registrarPago);
 
   const contrato = db.contratos.find((c) => c.id === cuota.contratoId);
+  const inquilino = db.personas.find((p) => p.id === contrato?.inquilinoId);
   const saldo = saldoDeCuota(cuota, db.pagos);
   const punitoriosSugeridos = punitoriosDeCuota(cuota, contrato, db.pagos);
+  const diasMora = cuota.vencimiento < hoy() && saldo > 0
+    ? Math.round((new Date(hoy()).getTime() - new Date(cuota.vencimiento).getTime()) / 86_400_000)
+    : 0;
 
   const [fecha, setFecha] = useState(hoy());
   const [monto, setMonto] = useState(String(saldo));
   const [punitorios, setPunitorios] = useState(String(punitoriosSugeridos));
   const [medio, setMedio] = useState<MedioPago>('transferencia');
-  const [cuentaId, setCuentaId] = useState(db.cuentas.find((c) => c.moneda === cuota.moneda)?.id ?? db.cuentas[0]?.id ?? '');
   const [comprobante, setComprobante] = useState('');
 
   const montoNum = Number(monto) || 0;
   const punitoriosNum = Number(punitorios) || 0;
-  const valido = montoNum > 0 && cuentaId;
+  const total = montoNum + punitoriosNum;
+  const quedaSaldo = saldo - montoNum;
 
   return (
     <Modal
-      titulo={`Registrar cobranza · ${formatearPeriodo(cuota.periodo, true)}`}
+      titulo="Registrar cobranza"
+      subtitulo={`${inquilino?.nombre ?? ''} · ${formatearPeriodo(cuota.periodo, true)}`}
       onCerrar={onCerrar}
       pie={
         <>
-          <button className="btn" onClick={onCerrar}>Cancelar</button>
+          <button className="btn btn--fantasma" onClick={onCerrar}>Cancelar</button>
           <button
             className="btn btn--primario"
-            disabled={!valido}
+            disabled={montoNum <= 0}
             onClick={() => {
               registrar({
                 cuotaId: cuota.id,
@@ -50,60 +54,69 @@ export function PagoModal({ cuota, onCerrar }: { cuota: Cuota; onCerrar: () => v
                 monto: montoNum,
                 moneda: cuota.moneda,
                 medio,
-                cuentaId,
                 comprobante: comprobante || undefined,
                 punitorios: punitoriosNum || undefined,
               });
               onCerrar();
             }}
           >
-            Registrar {formatearMoneda(montoNum + punitoriosNum, cuota.moneda)}
+            Cobrar {formatearMoneda(total, cuota.moneda)}
           </button>
         </>
       }
     >
-      <div className="aviso">
-        <span aria-hidden="true">🧾</span>
-        <div>
-          <strong>Cuota {formatearPeriodo(cuota.periodo, true)} · contrato {contrato?.numero}</strong>
-          <span className="mini">
-            Vence el {formatearFecha(cuota.vencimiento)} · total {formatearMoneda(cuota.total, cuota.moneda)} ·{' '}
-            saldo {formatearMoneda(saldo, cuota.moneda)}
-          </span>
-        </div>
-      </div>
+      <Nota tono={diasMora > 0 ? 'alerta' : 'neutro'}>
+        <strong>
+          Saldo de la cuota: {formatearMoneda(saldo, cuota.moneda)}
+        </strong>
+        <span className="mini">
+          Venció el {formatearFecha(cuota.vencimiento)}
+          {diasMora > 0 ? ` · ${plural(diasMora, 'día', 'días')} de atraso` : ' · todavía en término'}
+          {' · '}total facturado {formatearMoneda(cuota.total, cuota.moneda)}
+        </span>
+      </Nota>
 
       <div className="grid grid--form">
-        <Campo etiqueta="Fecha de pago">
+        <Campo etiqueta="Fecha del pago">
           <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} />
         </Campo>
-        <Campo etiqueta="Monto imputado">
+        <Campo
+          etiqueta="Monto"
+          ayuda={
+            quedaSaldo > 0.01
+              ? `Quedarían ${formatearMoneda(quedaSaldo, cuota.moneda)} sin cobrar`
+              : 'Cancela la cuota'
+          }
+        >
           <input className="entrada-num" type="number" value={monto} onChange={(e) => setMonto(e.target.value)} />
         </Campo>
         <Campo
           etiqueta="Punitorios"
-          ayuda={punitoriosSugeridos > 0 ? `Sugerido: ${formatearMoneda(punitoriosSugeridos, cuota.moneda)}` : 'Sin mora'}
+          ayuda={
+            punitoriosSugeridos > 0
+              ? `Sugerido por mora: ${formatearMoneda(punitoriosSugeridos, cuota.moneda)}`
+              : 'Sin mora, no corresponden'
+          }
         >
-          <input className="entrada-num" type="number" value={punitorios} onChange={(e) => setPunitorios(e.target.value)} />
+          <input
+            className="entrada-num"
+            type="number"
+            value={punitorios}
+            onChange={(e) => setPunitorios(e.target.value)}
+          />
         </Campo>
         <Campo etiqueta="Medio">
           <select value={medio} onChange={(e) => setMedio(e.target.value as MedioPago)}>
             {MEDIOS.map((m) => (
-              <option key={m.id} value={m.id}>{m.etiqueta}</option>
+              <option key={m.id} value={m.id}>{m.texto}</option>
             ))}
           </select>
-        </Campo>
-        <Campo etiqueta="Cuenta de destino">
-          <select value={cuentaId} onChange={(e) => setCuentaId(e.target.value)}>
-            {db.cuentas.filter((c) => c.activa).map((c) => (
-              <option key={c.id} value={c.id}>{c.nombre} ({c.moneda})</option>
-            ))}
-          </select>
-        </Campo>
-        <Campo etiqueta="Comprobante">
-          <input value={comprobante} onChange={(e) => setComprobante(e.target.value)} placeholder="REC-0001" />
         </Campo>
       </div>
+
+      <Campo etiqueta="Comprobante" ayuda="Opcional: número de recibo o de transferencia.">
+        <input value={comprobante} onChange={(e) => setComprobante(e.target.value)} placeholder="REC-0001" />
+      </Campo>
     </Modal>
   );
 }

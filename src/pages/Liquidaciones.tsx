@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Encabezado } from '../components/Encabezado';
-import { Chip, Kpi, Modal, Paginador, Tabla, Tarjeta, usePaginado, Vacio, type TonoChip } from '../components/ui';
+import { Avatar, Dato, Item, Modal, Panel, Pastilla, Segmentos, Vacio } from '../components/ui';
+import { IconoLiquidaciones } from '../components/iconos';
 import { useApp, useDb } from '../data/store';
 import { ETIQUETA_ITEM_LIQUIDACION } from '../domain/liquidaciones';
 import type { EstadoLiquidacion, Liquidacion } from '../domain/types';
@@ -14,16 +15,16 @@ import {
   ultimosPeriodos,
 } from '../domain/util';
 
-const TONO: Record<EstadoLiquidacion, TonoChip> = {
+const TONO: Record<EstadoLiquidacion, 'alerta' | 'acento' | 'ok'> = {
   borrador: 'alerta',
-  aprobada: 'info',
+  aprobada: 'acento',
   pagada: 'ok',
 };
 
-const ETIQUETA: Record<EstadoLiquidacion, string> = {
+const TEXTO: Record<EstadoLiquidacion, string> = {
   borrador: 'Borrador',
-  aprobada: 'Aprobada',
-  pagada: 'Pagada',
+  aprobada: 'Lista para pagar',
+  pagada: 'Transferida',
 };
 
 export default function Liquidaciones() {
@@ -33,160 +34,133 @@ export default function Liquidaciones() {
   const eliminarLiq = useApp((e) => e.eliminarLiquidacion);
 
   const [periodo, setPeriodo] = useState(periodoActual());
-  const [verTodas, setVerTodas] = useState(false);
+  const [filtro, setFiltro] = useState<'todas' | 'pendientes'>('todas');
   const [detalle, setDetalle] = useState<Liquidacion | null>(null);
-  const [mensaje, setMensaje] = useState('');
+  const [aviso, setAviso] = useState('');
 
   const personaDe = (id: string) => db.personas.find((p) => p.id === id);
 
-  const listadas = useMemo(
+  const lista = useMemo(
     () =>
       db.liquidaciones
-        .filter((l) => verTodas || l.periodo === periodo)
-        .sort((a, b) => (a.periodo === b.periodo ? a.numero.localeCompare(b.numero) : b.periodo.localeCompare(a.periodo))),
-    [db.liquidaciones, periodo, verTodas],
+        .filter((l) => l.periodo === periodo)
+        .filter((l) => filtro === 'todas' || l.estado !== 'pagada')
+        .sort((a, b) => a.numero.localeCompare(b.numero)),
+    [db.liquidaciones, periodo, filtro],
   );
 
-  const totalNeto = sumar(listadas, (l) => l.neto);
-  const totalComision = sumar(listadas, (l) => l.comisionTotal);
-  const pendientes = listadas.filter((l) => l.estado !== 'pagada');
-  const pag = usePaginado(listadas, 50);
+  const delPeriodo = db.liquidaciones.filter((l) => l.periodo === periodo);
+  const aPagar = sumar(delPeriodo, (l) => l.neto);
+  const honorarios = sumar(delPeriodo, (l) => l.comisionTotal);
+  const pendientes = delPeriodo.filter((l) => l.estado !== 'pagada');
 
   return (
     <>
       <Encabezado
-        titulo="Liquidaciones a propietarios"
-        bajada="Se liquida lo efectivamente cobrado; sobre eso se descuentan honorarios y gastos"
+        titulo="Liquidaciones"
+        bajada="Lo que hay que rendirle a cada propietario de lo que se cobró"
       >
+        <select
+          className="suelto no-imprimir"
+          value={periodo}
+          onChange={(e) => setPeriodo(e.target.value)}
+          aria-label="Período"
+        >
+          {ultimosPeriodos(periodoActual(), 18)
+            .reverse()
+            .map((p) => (
+              <option key={p} value={p}>{formatearPeriodo(p, true)}</option>
+            ))}
+        </select>
         <button
           className="btn btn--primario no-imprimir"
           onClick={() => {
             const n = generar(periodo);
-            setMensaje(
+            setAviso(
               n
-                ? `Se generó ${plural(n, 'liquidación', 'liquidaciones')} de ${formatearPeriodo(periodo, true)}.`
-                : 'No quedan cobranzas sin rendir en ese período.',
+                ? `Se generó ${plural(n, 'liquidación', 'liquidaciones')}.`
+                : 'No quedan cobranzas sin rendir en este mes.',
             );
           }}
         >
-          Generar liquidaciones
+          Generar
         </button>
       </Encabezado>
 
-      <div className="contenido pila">
-        {mensaje && <div className="aviso aviso--ok"><span aria-hidden="true">✅</span><div>{mensaje}</div></div>}
+      <div className="contenido">
+        {aviso && <div className="nota nota--ok"><span>{aviso}</span></div>}
 
-        <div className="fila no-imprimir">
-          <select
-            value={periodo}
-            onChange={(e) => {
-              setPeriodo(e.target.value);
-              setVerTodas(false);
-            }}
-            style={{ width: 'auto' }}
-            aria-label="Período"
-            disabled={verTodas}
-          >
-            {ultimosPeriodos(periodoActual(), 18)
-              .reverse()
-              .map((p) => (
-                <option key={p} value={p}>{formatearPeriodo(p, true)}</option>
-              ))}
-          </select>
-          <label className="fila" style={{ gap: 6 }}>
-            <input type="checkbox" checked={verTodas} onChange={(e) => setVerTodas(e.target.checked)} />
-            Todos los períodos
-          </label>
-        </div>
-
-        <div className="grid grid--kpis">
-          <Kpi etiqueta="A pagar a propietarios" valor={formatearMoneda(totalNeto)} pie={`${listadas.length} liquidaciones`} />
-          <Kpi etiqueta="Honorarios de la inmobiliaria" valor={formatearMoneda(totalComision)} tono="ok" pie="administración devengada" />
-          <Kpi
-            etiqueta="Pendientes de pago"
+        <div className="grid grid--resumen">
+          <Dato
+            etiqueta="A transferir"
+            valor={formatearMoneda(aPagar)}
+            pie={plural(delPeriodo.length, 'liquidación', 'liquidaciones')}
+          />
+          <Dato etiqueta="Tus honorarios" valor={formatearMoneda(honorarios)} tono="acento" pie="del mes" />
+          <Dato
+            etiqueta="Sin transferir"
             valor={formatearMoneda(sumar(pendientes, (l) => l.neto))}
             tono={pendientes.length ? 'alerta' : 'ok'}
-            pie={`${pendientes.length} sin transferir`}
+            pie={pendientes.length ? `${pendientes.length} pendientes` : 'todo rendido'}
           />
         </div>
 
-        <Tarjeta ajustado>
-          {listadas.length === 0 ? (
+        <div className="fila no-imprimir">
+          <Segmentos
+            etiqueta="Filtrar liquidaciones"
+            valor={filtro}
+            onCambio={setFiltro}
+            opciones={[
+              { id: 'todas', texto: `Todas (${delPeriodo.length})` },
+              { id: 'pendientes', texto: `Sin transferir (${pendientes.length})` },
+            ]}
+          />
+        </div>
+
+        <Panel comoLista>
+          {lista.length === 0 ? (
             <Vacio
-              icono="📤"
-              titulo="No hay liquidaciones en este período"
-              detalle="Generalas cuando hayas registrado las cobranzas del mes."
+              icono={<IconoLiquidaciones tam={24} />}
+              titulo="No hay liquidaciones de este mes"
+              detalle="Generalas cuando hayas registrado las cobranzas."
             />
           ) : (
-            <Tabla>
-              <thead>
-                <tr>
-                  <th>Número</th>
-                  <th>Propietario</th>
-                  <th>Período</th>
-                  <th className="num">Cobrado</th>
-                  <th className="num">Honorarios</th>
-                  <th className="num">Gastos</th>
-                  <th className="num">Neto a pagar</th>
-                  <th>Estado</th>
-                  <th />
-                </tr>
-              </thead>
-              <tbody>
-                {pag.visibles.map((l) => {
-                  const cobrado = sumar(l.items.filter((i) => i.tipo === 'alquiler_cobrado'), (i) => i.monto);
-                  const gastos = sumar(l.items.filter((i) => i.tipo === 'gasto'), (i) => i.monto);
-                  return (
-                    <tr key={l.id} className="fila-clic" onClick={() => setDetalle(l)}>
-                      <td className="principal-celda">{l.numero}</td>
-                      <td>{personaDe(l.propietarioId)?.nombre ?? '—'}</td>
-                      <td>{formatearPeriodo(l.periodo, true)}</td>
-                      <td className="num">{formatearMoneda(cobrado, l.moneda)}</td>
-                      <td className="num neg">{formatearMoneda(l.comisionTotal * -1, l.moneda)}</td>
-                      <td className="num">{gastos ? formatearMoneda(gastos, l.moneda) : '—'}</td>
-                      <td className="num principal-celda">{formatearMoneda(l.neto, l.moneda)}</td>
-                      <td>
-                        <Chip tono={TONO[l.estado]}>{ETIQUETA[l.estado]}</Chip>
-                        {l.fechaPago && <span className="tabla__sub">{formatearFecha(l.fechaPago)}</span>}
-                      </td>
-                      <td className="num no-imprimir">
-                        <button className="btn btn--chico btn--fantasma" onClick={(e) => { e.stopPropagation(); setDetalle(l); }}>
-                          Ver
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-              <tfoot>
-                <tr>
-                  <td colSpan={4}>Totales</td>
-                  <td className="num neg">{formatearMoneda(totalComision * -1)}</td>
-                  <td />
-                  <td className="num">{formatearMoneda(totalNeto)}</td>
-                  <td colSpan={2} />
-                </tr>
-              </tfoot>
-            </Tabla>
+            lista.map((l) => {
+              const cobrado = sumar(l.items.filter((i) => i.tipo === 'alquiler_cobrado'), (i) => i.monto);
+              const gastos = sumar(l.items.filter((i) => i.tipo === 'gasto'), (i) => i.monto);
+              return (
+                <Item
+                  key={l.id}
+                  onClick={() => setDetalle(l)}
+                  avatar={<Avatar nombre={personaDe(l.propietarioId)?.nombre ?? '—'} />}
+                  titulo={
+                    <>
+                      {personaDe(l.propietarioId)?.nombre ?? '—'}
+                      <Pastilla tono={TONO[l.estado]}>{TEXTO[l.estado]}</Pastilla>
+                    </>
+                  }
+                  sub={
+                    <>
+                      {l.numero} · cobrado {formatearMoneda(cobrado, l.moneda)} · honorarios{' '}
+                      {formatearMoneda(l.comisionTotal, l.moneda)}
+                      {gastos < 0 && ` · gastos ${formatearMoneda(gastos, l.moneda)}`}
+                    </>
+                  }
+                  monto={formatearMoneda(l.neto, l.moneda)}
+                  montoPie={l.fechaPago ? `pagada ${formatearFecha(l.fechaPago)}` : 'a transferir'}
+                />
+              );
+            })
           )}
-          <Paginador
-            pagina={pag.pagina}
-            paginas={pag.paginas}
-            desde={pag.desde}
-            hasta={pag.hasta}
-            total={pag.total}
-            etiqueta="liquidaciones"
-            onCambio={pag.setPagina}
-          />
-        </Tarjeta>
+        </Panel>
       </div>
 
       {detalle && (
         <DetalleLiquidacion
           liquidacion={detalle}
           onCerrar={() => setDetalle(null)}
-          onCambiarEstado={(estado, cuentaId) => {
-            cambiarEstado(detalle.id, estado, cuentaId);
+          onCambiarEstado={(estado) => {
+            cambiarEstado(detalle.id, estado);
             setDetalle(null);
           }}
           onEliminar={() => {
@@ -207,16 +181,16 @@ function DetalleLiquidacion({
 }: {
   liquidacion: Liquidacion;
   onCerrar: () => void;
-  onCambiarEstado: (estado: EstadoLiquidacion, cuentaId?: string) => void;
+  onCambiarEstado: (estado: EstadoLiquidacion) => void;
   onEliminar: () => void;
 }) {
   const db = useDb();
   const propietario = db.personas.find((p) => p.id === liquidacion.propietarioId);
-  const [cuentaId, setCuentaId] = useState(liquidacion.cuentaId ?? db.cuentas[0]?.id ?? '');
 
   return (
     <Modal
-      titulo={`Liquidación ${liquidacion.numero}`}
+      titulo={propietario?.nombre ?? 'Liquidación'}
+      subtitulo={`${liquidacion.numero} · ${formatearPeriodo(liquidacion.periodo, true)}`}
       onCerrar={onCerrar}
       ancho
       pie={
@@ -226,79 +200,69 @@ function DetalleLiquidacion({
               Eliminar
             </button>
           )}
-          <button className="btn" onClick={() => window.print()}>Imprimir</button>
+          <button className="btn btn--fantasma" onClick={() => window.print()}>Imprimir</button>
           {liquidacion.estado === 'borrador' && (
-            <button className="btn btn--primario" onClick={() => onCambiarEstado('aprobada')}>Aprobar</button>
+            <button className="btn btn--primario" onClick={() => onCambiarEstado('aprobada')}>
+              Aprobar
+            </button>
           )}
           {liquidacion.estado === 'aprobada' && (
-            <button className="btn btn--primario" onClick={() => onCambiarEstado('pagada', cuentaId)}>
-              Marcar como pagada
+            <button className="btn btn--primario" onClick={() => onCambiarEstado('pagada')}>
+              Marcar como transferida
             </button>
           )}
           {liquidacion.estado === 'pagada' && (
-            <button className="btn" onClick={() => onCambiarEstado('aprobada')}>Revertir pago</button>
+            <button className="btn" onClick={() => onCambiarEstado('aprobada')}>Deshacer</button>
           )}
         </>
       }
     >
-      <div className="datos">
+      <div className="nota">
         <div>
-          <div className="dato__et">Propietario</div>
-          <div className="dato__val">{propietario?.nombre}</div>
-        </div>
-        <div>
-          <div className="dato__et">CUIT / DNI</div>
-          <div className="dato__val">{propietario?.documento ?? '—'}</div>
-        </div>
-        <div>
-          <div className="dato__et">Período</div>
-          <div className="dato__val">{formatearPeriodo(liquidacion.periodo, true)}</div>
-        </div>
-        <div>
-          <div className="dato__et">CBU</div>
-          <div className="dato__val mini">{propietario?.cbu ?? '—'}</div>
+          <strong>Transferir {formatearMoneda(liquidacion.neto, liquidacion.moneda)}</strong>
+          <span className="mini">
+            {propietario?.cbu ? `CBU ${propietario.cbu}` : 'Este propietario no tiene CBU cargado.'}
+          </span>
         </div>
       </div>
 
-      <Tabla compacta>
-        <thead>
-          <tr>
-            <th>Concepto</th>
-            <th>Tipo</th>
-            <th className="num">Importe</th>
-          </tr>
-        </thead>
-        <tbody>
-          {liquidacion.items.map((i, idx) => (
-            <tr key={idx}>
-              <td>{i.descripcion}</td>
-              <td className="mini tenue">{ETIQUETA_ITEM_LIQUIDACION[i.tipo]}</td>
-              <td className={`num ${i.monto < 0 ? 'neg' : ''}`}>{formatearMoneda(i.monto, liquidacion.moneda)}</td>
-            </tr>
-          ))}
-        </tbody>
-        <tfoot>
-          <tr>
-            <td colSpan={2}>Neto a transferir</td>
-            <td className="num">{formatearMoneda(liquidacion.neto, liquidacion.moneda)}</td>
-          </tr>
-        </tfoot>
-      </Tabla>
-
-      {liquidacion.estado === 'aprobada' && (
-        <label className="campo no-imprimir">
-          <span className="campo__et">Cuenta desde la que se paga</span>
-          <select value={cuentaId} onChange={(e) => setCuentaId(e.target.value)}>
-            {db.cuentas.filter((c) => c.activa).map((c) => (
-              <option key={c.id} value={c.id}>{c.nombre} ({c.moneda})</option>
-            ))}
-          </select>
-        </label>
-      )}
+      <div className="pila" style={{ gap: 2 }}>
+        {liquidacion.items.map((i, idx) => (
+          <div
+            className="fila"
+            key={idx}
+            style={{
+              justifyContent: 'space-between',
+              gap: 14,
+              padding: '9px 2px',
+              borderBottom: '1px solid var(--borde)',
+            }}
+          >
+            <span className="crece">
+              <span style={{ fontSize: 13.8 }}>{i.descripcion}</span>
+              <span className="mini tenue" style={{ display: 'block' }}>
+                {ETIQUETA_ITEM_LIQUIDACION[i.tipo]}
+              </span>
+            </span>
+            <strong className={`num ${i.monto < 0 ? 'neg' : ''}`} style={{ fontSize: 14 }}>
+              {formatearMoneda(i.monto, liquidacion.moneda)}
+            </strong>
+          </div>
+        ))}
+        <div className="fila" style={{ justifyContent: 'space-between', paddingTop: 12, gap: 14 }}>
+          <strong>Neto a transferir</strong>
+          <strong
+            className="num"
+            style={{ fontFamily: 'var(--fuente-titulo)', fontSize: 19 }}
+          >
+            {formatearMoneda(liquidacion.neto, liquidacion.moneda)}
+          </strong>
+        </div>
+      </div>
 
       <p className="mini tenue">
-        Los honorarios de administración se reconocen como ingreso al aprobar la liquidación; el pago al propietario
-        cancela la deuda de la cuenta «Propietarios cuenta liquidación».
+        Se liquida lo que entró, no lo que se facturó. Si después entra una cobranza tardía, «Generar» arma una
+        liquidación complementaria por la diferencia.
       </p>
     </Modal>
   );

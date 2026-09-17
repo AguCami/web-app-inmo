@@ -1,21 +1,21 @@
 {
-  "name": "inmo-contable",
+  "name": "gestion-alquileres",
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "Web app de contabilidad y seguimiento para inmobiliarias (Argentina)",
+  "description": "Web app para administrar alquileres: contratos, actualizaciones por índice, cobranzas y liquidaciones.",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview --port 4173 --host 127.0.0.1",
     "smoke": "node scripts/smoke.mjs",
-    "typecheck": "tsc -b"
+    "typecheck": "tsc -b",
+    "indices": "node scripts/actualizar-indices.mjs"
   },
   "dependencies": {
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.30.0",
-    "recharts": "^2.15.0",
     "zustand": "^5.0.3"
   },
   "devDependencies": {

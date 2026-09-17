@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { InterruptorTema } from './Tema';
 
-/** Encabezado de página: título, bajada y acciones propias de la pantalla. */
+/** Encabezado de pantalla: título, bajada y acciones propias de la página. */
 export function Encabezado({
   titulo,
   bajada,
@@ -12,8 +12,8 @@ export function Encabezado({
   children?: ReactNode;
 }) {
   return (
-    <header className="barra">
-      <div className="barra__titulo">
+    <header className="cabecera">
+      <div className="cabecera__texto">
         <h1>{titulo}</h1>
         {bajada && <p>{bajada}</p>}
       </div>

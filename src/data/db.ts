@@ -1,12 +1,12 @@
 import type { BaseDatos } from '../domain/types';
 import { crearBaseDemo, VERSION_BD } from './seed';
 
-const CLAVE = 'inmo-contable/db/v1';
+const CLAVE = 'gestion-alquileres/db/v2';
 
 /**
- * Persistencia local. Todo el estado vive en el navegador del usuario, así que
- * cada lectura y escritura va envuelta en try/catch: en ventana privada o con
- * el almacenamiento bloqueado, la app tiene que seguir funcionando en memoria.
+ * Persistencia local. Todo vive en el navegador del usuario, así que cada
+ * lectura y escritura va envuelta en try/catch: en ventana privada o con el
+ * almacenamiento bloqueado, la app tiene que seguir andando en memoria.
  */
 export function cargarBase(): BaseDatos {
   try {
@@ -18,8 +18,7 @@ export function cargarBase(): BaseDatos {
   } catch {
     /* almacenamiento ilegible: se arranca de la demo */
   }
-  // Primera visita (o base de una versión vieja): se deja la demo ya persistida,
-  // así lo que el usuario ve en pantalla es lo que queda guardado.
+  // Primera visita: se deja la demo ya guardada, así lo que se ve es lo que queda.
   const demo = crearBaseDemo();
   guardarBase(demo);
   return demo;
@@ -33,28 +32,19 @@ export function guardarBase(db: BaseDatos): void {
   }
 }
 
-export function borrarBase(): void {
-  try {
-    localStorage.removeItem(CLAVE);
-  } catch {
-    /* ignorado */
-  }
-}
-
 export function exportarJSON(db: BaseDatos): void {
   const blob = new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `respaldo-inmo-${new Date().toISOString().slice(0, 10)}.json`;
+  a.download = `respaldo-alquileres-${new Date().toISOString().slice(0, 10)}.json`;
   a.click();
   URL.revokeObjectURL(url);
 }
 
 export async function importarJSON(archivo: File): Promise<BaseDatos> {
-  const texto = await archivo.text();
-  const datos = JSON.parse(texto) as BaseDatos;
-  if (!datos || !Array.isArray(datos.propiedades)) {
+  const datos = JSON.parse(await archivo.text()) as BaseDatos;
+  if (!datos || !Array.isArray(datos.propiedades) || !Array.isArray(datos.contratos)) {
     throw new Error('El archivo no tiene el formato esperado.');
   }
   return { ...datos, version: VERSION_BD };

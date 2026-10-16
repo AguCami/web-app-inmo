@@ -1,0 +1,35 @@
+# Temporal: averigua qué endpoints contesta el portal del organismo.
+# Se borra apenas se sepa cuál es el bueno.
+name: Sondeo del portal
+
+on:
+  workflow_dispatch:
+
+jobs:
+  sondear:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Probar rutas
+        run: |
+          node -e '
+          const base = "https://datosestadistica.cba.gov.ar";
+          const rutas = [
+            "/api/3/action/status_show",
+            "/api/action/status_show",
+            "/es/api/3/action/status_show",
+            "/en/api/3/action/status_show",
+            "/api/3/action/package_search?q=ipc&rows=5",
+            "/en/api/3/action/package_search?q=ipc&rows=5",
+            "/dataset?q=ipc",
+            "/",
+          ];
+          for (const r of rutas) {
+            try {
+              const res = await fetch(base + r, { redirect: "manual", headers: { accept: "application/json, text/html" } });
+              const t = (await res.text()).replace(/\s+/g, " ").slice(0, 200);
+              console.log(`::notice::${res.status} ${r} -> ${res.headers.get("location") ?? res.headers.get("content-type")} :: ${t}`);
+            } catch (e) {
+              console.log(`::notice::ERR ${r} -> ${e.cause?.message ?? e.message}`);
+            }
+          }
+          ' --input-type=module

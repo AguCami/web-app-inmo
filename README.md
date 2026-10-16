@@ -57,7 +57,7 @@ pipeline viejo pisa el deploy y sirve la página en blanco.
 | Pantalla | Para qué |
 |---|---|
 | **Inicio** | Cuánto se cobró del mes, quién debe, qué contratos ajustan o vencen, qué unidades están vacías |
-| **Cobranzas** | La cuota de cada inquilino del mes, con el botón de cobrar y los punitorios ya calculados |
+| **Cobranzas** | La cuota de cada inquilino del mes, con el botón de cobrar, los punitorios ya calculados y el recibo en PDF |
 | **Contratos** | Alta, cronograma de actualizaciones, cuotas, el legajo de archivos y la bitácora |
 | **Propiedades** | La cartera, con su estado y el alquiler vigente |
 | **Liquidaciones** | Lo que hay que transferirle a cada propietario: cobrado menos honorarios menos gastos |
@@ -102,6 +102,29 @@ con fecha, tipo y detalle, con fotos o presupuestos colgados. Lo que quedó
 abierto aparece en Inicio, porque es lo primero que se olvida.
 
 ![Bitácora del contrato](docs/bitacora.png)
+
+**Cobrar emite el recibo.** El botón dice «Cobrar y dar recibo» porque hace
+las dos cosas: registra la cobranza y baja el PDF para mandárselo al
+inquilino. Desde el botón **Recibos** de cada cuota se vuelven a bajar los ya
+emitidos.
+
+![Recibo de alquiler](docs/recibo.png)
+
+El número lo pone la app —`REC-00139`, correlativo— y queda guardado con el
+pago: **reimprimir un recibo devuelve el mismo archivo, byte a byte**, no uno
+nuevo con otro número. El campo «Comprobante» es otra cosa: es la referencia
+de la transferencia que trae el inquilino.
+
+Un recibo por un pago parcial que no aclara el saldo parece cancelar la cuota
+entera, así que cuando queda algo sin pagar el PDF lo dice en un recuadro, con
+el monto y el período.
+
+**El PDF se escribe a mano, sin librería.** `domain/pdf.ts` son 250 líneas que
+hacen lo que un recibo necesita: una hoja A4, las tipografías base que todo
+lector de PDF ya trae, texto alineado, líneas, recuadros y el logo embebido
+como JPEG. jsPDF pesa más que toda esta app junta; esto suma 6 kB. El importe
+va también en letras, que es lo que evita que a un recibo le agreguen un cero
+después de firmado.
 
 **Los honorarios salen del alquiler cobrado, no de la cuota entera.** Las
 expensas se las lleva el consorcio: cobrarles comisión sería cobrar de más.
@@ -173,8 +196,11 @@ src/
 │   ├── types.ts         Modelo de datos
 │   ├── util.ts          Fechas, períodos, plata, formato es-AR
 │   ├── contratos.ts     Cronograma de ajustes, índices, vigencia
-│   ├── cobranzas.ts     Emisión de cuotas, punitorios, mora
+│   ├── cobranzas.ts     Emisión de cuotas, punitorios, mora, recibos
 │   ├── liquidaciones.ts Rendición a propietarios (incremental)
+│   ├── pdf.ts           Escritor de PDF mínimo, sin dependencias
+│   ├── letras.ts        El importe escrito con todas las letras
+│   ├── recibo.ts        Qué dice y cómo se ve el recibo de alquiler
 │   └── resumen.ts       Los números de Inicio
 ├── data/            Persistencia, índices y datos de ejemplo
 ├── components/      Kit de interfaz e íconos

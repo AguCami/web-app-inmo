@@ -1,4 +1,5 @@
 import type { BaseDatos } from '../domain/types';
+import { numerarRecibos } from '../domain/cobranzas';
 import { sanear } from '../domain/integridad';
 import { aBase64, borrarArchivos, desdeBase64 } from './archivos';
 import { crearBaseDemo, VERSION_BD } from './seed';
@@ -19,19 +20,19 @@ export function cargarBase(): BaseDatos {
         // Repara bases que quedaron con huérfanos de versiones anteriores,
         // cuando borrar un contrato no arrastraba sus cuotas.
         const { db, huboCambios, archivosHuerfanos } = sanear(datos);
-        const conNombre = migrarNombre(db);
-        if (huboCambios || conNombre !== db) {
-          guardarBase(conNombre);
+        const migrada = conRecibos(migrarNombre(db));
+        if (huboCambios || migrada !== db) {
+          guardarBase(migrada);
           void borrarArchivos(archivosHuerfanos);
         }
-        return conNombre;
+        return migrada;
       }
     }
   } catch {
     /* almacenamiento ilegible: se arranca de la demo */
   }
   // Primera visita: se deja la demo ya guardada, así lo que se ve es lo que queda.
-  const demo = crearBaseDemo();
+  const demo = conRecibos(crearBaseDemo());
   guardarBase(demo);
   return demo;
 }
@@ -49,6 +50,15 @@ function migrarNombre(db: BaseDatos): BaseDatos {
     ...db,
     configuracion: { ...db.configuracion, nombre: 'Inversiones Generales M & M' },
   };
+}
+
+/**
+ * Garantiza que todos los pagos tengan número de recibo: los guardados antes
+ * de que existieran, los de la demo y los que vienen en un respaldo viejo.
+ */
+export function conRecibos(db: BaseDatos): BaseDatos {
+  const pagos = numerarRecibos(db.pagos);
+  return pagos === db.pagos ? db : { ...db, pagos };
 }
 
 export function guardarBase(db: BaseDatos): void {
@@ -96,10 +106,10 @@ export async function importarJSON(archivo: File): Promise<BaseDatos> {
     if (contenido) await desdeBase64(adjunto.id, contenido, adjunto.tipo);
   }
 
-  return {
+  return conRecibos({
     ...base,
     version: VERSION_BD,
     adjuntos,
     novedades: base.novedades ?? [],
-  };
+  });
 }

@@ -59,7 +59,7 @@ export default function App() {
     <div className="app">
       <nav className="rail no-imprimir" aria-label="Navegación principal">
         <div className="marca">
-          <Logo />
+          <Logo tam={44} />
           <span className="marca__texto">
             <strong>{db.configuracion.nombre || 'Alquileres'}</strong>
             <span>Inmobiliaria</span>

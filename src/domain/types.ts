@@ -168,6 +168,13 @@ export interface Pago {
   monto: number;
   moneda: Moneda;
   medio: MedioPago;
+  /**
+   * Número del recibo que se le dio al inquilino: «REC-00007». Se asigna al
+   * registrar el pago y no cambia, para que reimprimirlo devuelva el mismo
+   * papel que se entregó.
+   */
+  recibo?: string;
+  /** Referencia de la transferencia o del comprobante que trajo el inquilino. */
   comprobante?: string;
   /** Punitorios incluidos en este pago. */
   punitorios?: number;

@@ -4,6 +4,7 @@
  *   npm run build && npm run preview &
  *   npm run smoke
  */
+import { readFile } from 'node:fs/promises';
 import { chromium } from 'playwright';
 
 const BASE = process.env.URL_BASE ?? 'http://127.0.0.1:4173';
@@ -27,7 +28,10 @@ const comprobar = (nombre, ok, detalle = '') => {
 };
 
 const navegador = await chromium.launch({ executablePath: EJECUTABLE });
-const pagina = await navegador.newPage({ viewport: { width: 1440, height: 1000 } });
+const pagina = await navegador.newPage({
+  viewport: { width: 1440, height: 1000 },
+  acceptDownloads: true,
+});
 
 const errores = [];
 pagina.on('pageerror', (e) => errores.push(`pageerror: ${e.message}`));
@@ -182,7 +186,81 @@ comprobar(
     .count()) === 1,
 );
 
-/* ── 8. Sin desborde horizontal en el celular ────────────────────── */
+/* ── 8. El recibo en PDF ─────────────────────────────────────────── */
+await pagina.goto(`${BASE}/#/cobranzas`, { waitUntil: 'networkidle' });
+await pagina.waitForTimeout(400);
+
+const bajarPDF = async (accion) => {
+  const espera = pagina.waitForEvent('download');
+  await accion();
+  const descarga = await espera;
+  return { nombre: descarga.suggestedFilename(), bytes: await readFile(await descarga.path()) };
+};
+
+// Para cuando se llega acá ya se cobró lo que faltaba del mes corriente, así
+// que se busca un período que todavía tenga deuda en vez de suponerlo.
+const periodoConDeuda = await pagina.evaluate(() => {
+  const db = JSON.parse(localStorage.getItem('gestion-alquileres/db/v3'));
+  const cobrado = new Map();
+  for (const p of db.pagos) cobrado.set(p.cuotaId, (cobrado.get(p.cuotaId) ?? 0) + p.monto);
+  const conSaldo = db.cuotas.find(
+    (c) => c.estado !== 'anulada' && c.total - (cobrado.get(c.id) ?? 0) > 1,
+  );
+  return conSaldo?.periodo ?? null;
+});
+comprobar('queda alguna cuota con saldo para cobrar', Boolean(periodoConDeuda), periodoConDeuda ?? '');
+await pagina.selectOption('select[aria-label="Período"]', periodoConDeuda);
+await pagina.waitForTimeout(400);
+
+// Cobro parcial: es el caso que más importa que el recibo diga bien.
+const reciboParcial = await bajarPDF(async () => {
+  await pagina.locator('button', { hasText: 'Cobrar' }).first().click();
+  await pagina.waitForSelector('[role="dialog"]');
+  await pagina.locator('[role="dialog"] input.entrada-num').first().fill('50000');
+  await pagina.locator('[role="dialog"] button', { hasText: 'Cobrar y dar recibo' }).click();
+});
+
+// El contenido va sin comprimir, así que el texto del recibo se puede leer
+// directo de los bytes del archivo.
+const pdf = reciboParcial.bytes.toString('latin1');
+comprobar(
+  'cobrar emite un PDF bien formado',
+  pdf.startsWith('%PDF-1.4') && pdf.trimEnd().endsWith('%%EOF'),
+  `${reciboParcial.bytes.length} bytes`,
+);
+comprobar(
+  'el archivo se llama por su número y su inquilino',
+  /^Recibo REC-\d{5} - .+\.pdf$/.test(reciboParcial.nombre),
+  reciboParcial.nombre,
+);
+comprobar('el importe va también en letras', /Pesos .+ con \d\d\/100/.test(pdf));
+comprobar('el recibo lleva el logo embebido', pdf.includes('/DCTDecode'));
+comprobar(
+  'un pago parcial avisa que la cuota no queda saldada',
+  pdf.includes('Pago parcial: la cuota no queda cancelada'),
+);
+
+// Reimprimirlo tiene que devolver exactamente el mismo papel que se entregó.
+await pagina.waitForTimeout(400);
+await pagina.locator('button', { hasText: 'Recibos' }).first().click();
+await pagina.waitForSelector('[role="dialog"]');
+const copia = await bajarPDF(() =>
+  pagina.locator('[role="dialog"] button', { hasText: 'Descargar PDF' }).first().click(),
+);
+comprobar('reimprimir un recibo devuelve el mismo archivo', copia.bytes.equals(reciboParcial.bytes));
+await pagina.locator('[role="dialog"] button', { hasText: 'Cerrar' }).click();
+await pagina.waitForTimeout(300);
+
+comprobar(
+  'los pagos de la demo también tienen número de recibo',
+  await pagina.evaluate(() => {
+    const db = JSON.parse(localStorage.getItem('gestion-alquileres/db/v3'));
+    const numeros = db.pagos.map((p) => p.recibo);
+    return numeros.every(Boolean) && new Set(numeros).size === numeros.length;
+  }),
+);
+
+/* ── 9. Sin desborde horizontal en el celular ────────────────────── */
 const movil = await navegador.newPage({ viewport: { width: 390, height: 844 } });
 let desborda = false;
 for (const [, ruta] of RUTAS) {
@@ -193,7 +271,7 @@ for (const [, ruta] of RUTAS) {
 }
 comprobar('sin desborde horizontal en 390 px', !desborda);
 
-/* ── 9. Borrar arrastra lo que dependía, y pide confirmación ─────── */
+/* ── 10. Borrar arrastra lo que dependía, y pide confirmación ────── */
 const conteos = () =>
   pagina.evaluate(() => {
     const db = JSON.parse(localStorage.getItem('gestion-alquileres/db/v3'));
@@ -253,7 +331,7 @@ const archivosQueQuedan = await pagina.evaluate(
 );
 comprobar('borrar también limpia los archivos de IndexedDB', archivosQueQuedan === 0, `${archivosQueQuedan} quedan`);
 
-/* ── 10. Una base inconsistente se repara sola al abrir ──────────── */
+/* ── 11. Una base inconsistente se repara sola al abrir ─────────── */
 await pagina.evaluate(() => {
   const CLAVE = 'gestion-alquileres/db/v3';
   localStorage.removeItem(CLAVE);

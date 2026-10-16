@@ -71,6 +71,65 @@ export function pagosDeCuota(pagos: Pago[], cuotaId: string): Pago[] {
   return pagos.filter((p) => p.cuotaId === cuotaId);
 }
 
+const PREFIJO_RECIBO = 'REC-';
+
+/** El que sigue al más alto que haya, así nunca se repite un número. */
+export function siguienteNumeroRecibo(pagos: Pago[]): string {
+  let mayor = 0;
+  for (const p of pagos) {
+    const n = Number(p.recibo?.replace(PREFIJO_RECIBO, ''));
+    if (Number.isFinite(n) && n > mayor) mayor = n;
+  }
+  return `${PREFIJO_RECIBO}${String(mayor + 1).padStart(5, '0')}`;
+}
+
+/**
+ * Le pone número de recibo a todo pago que no lo tenga, en orden cronológico.
+ * Devuelve el mismo arreglo si no había nada que numerar, así quien llama
+ * puede comparar por identidad y evitarse una escritura.
+ *
+ * Arranca después del número más alto que ya exista: si una parte de los
+ * pagos venía numerada, los nuevos no pueden pisarlos.
+ */
+export function numerarRecibos(pagos: Pago[]): Pago[] {
+  if (pagos.every((p) => p.recibo)) return pagos;
+
+  let n = Math.max(0, ...pagos.map((p) => Number(p.recibo?.replace(PREFIJO_RECIBO, '')) || 0));
+  const numeros = new Map<string, string>();
+
+  const orden = [...pagos].sort(
+    (a, b) => a.fecha.localeCompare(b.fecha) || a.id.localeCompare(b.id),
+  );
+  for (const pago of orden) {
+    if (pago.recibo) continue;
+    n += 1;
+    numeros.set(pago.id, `${PREFIJO_RECIBO}${String(n).padStart(5, '0')}`);
+  }
+
+  return pagos.map((p) => (p.recibo ? p : { ...p, recibo: numeros.get(p.id) }));
+}
+
+/** Orden estable de los pagos de una cuota: por fecha y, a igual fecha, por id. */
+export function pagosOrdenados(pagos: Pago[], cuotaId: string): Pago[] {
+  return pagosDeCuota(pagos, cuotaId).sort(
+    (a, b) => a.fecha.localeCompare(b.fecha) || a.id.localeCompare(b.id),
+  );
+}
+
+/**
+ * Lo que quedaba debiendo la cuota justo después de este pago. El recibo tiene
+ * que decir lo que decía el día que se emitió, no lo que pasó después, así que
+ * se suma solo hasta este pago inclusive.
+ */
+export function saldoTrasPago(cuota: Cuota, pagos: Pago[], pagoId: string): number {
+  let acumulado = 0;
+  for (const p of pagosOrdenados(pagos, cuota.id)) {
+    acumulado += p.monto;
+    if (p.id === pagoId) break;
+  }
+  return redondear(Math.max(0, cuota.total - acumulado));
+}
+
 export function cobradoDeCuota(cuota: Cuota, pagos: Pago[]): number {
   return redondear(sumar(pagosDeCuota(pagos, cuota.id), (p) => p.monto));
 }

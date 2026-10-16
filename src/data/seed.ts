@@ -261,7 +261,9 @@ export function crearBaseDemo(): BaseDatos {
         monto,
         moneda: cuota.moneda,
         medio: azar() < 0.75 ? 'transferencia' : 'efectivo',
-        comprobante: `REC-${cuota.id.slice(-6)}`,
+        // Referencia del banco o del depósito: el número de recibo lo pone
+        // la app, no el inquilino.
+        comprobante: String(4100000000 + Math.floor(azar() * 899999999)),
         punitorios: demora > 3 ? redondear((cuota.total * 0.15 * demora) / 100) : 0,
       });
     }

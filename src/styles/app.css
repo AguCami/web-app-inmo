@@ -61,7 +61,14 @@ a { color: var(--acento); text-decoration-thickness: 1px; text-underline-offset:
   overflow-y: auto;
 }
 
-.marca { display: flex; align-items: center; gap: 10px; padding: 4px 8px 16px; }
+.marca {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+  padding: 6px 2px 18px;
+  text-align: center;
+}
 .marca__logo {
   width: 34px;
   height: 34px;
@@ -75,9 +82,28 @@ a { color: var(--acento); text-decoration-thickness: 1px; text-underline-offset:
 }
 /* El logo viene recortado y con fondo transparente, así que va directo. */
 .marca__logo--imagen { background: none; object-fit: contain; }
-.marca__texto { min-width: 0; }
-.marca__texto strong { display: block; font-family: var(--fuente-titulo); font-size: 15px; line-height: 1.2; }
-.marca__texto span { font-size: 11.5px; color: var(--tinta-3); }
+.marca__texto { min-width: 0; max-width: 100%; }
+/* El nombre va en un solo renglón. Si alguien pone uno más largo que el
+   ancho del menú, se recorta con puntos suspensivos en vez de romper el
+   bloque en dos líneas. */
+.marca__texto strong {
+  display: block;
+  font-family: var(--fuente-titulo);
+  font-size: 12px;
+  line-height: 1.25;
+  letter-spacing: -0.1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.marca__texto span {
+  display: block;
+  margin-top: 1px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  color: var(--tinta-3);
+}
 
 .rail__link {
   display: flex;

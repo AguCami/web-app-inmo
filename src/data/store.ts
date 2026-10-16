@@ -14,12 +14,12 @@ import type {
   Propiedad,
   ValorIndice,
 } from '../domain/types';
-import { generarCuotasFaltantes } from '../domain/cobranzas';
+import { generarCuotasFaltantes, siguienteNumeroRecibo } from '../domain/cobranzas';
 import { armarLiquidacion } from '../domain/liquidaciones';
 import { sanear, type ColeccionBorrable } from '../domain/integridad';
 import { hoy, nuevoId, periodoActual } from '../domain/util';
 import { borrarArchivos, guardarArchivo, MAXIMO_POR_ARCHIVO } from './archivos';
-import { cargarBase, guardarBase } from './db';
+import { cargarBase, conRecibos, guardarBase } from './db';
 import { baseVacia, crearBaseDemo } from './seed';
 import { combinarIndices, traerIndicesPublicados } from './indices';
 
@@ -49,7 +49,8 @@ interface EstadoApp {
 
   emitirCuotas: (hasta?: Periodo) => number;
   anularCuota: (cuotaId: ID) => void;
-  registrarPago: (pago: Omit<Pago, 'id'>) => void;
+  /** Devuelve el pago ya creado, con su número de recibo, para poder emitirlo. */
+  registrarPago: (pago: Omit<Pago, 'id' | 'recibo'>) => Pago;
   eliminarPago: (pagoId: ID) => void;
 
   generarLiquidaciones: (periodo: Periodo) => number;
@@ -79,7 +80,7 @@ export const useApp = create<EstadoApp>((set, get) => {
     indicesSincronizados: 'pendiente',
 
     reemplazarBase: (db) => mutar(() => db),
-    cargarDemo: () => mutar(() => crearBaseDemo()),
+    cargarDemo: () => mutar(() => conRecibos(crearBaseDemo())),
     vaciar: () => mutar(() => baseVacia()),
 
     actualizarConfiguracion: (cambios) =>
@@ -203,8 +204,15 @@ export const useApp = create<EstadoApp>((set, get) => {
         pagos: db.pagos.filter((p) => p.cuotaId !== cuotaId),
       })),
 
-    registrarPago: (pago) =>
-      mutar((db) => ({ ...db, pagos: [...db.pagos, { ...pago, id: nuevoId('pa') }] })),
+    registrarPago: (pago) => {
+      const nuevo: Pago = {
+        ...pago,
+        id: nuevoId('pa'),
+        recibo: siguienteNumeroRecibo(get().db.pagos),
+      };
+      mutar((db) => ({ ...db, pagos: [...db.pagos, nuevo] }));
+      return nuevo;
+    },
 
     eliminarPago: (pagoId) =>
       mutar((db) => ({ ...db, pagos: db.pagos.filter((p) => p.id !== pagoId) })),

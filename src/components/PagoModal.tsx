@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Campo, Modal, Nota } from './ui';
+import { emitirRecibo } from '../data/recibos';
 import { useApp, useDb } from '../data/store';
 import { punitoriosDeCuota, saldoDeCuota } from '../domain/cobranzas';
 import type { Cuota, MedioPago } from '../domain/types';
@@ -30,6 +31,7 @@ export function PagoModal({ cuota, onCerrar }: { cuota: Cuota; onCerrar: () => v
   const [punitorios, setPunitorios] = useState(String(punitoriosSugeridos));
   const [medio, setMedio] = useState<MedioPago>('transferencia');
   const [comprobante, setComprobante] = useState('');
+  const [emitiendo, setEmitiendo] = useState(false);
 
   const montoNum = Number(monto) || 0;
   const punitoriosNum = Number(punitorios) || 0;
@@ -46,9 +48,10 @@ export function PagoModal({ cuota, onCerrar }: { cuota: Cuota; onCerrar: () => v
           <button className="btn btn--fantasma" onClick={onCerrar}>Cancelar</button>
           <button
             className="btn btn--primario"
-            disabled={montoNum <= 0}
-            onClick={() => {
-              registrar({
+            disabled={montoNum <= 0 || emitiendo}
+            onClick={async () => {
+              setEmitiendo(true);
+              const pago = registrar({
                 cuotaId: cuota.id,
                 fecha,
                 monto: montoNum,
@@ -57,10 +60,13 @@ export function PagoModal({ cuota, onCerrar }: { cuota: Cuota; onCerrar: () => v
                 comprobante: comprobante || undefined,
                 punitorios: punitoriosNum || undefined,
               });
+              // El cobro ya quedó guardado; el recibo se arma sobre la base
+              // recién mutada, así sale con este pago adentro.
+              await emitirRecibo(useApp.getState().db, pago);
               onCerrar();
             }}
           >
-            Cobrar {formatearMoneda(total, cuota.moneda)}
+            {emitiendo ? 'Armando el recibo…' : `Cobrar y dar recibo · ${formatearMoneda(total, cuota.moneda)}`}
           </button>
         </>
       }
@@ -114,8 +120,11 @@ export function PagoModal({ cuota, onCerrar }: { cuota: Cuota; onCerrar: () => v
         </Campo>
       </div>
 
-      <Campo etiqueta="Comprobante" ayuda="Opcional: número de recibo o de transferencia.">
-        <input value={comprobante} onChange={(e) => setComprobante(e.target.value)} placeholder="REC-0001" />
+      <Campo
+        etiqueta="Comprobante del inquilino"
+        ayuda="Opcional: número de la transferencia o del depósito. El recibo lo numera la app."
+      >
+        <input value={comprobante} onChange={(e) => setComprobante(e.target.value)} placeholder="1234567890" />
       </Campo>
     </Modal>
   );

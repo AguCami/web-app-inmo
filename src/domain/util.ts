@@ -92,6 +92,17 @@ export function formatearPeriodo(p: Periodo, largo = false): string {
   return largo ? `${nombre} ${y}` : `${nombre} ${String(y).slice(2)}`;
 }
 
+const MESES_LARGOS = [
+  'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+  'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',
+];
+
+/** «octubre de 2026» — para los documentos, donde «oct 2026» queda pobre. */
+export function formatearPeriodoLargo(p: Periodo): string {
+  const [y, m] = p.split('-').map(Number);
+  return `${MESES_LARGOS[(m ?? 1) - 1] ?? ''} de ${y}`;
+}
+
 /** Devuelve los N períodos que terminan en `hasta` (incluido). */
 export function ultimosPeriodos(hasta: Periodo, n: number): Periodo[] {
   return Array.from({ length: n }, (_, i) => sumarPeriodos(hasta, i - (n - 1)));

@@ -22,6 +22,7 @@ import {
   TONO_NOVEDAD,
 } from '../components/NovedadModal';
 import { PagoModal } from '../components/PagoModal';
+import { RecibosModal } from '../components/RecibosModal';
 import { FormularioContrato, TEXTO_VIGENCIA, TONO_VIGENCIA } from './Contratos';
 import { TEXTO_CUOTA, TONO_CUOTA } from './Cobranzas';
 import { useApp, useDb } from '../data/store';
@@ -56,6 +57,7 @@ export default function ContratoDetalle() {
   const anular = useApp((e) => e.anularCuota);
 
   const [vista, setVista] = useState<Vista>('cuotas');
+  const [recibosDe, setRecibosDe] = useState<Cuota | null>(null);
   const [editando, setEditando] = useState(false);
   const [cobrando, setCobrando] = useState<Cuota | null>(null);
   const [confirmandoBorrado, setConfirmandoBorrado] = useState(false);
@@ -211,6 +213,11 @@ export default function ContratoDetalle() {
                         {saldo > 0.01 && estado !== 'anulada' && (
                           <button className="btn btn--primario btn--chico" onClick={() => setCobrando(c)}>
                             Cobrar
+                          </button>
+                        )}
+                        {cobradoDeCuota(c, db.pagos) > 0 && (
+                          <button className="btn btn--chico" onClick={() => setRecibosDe(c)}>
+                            Recibos
                           </button>
                         )}
                         {estado !== 'anulada' && cobradoDeCuota(c, db.pagos) === 0 && (
@@ -444,6 +451,7 @@ export default function ContratoDetalle() {
       )}
 
       {cobrando && <PagoModal cuota={cobrando} onCerrar={() => setCobrando(null)} />}
+      {recibosDe && <RecibosModal cuota={recibosDe} onCerrar={() => setRecibosDe(null)} />}
 
       {novedadAbierta && (
         <NovedadModal novedad={novedadAbierta} onCerrar={() => setNovedadAbierta(null)} />

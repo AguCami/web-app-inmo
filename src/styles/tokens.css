@@ -1,9 +1,11 @@
 /*
  * Tokens de diseño.
  *
- * La identidad de esta app es blanda: radios generosos, superficies que flotan
- * sobre un fondo tibio y un verde petróleo como único acento. Los colores de
- * estado están reservados y nunca se usan como color decorativo.
+ * La identidad sale del logo de la inmobiliaria: una espiral azul. El acento
+ * de la app es ese mismo azul, y el neutro tiene una pizca de azul en vez de
+ * ser un gris de fábrica, para que todo lea como un solo sistema.
+ *
+ * Los colores de estado están reservados y nunca se usan como decoración.
  *
  * El modo oscuro tiene sus propios pasos, elegidos contra el fondo oscuro: no
  * es un invertido automático del claro.
@@ -12,28 +14,28 @@
 :root {
   color-scheme: light;
 
-  /* Superficies — el neutro tiene una pizca de verde, no es un gris de fábrica */
-  --fondo: #f1f4f2;
+  /* Superficies */
+  --fondo: #f1f4f7;
   --panel: #ffffff;
-  --panel-2: #f6f8f7;
-  --panel-hover: #eef2f0;
+  --panel-2: #f5f7fa;
+  --panel-hover: #eef2f7;
   --rail: #ffffff;
 
   /* Tinta */
-  --tinta: #16211e;
-  --tinta-2: #57635f;
-  --tinta-3: #8b9793;
+  --tinta: #151b22;
+  --tinta-2: #555f6a;
+  --tinta-3: #88919b;
   --tinta-sobre-acento: #ffffff;
 
   /* Líneas */
-  --borde: #e4eae7;
-  --borde-fuerte: #d2dbd7;
+  --borde: #e4e9ef;
+  --borde-fuerte: #d3dae2;
 
-  /* Acento */
-  --acento: #10695f;
-  --acento-fuerte: #0b514a;
-  --acento-suave: #e2efec;
-  --acento-tinta: #0b514a;
+  /* Acento: el azul del logo */
+  --acento: #0b57b5;
+  --acento-fuerte: #0a4795;
+  --acento-suave: #e4edfa;
+  --acento-tinta: #0a4795;
 
   /* Estado — pares fondo/tinta, se invierten juntos por tema */
   --ok: #1a7f46;
@@ -42,12 +44,12 @@
   --alerta-fondo: #fbf0d8;
   --critico: #b23a34;
   --critico-fondo: #fbe8e6;
-  --neutro: #57635f;
-  --neutro-fondo: #eceff0;
+  --neutro: #555f6a;
+  --neutro-fondo: #ebeef2;
 
-  /* Acentos de apoyo para avatares y etiquetas de tipo de propiedad */
-  --tono-1: #2a6f97;
-  --tono-1-fondo: #e2edf4;
+  /* Tonos de apoyo para avatares. El azul quedó reservado para el acento. */
+  --tono-1: #5558b0;
+  --tono-1-fondo: #e9e9f8;
   --tono-2: #8a5a2b;
   --tono-2-fondo: #f4ebe1;
   --tono-3: #6b4e8f;
@@ -63,9 +65,9 @@
   --r-xl: 30px;
   --r-pill: 999px;
 
-  --sombra-suave: 0 1px 2px rgba(22, 33, 30, 0.04), 0 4px 14px rgba(22, 33, 30, 0.05);
-  --sombra-media: 0 2px 6px rgba(22, 33, 30, 0.06), 0 12px 32px rgba(22, 33, 30, 0.09);
-  --sombra-alta: 0 8px 40px rgba(22, 33, 30, 0.22);
+  --sombra-suave: 0 1px 2px rgba(21, 27, 34, 0.04), 0 4px 14px rgba(21, 27, 34, 0.05);
+  --sombra-media: 0 2px 6px rgba(21, 27, 34, 0.06), 0 12px 32px rgba(21, 27, 34, 0.09);
+  --sombra-alta: 0 8px 40px rgba(21, 27, 34, 0.22);
 
   --rail-ancho: 236px;
 
@@ -78,24 +80,24 @@
   :root:where(:not([data-theme='light'])) {
     color-scheme: dark;
 
-    --fondo: #0e1413;
-    --panel: #18201e;
-    --panel-2: #1f2825;
-    --panel-hover: #25302c;
-    --rail: #141b19;
+    --fondo: #0d1116;
+    --panel: #171d24;
+    --panel-2: #1e252d;
+    --panel-hover: #252e37;
+    --rail: #131920;
 
-    --tinta: #eef3f1;
-    --tinta-2: #a9b5b1;
-    --tinta-3: #7d8a86;
-    --tinta-sobre-acento: #06201d;
+    --tinta: #eef2f7;
+    --tinta-2: #a8b2bd;
+    --tinta-3: #7c858f;
+    --tinta-sobre-acento: #05203f;
 
-    --borde: #253029;
-    --borde-fuerte: #32403a;
+    --borde: #242c35;
+    --borde-fuerte: #323c47;
 
-    --acento: #4cb5a6;
-    --acento-fuerte: #6cc9bb;
-    --acento-suave: #16302c;
-    --acento-tinta: #7fd3c6;
+    --acento: #62a6ee;
+    --acento-fuerte: #85bcf4;
+    --acento-suave: #152940;
+    --acento-tinta: #9bc8f7;
 
     --ok: #56c583;
     --ok-fondo: #12301f;
@@ -103,11 +105,11 @@
     --alerta-fondo: #322612;
     --critico: #ef8079;
     --critico-fondo: #331a18;
-    --neutro: #a9b5b1;
-    --neutro-fondo: #232c29;
+    --neutro: #a8b2bd;
+    --neutro-fondo: #222a32;
 
-    --tono-1: #7db4d8;
-    --tono-1-fondo: #17262f;
+    --tono-1: #9b9ee9;
+    --tono-1-fondo: #1e2038;
     --tono-2: #d3a473;
     --tono-2-fondo: #2c2219;
     --tono-3: #b39ad6;
@@ -125,24 +127,24 @@
 :root[data-theme='dark'] {
   color-scheme: dark;
 
-  --fondo: #0e1413;
-  --panel: #18201e;
-  --panel-2: #1f2825;
-  --panel-hover: #25302c;
-  --rail: #141b19;
+  --fondo: #0d1116;
+  --panel: #171d24;
+  --panel-2: #1e252d;
+  --panel-hover: #252e37;
+  --rail: #131920;
 
-  --tinta: #eef3f1;
-  --tinta-2: #a9b5b1;
-  --tinta-3: #7d8a86;
-  --tinta-sobre-acento: #06201d;
+  --tinta: #eef2f7;
+  --tinta-2: #a8b2bd;
+  --tinta-3: #7c858f;
+  --tinta-sobre-acento: #05203f;
 
-  --borde: #253029;
-  --borde-fuerte: #32403a;
+  --borde: #242c35;
+  --borde-fuerte: #323c47;
 
-  --acento: #4cb5a6;
-  --acento-fuerte: #6cc9bb;
-  --acento-suave: #16302c;
-  --acento-tinta: #7fd3c6;
+  --acento: #62a6ee;
+  --acento-fuerte: #85bcf4;
+  --acento-suave: #152940;
+  --acento-tinta: #9bc8f7;
 
   --ok: #56c583;
   --ok-fondo: #12301f;
@@ -150,11 +152,11 @@
   --alerta-fondo: #322612;
   --critico: #ef8079;
   --critico-fondo: #331a18;
-  --neutro: #a9b5b1;
-  --neutro-fondo: #232c29;
+  --neutro: #a8b2bd;
+  --neutro-fondo: #222a32;
 
-  --tono-1: #7db4d8;
-  --tono-1-fondo: #17262f;
+  --tono-1: #9b9ee9;
+  --tono-1-fondo: #1e2038;
   --tono-2: #d3a473;
   --tono-2-fondo: #2c2219;
   --tono-3: #b39ad6;

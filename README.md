@@ -1,9 +1,12 @@
-# Gestión de Alquileres
+# Inversiones Generales M & M — Alquileres
 
-Web app para administrar alquileres: contratos, actualizaciones por índice,
-cobranza mes a mes y liquidación a los propietarios. Pensada para Córdoba,
-Argentina: incluye el **IPC de Córdoba** como índice de actualización, junto al
-ICL del BCRA, el IPC nacional y el porcentaje fijo.
+<img src="public/logo.png" width="96" align="right" alt="">
+
+Web app para administrar los alquileres de **Inversiones Generales M & M
+Inmobiliaria**: contratos, actualizaciones por índice, cobranza mes a mes y
+liquidación a los propietarios. Pensada para Córdoba, Argentina: incluye el
+**IPC de Córdoba** como índice de actualización, junto al ICL del BCRA, el IPC
+nacional y el porcentaje fijo.
 
 No hay servidor ni cuentas: los datos viven en el navegador y se respaldan en un
 archivo.
@@ -28,15 +31,26 @@ Arranca con una administración de ejemplo: 14 unidades, 12 contratos activos, u
 año de cobranzas y liquidaciones. Desde **Ajustes → Respaldo** se vacía para
 cargar datos reales.
 
-### El logo
+### La marca
 
-Dejá el archivo en **`public/logo.png`** y aparece en el menú. Mientras no esté,
-la app usa un ícono genérico: no queda un cuadro roto ni un hueco.
+El logo vive en **`public/logo.png`** (y el del navegador en
+`public/favicon.png`); el original sin recortar quedó en
+`docs/logo-original.jpg`. Para cambiarlo, pisá esos archivos. Si el logo
+faltara, el menú muestra un ícono genérico en vez de un cuadro roto.
 
-El nombre, el CUIT, el teléfono y el email se editan en **Ajustes → Mis datos**.
+El azul del logo es el acento de toda la app: está una sola vez, en
+`--acento` dentro de `src/styles/tokens.css`.
 
-Ya está el workflow de GitHub Pages. Falta un solo paso a mano, una vez:
-**Settings → Pages → Source: «GitHub Actions»**.
+El nombre viene puesto. **El CUIT, el teléfono y el email están en blanco a
+propósito** —no los invento, porque se imprimen en las liquidaciones que recibe
+el propietario—. Se cargan una vez en **Ajustes → Mis datos**.
+
+### Publicada
+
+<https://agucami.github.io/web-app-inmo/> — cada push a la rama la vuelve a
+desplegar con el workflow de GitHub Pages. El único paso manual, ya hecho, es
+**Settings → Pages → Source: «GitHub Actions»**: con «Deploy from a branch» el
+pipeline viejo pisa el deploy y sirve la página en blanco.
 
 ## Las pantallas
 

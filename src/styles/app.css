@@ -73,13 +73,8 @@ a { color: var(--acento); text-decoration-thickness: 1px; text-underline-offset:
   font-size: 17px;
   flex: none;
 }
-/* El logo propio va sobre blanco: muchos vienen con fondo claro y en modo
-   oscuro quedarían ilegibles sobre el panel. */
-.marca__logo--imagen {
-  background: #fff;
-  object-fit: contain;
-  padding: 3px;
-}
+/* El logo viene recortado y con fondo transparente, así que va directo. */
+.marca__logo--imagen { background: none; object-fit: contain; }
 .marca__texto { min-width: 0; }
 .marca__texto strong { display: block; font-family: var(--fuente-titulo); font-size: 15px; line-height: 1.2; }
 .marca__texto span { font-size: 11.5px; color: var(--tinta-3); }
@@ -130,6 +125,7 @@ a { color: var(--acento); text-decoration-thickness: 1px; text-underline-offset:
   border: 1px solid var(--borde);
   border-radius: var(--r-lg);
   box-shadow: var(--sombra-suave);
+  container-type: inline-size;
 }
 .panel__cab {
   display: flex;
@@ -165,11 +161,12 @@ a { color: var(--acento); text-decoration-thickness: 1px; text-underline-offset:
   display: flex;
   flex-direction: column;
   gap: 3px;
+  container-type: inline-size;
 }
 .dato__et { font-size: 12.5px; color: var(--tinta-2); font-weight: 500; }
 .dato__valor {
   font-family: var(--fuente-titulo);
-  font-size: 25px;
+  font-size: clamp(18px, 7.2cqi, 25px);
   font-weight: 600;
   letter-spacing: -0.02em;
   line-height: 1.2;
@@ -586,16 +583,19 @@ select.suelto { width: auto; border-radius: var(--r-pill); background: var(--pan
 
 /* ────────────────────────── Responsivo ──────────────────────────── */
 
-/* En pantallas angostas el ítem se parte en dos filas: arriba quién y qué,
-   abajo cuánto y las acciones. Sin esto el texto queda en una columna de 40 px. */
-@media (max-width: 620px) {
+/* En un panel angosto el ítem se parte en dos filas: arriba quién y qué, abajo
+   cuánto y las acciones. Va por ancho de panel y no de ventana, porque tres
+   paneles en una misma fila dejan cada uno tan angosto como un celular. */
+@container (max-width: 430px) {
   .item { flex-wrap: wrap; row-gap: 10px; }
   .item__cuerpo { flex: 1 1 calc(100% - 56px); }
   .item__monto { text-align: left; margin-left: 56px; }
   .item__monto small { display: inline; margin-left: 6px; }
   .item__fin { margin-left: auto; }
+}
+
+@media (max-width: 620px) {
   .cabecera { gap: 10px; }
-  .dato__valor { font-size: 22px; }
 }
 
 @media (max-width: 900px) {

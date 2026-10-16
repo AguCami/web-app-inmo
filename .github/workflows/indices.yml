@@ -5,8 +5,12 @@
 # Actions, una vez por día: si hay un valor nuevo lo escribe en
 # public/indices.json, lo commitea, y el push dispara el deploy.
 #
-# Si la fuente cambia de formato el script falla y este workflow queda en rojo,
-# que es lo que queremos: mejor enterarse que publicar un índice mal leído.
+# Hoy el organismo no contesta desde acá: el runner sale por un datacenter en
+# Estados Unidos y sus sitios responden 404, 403 o con el origen caído. En ese
+# caso el script avisa y termina bien, porque no hay nada que arreglar de este
+# lado. Si en cambio la fuente contesta con datos y no se los puede interpretar,
+# falla y deja la corrida en rojo: mejor enterarse que publicar un índice mal
+# leído. El detalle de cada corrida queda en el resumen del job.
 name: Actualizar índices
 
 on:

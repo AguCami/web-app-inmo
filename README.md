@@ -136,9 +136,34 @@ Si el organismo cambia el formato, el script **falla y no escribe nada**: el
 workflow queda en rojo, que es mejor que publicar un índice mal leído. Y siempre
 se puede corregir cualquier mes a mano desde Ajustes.
 
-> **Estado:** el parseo todavía no se probó contra la fuente real — el entorno
-> donde se escribió tiene bloqueado el dominio del organismo. La primera corrida
-> en Actions va a mostrar exactamente qué devuelve el portal.
+### Estado: la fuente no contesta desde GitHub
+
+La tarea ya corrió y **no funciona todavía, por el lado del organismo**. El
+runner de Actions sale por un datacenter de Microsoft en Estados Unidos, y los
+sitios de la Provincia responden distinto según de dónde se les pregunte:
+
+| Fuente | Qué devuelve al runner |
+|---|---|
+| `datosestadistica.cba.gov.ar` | CKAN 2.11.5 vivo, pero **404 en todas las rutas**, la raíz incluida, con y sin user-agent de navegador. Los buscadores tienen indexados sus datasets, así que desde Argentina anda. |
+| `estadistica.cba.gov.ar` | Siempre la misma cáscara de 1357 bytes, con `x-cache: Error from cloudfront`: el origen está fallando. El portal real es un sitio ArcGIS Hub. |
+| `prensa.cba.gov.ar` | `403 Request blocked` del WAF. |
+| `apis.datos.gob.ar` | Responde bien, pero **no publica el IPC de Córdoba** (sí el de Tucumán, Santa Fe, Chaco y CABA). |
+
+Mientras eso siga así, el script distingue dos situaciones que antes trataba
+igual:
+
+- **No se pudo llegar a la fuente** (no resuelve, la bloquean, 404, 5xx):
+  avisa y termina bien. Es una condición de afuera, y dejar la tarea en rojo
+  todos los días hasta que el organismo vuelva solo entrena a ignorarla.
+- **La fuente contestó con datos y no se los entiende:** falla, queda en rojo
+  y no toca el archivo. Eso sí hay que mirarlo.
+
+Cada corrida deja el detalle en el resumen del job y como anotación, así se ve
+desde afuera sin entrar al log.
+
+**Mientras tanto los índices se cargan a mano en Ajustes**, mes a mes, que es
+además donde se corrigen si el organismo publica un dato provisorio y después
+lo rectifica.
 
 ## Cómo está armado
 

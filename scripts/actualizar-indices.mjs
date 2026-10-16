@@ -6,12 +6,33 @@
  * abrir y lo mezcla con la serie que tiene guardada, así los contratos que
  * ajustan por IPC Córdoba se actualizan solos cuando sale el dato del mes.
  *
- * IMPORTANTE — este script todavía no se probó contra la fuente real: el
- * entorno donde se escribió tiene bloqueado el dominio del organismo. Por eso
- * está hecho para fallar fuerte y claro en vez de publicar cualquier cosa: si
- * no encuentra la serie o no la puede interpretar, sale con error y NO toca el
- * archivo. La primera corrida en Actions va a decir exactamente qué devuelve
- * la fuente, y con eso se termina de ajustar el parseo.
+ * ESTADO (oct 2026) — desde GitHub Actions no se llega a la fuente. El runner
+ * sale por un datacenter de Microsoft en Estados Unidos y los sitios de la
+ * Provincia responden distinto según de dónde les pregunten:
+ *
+ *   datosestadistica.cba.gov.ar  CKAN 2.11.5 vivo, pero 404 en todas las rutas,
+ *                                la raíz incluida, con y sin user-agent de
+ *                                navegador. El buscador sí tiene indexados sus
+ *                                datasets, así que desde Argentina anda.
+ *   estadistica.cba.gov.ar       CloudFront devuelve siempre la misma cáscara
+ *                                de 1357 bytes, con "x-cache: Error from
+ *                                cloudfront": el origen está fallando.
+ *   prensa.cba.gov.ar            403 "Request blocked" del WAF.
+ *   apis.datos.gob.ar            responde bien, pero no publica el IPC de
+ *                                Córdoba (sí el de Tucumán, Santa Fe, Chaco
+ *                                y CABA).
+ *
+ * Por eso el script distingue dos cosas que antes trataba igual:
+ *
+ *   · Si no se puede LLEGAR a la fuente —no resuelve, la bloquean, contesta
+ *     404 o 5xx— avisa y termina bien. Es una condición de afuera y que la
+ *     tarea quede en rojo todos los días no la arregla.
+ *   · Si la fuente CONTESTA con datos y no se los puede interpretar, falla y
+ *     deja la corrida en rojo, sin tocar el archivo. Eso sí hay que mirarlo:
+ *     es la diferencia entre no actualizar y actualizar mal.
+ *
+ * Mientras tanto los índices se cargan a mano en Ajustes, que es donde siempre
+ * se pueden corregir.
  *
  *   node scripts/actualizar-indices.mjs           # escribe si hay algo nuevo
  *   node scripts/actualizar-indices.mjs --dry-run # solo informa
@@ -65,6 +86,23 @@ function volcarResumen(titulo) {
   }
 }
 
+/**
+ * La fuente no se dejó consultar. No es culpa del script ni hay nada que
+ * arreglar acá, así que se avisa y se termina bien: dejar la tarea en rojo
+ * todos los días hasta que el organismo vuelva solo entrena a ignorarla.
+ */
+function rendirse(mensaje) {
+  anotar('warning', mensaje);
+  console.warn(`\n⚠ ${mensaje}\n`);
+  console.warn('El archivo no se modificó. Los índices se cargan a mano en Ajustes.');
+  volcarResumen('No se pudo consultar el IPC de Córdoba');
+  process.exit(0);
+}
+
+/**
+ * La fuente contestó con datos y no se los pudo interpretar. Esto sí hay que
+ * mirarlo: es la diferencia entre no actualizar y actualizar mal.
+ */
 function abortar(mensaje) {
   anotar('error', mensaje);
   console.error(`\n✗ ${mensaje}\n`);
@@ -79,19 +117,21 @@ async function pedir(url, comoJSON) {
   try {
     r = await fetch(url, { headers: comoJSON ? { accept: 'application/json' } : {} });
   } catch (e) {
-    // Es el modo de falla más probable: el organismo caído, el dominio movido
-    // o el certificado vencido. El mensaje de fetch solo dice "fetch failed".
-    abortar(`No pude conectarme a ${url} — ${e.cause?.message ?? e.message}`);
+    // El mensaje de fetch solo dice "fetch failed"; la causa está adentro.
+    rendirse(`No pude conectarme a ${url} — ${e.cause?.message ?? e.message}`);
   }
-  if (!r.ok) abortar(`${url} respondió ${r.status} ${r.statusText}`);
+  if (!r.ok) rendirse(`${url} respondió ${r.status} ${r.statusText}`);
 
   const texto = await r.text();
   if (!comoJSON) return texto;
   try {
     return JSON.parse(texto);
   } catch {
-    // Pasa cuando en vez del API contesta un portal de error o un muro de bot.
-    abortar(`${url} no devolvió JSON sino ${r.headers.get('content-type') ?? '?'}: ${texto.slice(0, 180)}`);
+    // En vez del API contestó un portal de error o un muro de bot: tampoco se
+    // pudo llegar a los datos, por más que el código HTTP diga 200.
+    rendirse(
+      `${url} no devolvió JSON sino ${r.headers.get('content-type') ?? '?'}: ${texto.slice(0, 180)}`,
+    );
   }
 }
 
@@ -119,7 +159,12 @@ async function ubicarRecurso() {
       if (!formatosUtiles.includes(formato)) continue;
       const nombre = `${paquete.title ?? ''} ${recurso.name ?? ''}`.toLowerCase();
       if (!nombre.includes('ipc') && !nombre.includes('precios al consumidor')) continue;
-      return { url: recurso.url, formato, nombre: `${paquete.title} — ${recurso.name}` };
+      return {
+        url: recurso.url,
+        formato,
+        id: recurso.id,
+        nombre: `${paquete.title} — ${recurso.name}`,
+      };
     }
   }
   abortar('Encontré datasets pero ninguno con un recurso CSV/XLSX del IPC.');
@@ -185,14 +230,52 @@ function normalizarPeriodo(crudo) {
 const recurso = await ubicarRecurso();
 informar(`Usando: ${recurso.nombre} — ${recurso.url}`);
 
-if (recurso.formato !== 'CSV' && recurso.formato !== 'JSON') {
-  abortar(
-    `El recurso es ${recurso.formato} y este script solo lee CSV/JSON. ` +
-      'Agregá el parseo de planilla o pedile al organismo el recurso en CSV.',
-  );
+/**
+ * La última vez que se pudo ver el catálogo, la serie estaba publicada como
+ * planilla. Antes de rendirse con eso: si el recurso está cargado en el
+ * datastore de CKAN, el mismo contenido sale en JSON y no hace falta leer
+ * XLSX. Es la vía preferida incluso para los CSV, porque ya viene en filas.
+ */
+async function traerDelDatastore(id) {
+  if (!id) return null;
+  const consulta = new URL('/api/3/action/datastore_search', PORTAL);
+  consulta.searchParams.set('resource_id', id);
+  consulta.searchParams.set('limit', '2000');
+
+  const datos = await traerJSON(consulta);
+  const filas = datos?.result?.records;
+  if (!Array.isArray(filas) || filas.length === 0) return null;
+
+  const columnas = Object.keys(filas[0]);
+  const cPeriodo = columnas.find((c) => /periodo|período|mes|fecha/i.test(c));
+  const cValor = columnas.find((c) => /indice|índice|nivel general|valor/i.test(c));
+  if (!cPeriodo || !cValor) {
+    abortar(`El datastore no tiene columnas reconocibles. Columnas: ${columnas.join(' | ')}`);
+  }
+
+  const serie = new Map();
+  for (const fila of filas) {
+    const periodo = normalizarPeriodo(String(fila[cPeriodo] ?? '').trim());
+    const valor = Number(String(fila[cValor] ?? '').trim().replace(/\./g, '').replace(',', '.'));
+    if (!periodo || !Number.isFinite(valor) || valor <= 0) continue;
+    serie.set(periodo, Math.round(valor * 100) / 100);
+  }
+  if (serie.size === 0) abortar('El datastore se leyó pero no salió ningún período válido.');
+  informar(`Leído del datastore de CKAN: ${serie.size} períodos.`);
+  return serie;
 }
 
-const serieNueva = parsearCSV(await pedir(recurso.url, false));
+let serieNueva = await traerDelDatastore(recurso.id);
+
+if (!serieNueva) {
+  if (recurso.formato !== 'CSV' && recurso.formato !== 'JSON') {
+    abortar(
+      `El recurso es ${recurso.formato}, no está en el datastore y este script no lee planillas. ` +
+        'Agregá el parseo de XLSX o pedile al organismo el recurso en CSV.',
+    );
+  }
+  serieNueva = parsearCSV(await pedir(recurso.url, false));
+}
 
 const periodos = [...serieNueva.keys()].sort();
 informar(

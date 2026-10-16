@@ -7,29 +7,31 @@ jobs:
   sondear:
     runs-on: ubuntu-latest
     steps:
-      - name: Buscar el IPC en el portal ArcGIS
+      - name: Últimas fuentes candidatas
         run: |
           node -e '
           const UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36";
           const nota = (t) => console.log("::notice::" + String(t).replace(/\r?\n/g, "%0A").slice(0, 4000));
           const traer = async (u) => {
             const r = await fetch(u, { headers: { "user-agent": UA, accept: "*/*" } });
-            return { s: r.status, t: await r.text() };
+            return { s: r.status, tipo: r.headers.get("content-type"), t: await r.text() };
           };
-          const B = "https://estadistica.cba.gov.ar/portal/sharing/rest";
 
-          for (const q of ["IPC", "precios al consumidor"]) {
-            const u = `${B}/search?q=${encodeURIComponent(q)}&num=20&f=json`;
+          // ¿Tiene datos.gob.ar alguna serie de Córdoba?
+          try {
+            const r = await traer("https://apis.datos.gob.ar/series/api/search/?q=" + encodeURIComponent("Córdoba") + "&limit=25");
+            const j = JSON.parse(r.t);
+            nota("CORDOBA en datos.gob.ar:%0A" + (j.data ?? []).map((d) => `${d.field.id} | ${d.field.description} | ${d.dataset.title}`).join("%0A"));
+          } catch (e) { nota("CORDOBA ERR " + e.message); }
+
+          // La prensa oficial publica la variación mensual en el título.
+          for (const u of [
+            "https://prensa.cba.gov.ar/?s=precios+al+consumidor",
+            "https://prensa.cba.gov.ar/wp-json/wp/v2/posts?search=precios%20al%20consumidor&per_page=5",
+          ]) {
             try {
               const r = await traer(u);
-              const j = JSON.parse(r.t);
-              const filas = (j.results ?? []).map((x) => `${x.type} | ${x.title} | ${x.id} | ${x.url ?? ""}`);
-              nota(`BUSCAR "${q}" total=${j.total}:%0A` + filas.join("%0A"));
-            } catch (e) { nota(`BUSCAR "${q}" ERR ${e.message}`); }
-          }
-
-          for (const u of [`${B}/portals/self?f=json`, "https://estadistica.cba.gov.ar/server/rest/services?f=json"]) {
-            try { const r = await traer(u); nota(`${u} -> ${r.s}%0A${r.t.slice(0, 900)}`); }
-            catch (e) { nota(`${u} ERR ${e.message}`); }
+              nota(`${u} -> ${r.s} ${r.tipo} largo=${r.t.length}%0A` + r.t.slice(0, 600));
+            } catch (e) { nota(`${u} ERR ${e.cause?.message ?? e.message}`); }
           }
           ' --input-type=module

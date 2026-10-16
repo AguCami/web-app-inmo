@@ -58,7 +58,7 @@ pipeline viejo pisa el deploy y sirve la página en blanco.
 |---|---|
 | **Inicio** | Cuánto se cobró del mes, quién debe, qué contratos ajustan o vencen, qué unidades están vacías |
 | **Cobranzas** | La cuota de cada inquilino del mes, con el botón de cobrar, los punitorios ya calculados y el recibo en PDF |
-| **Contratos** | Alta, cronograma de actualizaciones, cuotas, el legajo de archivos y la bitácora |
+| **Contratos** | Alta, cronograma de actualizaciones, cuotas con sus recibos, el legajo de archivos y la bitácora |
 | **Propiedades** | La cartera, con su estado y el alquiler vigente |
 | **Liquidaciones** | Lo que hay que transferirle a cada propietario: cobrado menos honorarios menos gastos |
 | **Gastos** | Arreglos y servicios de cada unidad, para descontarlos de la liquidación |
@@ -105,8 +105,8 @@ abierto aparece en Inicio, porque es lo primero que se olvida.
 
 **Cobrar emite el recibo.** El botón dice «Cobrar y dar recibo» porque hace
 las dos cosas: registra la cobranza y baja el PDF para mandárselo al
-inquilino. Desde el botón **Recibos** de cada cuota se vuelven a bajar los ya
-emitidos.
+inquilino. Los ya emitidos se vuelven a bajar desde el botón **Recibos** de
+cada cuota, en el contrato — que es a donde lleva «Ver» desde Cobranzas.
 
 ![Recibo de alquiler](docs/recibo.png)
 
@@ -221,6 +221,9 @@ librería de componentes y sin librería de gráficos.
   a la derecha.
 - Listas de tarjetas en vez de grillas: se lee como una app, no como una planilla.
 - Los estados siempre llevan texto además de color.
+- En las listas donde no todas las filas traen los mismos botones, la columna
+  de acciones tiene ancho fijo: si se achicara con el contenido, los importes
+  de cada fila terminarían en una x distinta y la lista se vería chueca.
 - Anda hasta 390 px de ancho y tiene hoja de impresión para contratos y
   liquidaciones.
 

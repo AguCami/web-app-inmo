@@ -175,7 +175,7 @@ export default function ContratoDetalle() {
         </div>
 
         {vista === 'cuotas' && (
-          <Panel comoLista>
+          <Panel comoLista clase="panel--acciones-cuotas">
             {cuotas.length === 0 ? (
               <Vacio titulo="Todavía no hay cuotas emitidas" detalle="Emitilas desde la pantalla de Cobranzas." />
             ) : (

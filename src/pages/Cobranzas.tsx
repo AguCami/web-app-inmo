@@ -15,7 +15,6 @@ import {
 } from '../components/ui';
 import { IconoBuscar, IconoCobranzas } from '../components/iconos';
 import { PagoModal } from '../components/PagoModal';
-import { RecibosModal } from '../components/RecibosModal';
 import { useApp, useDb } from '../data/store';
 import {
   cobradoDeCuota,
@@ -65,7 +64,6 @@ export default function Cobranzas() {
   const [filtro, setFiltro] = useState<Filtro>('todas');
   const [busqueda, setBusqueda] = useState('');
   const [cobrando, setCobrando] = useState<Cuota | null>(null);
-  const [recibosDe, setRecibosDe] = useState<Cuota | null>(null);
   const [aviso, setAviso] = useState('');
 
   const contratoDe = (id: string) => db.contratos.find((c) => c.id === id);
@@ -187,7 +185,7 @@ export default function Cobranzas() {
           </div>
         </div>
 
-        <Panel comoLista>
+        <Panel comoLista clase="panel--acciones">
           {filtradas.length === 0 ? (
             <Vacio
               icono={<IconoCobranzas tam={24} />}
@@ -244,11 +242,6 @@ export default function Cobranzas() {
                             Cobrar
                           </button>
                         )}
-                        {cobrado > 0 && (
-                          <button className="btn btn--chico" onClick={() => setRecibosDe(c)}>
-                            Recibos
-                          </button>
-                        )}
                         <button
                           className="btn btn--fantasma btn--chico"
                           onClick={() => navegar(`/contratos/${c.contratoId}`)}
@@ -275,7 +268,6 @@ export default function Cobranzas() {
       </div>
 
       {cobrando && <PagoModal cuota={cobrando} onCerrar={() => setCobrando(null)} />}
-      {recibosDe && <RecibosModal cuota={recibosDe} onCerrar={() => setRecibosDe(null)} />}
     </>
   );
 }

@@ -240,16 +240,48 @@ comprobar(
   pdf.includes('Pago parcial: la cuota no queda cancelada'),
 );
 
-// Reimprimirlo tiene que devolver exactamente el mismo papel que se entregó.
-await pagina.waitForTimeout(400);
-await pagina.locator('button', { hasText: 'Recibos' }).first().click();
+// Los recibos se reimprimen desde el contrato, no desde Cobranzas.
+comprobar(
+  'Cobranzas no ofrece recibos: eso vive en el contrato',
+  (await pagina.locator('.item button', { hasText: 'Recibos' }).count()) === 0,
+);
+
+const ultimo = await pagina.evaluate(() => {
+  const db = JSON.parse(localStorage.getItem('gestion-alquileres/db/v3'));
+  const pago = [...db.pagos].sort((a, b) => (a.recibo ?? '').localeCompare(b.recibo ?? '')).pop();
+  const cuota = db.cuotas.find((c) => c.id === pago.cuotaId);
+  return { contratoId: cuota.contratoId, periodo: cuota.periodo };
+});
+const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+const etiqueta = `${MESES[Number(ultimo.periodo.slice(5)) - 1]} ${ultimo.periodo.slice(0, 4)}`;
+
+await pagina.goto(`${BASE}/#/contratos/${ultimo.contratoId}`, { waitUntil: 'networkidle' });
+await pagina.waitForTimeout(500);
+await pagina.locator('.item', { hasText: etiqueta }).locator('button', { hasText: 'Recibos' }).click();
 await pagina.waitForSelector('[role="dialog"]');
+
+// Reimprimirlo tiene que devolver exactamente el mismo papel que se entregó.
 const copia = await bajarPDF(() =>
-  pagina.locator('[role="dialog"] button', { hasText: 'Descargar PDF' }).first().click(),
+  pagina.locator('[role="dialog"] button', { hasText: 'Descargar PDF' }).last().click(),
 );
 comprobar('reimprimir un recibo devuelve el mismo archivo', copia.bytes.equals(reciboParcial.bytes));
 await pagina.locator('[role="dialog"] button', { hasText: 'Cerrar' }).click();
 await pagina.waitForTimeout(300);
+
+// Las filas no traen los mismos botones, así que la columna de acciones tiene
+// ancho fijo: si se achicara con el contenido, los importes quedarían chuecos.
+const bordesDeImporte = () =>
+  pagina.evaluate(
+    () => new Set(
+      [...document.querySelectorAll('.item__monto')].map((e) =>
+        Math.round(e.getBoundingClientRect().right),
+      ),
+    ).size,
+  );
+comprobar('en el contrato los importes quedan a plomo', (await bordesDeImporte()) === 1);
+await pagina.goto(`${BASE}/#/cobranzas`, { waitUntil: 'networkidle' });
+await pagina.waitForTimeout(400);
+comprobar('en Cobranzas los importes quedan a plomo', (await bordesDeImporte()) === 1);
 
 comprobar(
   'los pagos de la demo también tienen número de recibo',

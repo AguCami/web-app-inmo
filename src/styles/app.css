@@ -272,7 +272,21 @@ button.item { cursor: pointer; }
   white-space: nowrap;
 }
 .item__monto small { display: block; font-size: 11.5px; font-weight: 500; color: var(--tinta-3); font-family: var(--fuente); }
-.item__fin { display: flex; align-items: center; gap: 10px; flex: none; }
+/*
+ * La columna de acciones no trae los mismos botones en todas las filas: una
+ * cuota por cobrar tiene «Cobrar», una ya cobrada no. Si la columna se achica
+ * con el contenido, los importes de cada fila terminan en una x distinta y la
+ * lista se ve chueca. Con un ancho mínimo por lista, los botones se alinean a
+ * la derecha y la columna de plata queda a plomo.
+ */
+.item__fin {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex: none;
+  min-width: var(--acciones-min, 0);
+}
 
 /* ─────────────────────── Tarjeta de propiedad ───────────────────── */
 
@@ -607,6 +621,12 @@ select.suelto { width: auto; border-radius: var(--r-pill); background: var(--pan
 .adjunto-chip:hover { border-color: var(--acento); color: var(--acento-tinta); }
 .adjunto-chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
+/* Listas donde no todas las filas traen los mismos botones. Cada valor es el
+   ancho del juego más largo de esa lista, más un poco de aire por si la
+   tipografía no carga y el navegador cae al stack del sistema. */
+.panel--acciones { --acciones-min: 140px; }         /* Cobranzas: Cobrar + Ver */
+.panel--acciones-cuotas { --acciones-min: 172px; }  /* Contrato: Cobrar + Recibos */
+
 /* ────────────────────────── Responsivo ──────────────────────────── */
 
 /* En un panel angosto el ítem se parte en dos filas: arriba quién y qué, abajo
@@ -617,7 +637,8 @@ select.suelto { width: auto; border-radius: var(--r-pill); background: var(--pan
   .item__cuerpo { flex: 1 1 calc(100% - 56px); }
   .item__monto { text-align: left; margin-left: 56px; }
   .item__monto small { display: inline; margin-left: 6px; }
-  .item__fin { margin-left: auto; }
+  /* En el celular la columna se arma sola: el ancho mínimo solo estorba. */
+  .item__fin { margin-left: auto; min-width: 0; }
 }
 
 @media (max-width: 620px) {

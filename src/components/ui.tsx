@@ -9,6 +9,7 @@ export function Panel({
   acciones,
   children,
   comoLista,
+  clase,
 }: {
   titulo?: ReactNode;
   subtitulo?: ReactNode;
@@ -16,9 +17,11 @@ export function Panel({
   children: ReactNode;
   /** Deja que los hijos sean ítems de lista, con su propio espaciado. */
   comoLista?: boolean;
+  /** Clase extra del panel, para los retoques que dependen de la lista. */
+  clase?: string;
 }) {
   return (
-    <section className="panel">
+    <section className={`panel${clase ? ` ${clase}` : ''}`}>
       {(titulo || acciones) && (
         <header className="panel__cab">
           <div>

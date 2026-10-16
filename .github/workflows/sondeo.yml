@@ -7,26 +7,27 @@ jobs:
   sondear:
     runs-on: ubuntu-latest
     steps:
-      - name: Probar URLs que sí existen según el buscador
+      - name: De dónde saca los datos el sitio, y qué tiene datos.gob.ar
         run: |
           node -e '
           const UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36";
-          const nota = (t) => console.log("::notice::" + String(t).replace(/\r?\n/g, "%0A").slice(0, 3000));
-          const urls = [
-            "https://datosestadistica.cba.gov.ar/dataset/indic",
-            "https://datosestadistica.cba.gov.ar/dataset/indic/resource/2b4a7c60-1c8a-45b1-be8f-2bd59bfe2364",
-            "https://datosestadistica.cba.gov.ar/api/3/action/package_show?id=indic",
-            "https://estadistica.cba.gov.ar/wp-json/wp/v2/posts?search=precios&per_page=3",
-          ];
-          for (const u of urls) {
+          const nota = (t) => console.log("::notice::" + String(t).replace(/\r?\n/g, "%0A").slice(0, 4000));
+          const traer = async (u) => {
+            const r = await fetch(u, { headers: { "user-agent": UA, accept: "*/*" } });
+            return { s: r.status, t: await r.text() };
+          };
+
+          // 1. La cáscara del sitio de estadística, entera.
+          const home = await traer("https://estadistica.cba.gov.ar/");
+          nota("SHELL " + home.s + "%0A" + home.t);
+
+          // 2. La API de series de tiempo del Estado nacional.
+          for (const q of ["ipc cordoba", "precios consumidor cordoba", "cordoba nivel general"]) {
             try {
-              const res = await fetch(u, { headers: { "user-agent": UA, accept: "*/*", "accept-language": "es-AR,es;q=0.9" } });
-              const h = [...res.headers].map(([k, v]) => `${k}: ${v}`).join("%0A");
-              const t = (await res.text()).replace(/\s+/g, " ").slice(0, 400);
-              nota(`${res.status} ${u}%0A${h}%0A--%0A${t}`);
-            } catch (e) { nota(`ERR ${u} -> ${e.cause?.message ?? e.message}`); }
+              const r = await traer("https://apis.datos.gob.ar/series/api/search/?q=" + encodeURIComponent(q) + "&limit=12");
+              const j = JSON.parse(r.t);
+              const filas = (j.data ?? []).map((d) => `${d.field.id} | ${d.field.description} | ${d.dataset.title}`);
+              nota(`BUSQUEDA "${q}" (${j.meta?.[0]?.available ?? "?"}):%0A` + filas.join("%0A"));
+            } catch (e) { nota(`BUSQUEDA "${q}" ERR ${e.message}`); }
           }
           ' --input-type=module
-
-      - name: Qué ve la IP del runner
-        run: curl -s https://ipinfo.io/json | tr -d "\n" | sed "s/^/::notice::/"

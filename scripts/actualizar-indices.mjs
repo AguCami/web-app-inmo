@@ -17,7 +17,7 @@
  *   node scripts/actualizar-indices.mjs --dry-run # solo informa
  */
 import { readFile, writeFile } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
+import { appendFileSync, existsSync } from 'node:fs';
 
 const ARCHIVO = new URL('../public/indices.json', import.meta.url);
 const PORTAL = 'https://datosestadistica.cba.gov.ar';
@@ -26,17 +26,76 @@ const SOLO_INFORMAR = process.argv.includes('--dry-run');
 /** Términos con los que se busca el dataset en el portal CKAN del organismo. */
 const BUSQUEDA = 'indice precios al consumidor';
 
+/*
+ * En Actions, lo que el script imprime queda enterrado en el log del job, que
+ * solo se puede leer entrando a la web. Lo importante va además como anotación
+ * (`::notice::`, `::error::`): aparece arriba de todo en la corrida y se puede
+ * consultar por API. GitHub acepta hasta diez por nivel y por paso.
+ */
+const EN_ACTIONS = Boolean(process.env.GITHUB_ACTIONS);
+const bitacora = [];
+let notas = 0;
+
+function anotar(nivel, mensaje) {
+  bitacora.push(mensaje);
+  if (!EN_ACTIONS) return;
+  if (nivel === 'notice' && notas++ >= 9) return;
+  console.log(`::${nivel}::${mensaje.replace(/\r?\n/g, '%0A')}`);
+}
+
+function informar(mensaje) {
+  console.log(mensaje);
+  anotar('notice', mensaje);
+}
+
+/**
+ * Deja el detalle en el resumen de la corrida, que es donde se lee cómodo.
+ * Escribe sincrónico a propósito: `abortar` no debe devolver el control a
+ * quien lo llamó, y con un await de por medio el código que sigue al llamado
+ * se ejecutaría igual antes del exit.
+ */
+function volcarResumen(titulo) {
+  const destino = process.env.GITHUB_STEP_SUMMARY;
+  if (!destino) return;
+  const cuerpo = bitacora.map((l) => `- ${l}`).join('\n');
+  try {
+    appendFileSync(destino, `## ${titulo}\n\n${cuerpo}\n`);
+  } catch {
+    /* el resumen es un lujo, no vale perder la corrida por él */
+  }
+}
+
 function abortar(mensaje) {
+  anotar('error', mensaje);
   console.error(`\n✗ ${mensaje}\n`);
   console.error('El archivo no se modificó. Revisá la fuente y ajustá el parseo de este script.');
+  volcarResumen('No se pudo actualizar el IPC de Córdoba');
   process.exit(1);
 }
 
-async function traerJSON(url) {
-  const r = await fetch(url, { headers: { accept: 'application/json' } });
-  if (!r.ok) abortar(`${url} respondió ${r.status}`);
-  return r.json();
+/** Trae y descifra una respuesta, contando con claridad cómo falló si falla. */
+async function pedir(url, comoJSON) {
+  let r;
+  try {
+    r = await fetch(url, { headers: comoJSON ? { accept: 'application/json' } : {} });
+  } catch (e) {
+    // Es el modo de falla más probable: el organismo caído, el dominio movido
+    // o el certificado vencido. El mensaje de fetch solo dice "fetch failed".
+    abortar(`No pude conectarme a ${url} — ${e.cause?.message ?? e.message}`);
+  }
+  if (!r.ok) abortar(`${url} respondió ${r.status} ${r.statusText}`);
+
+  const texto = await r.text();
+  if (!comoJSON) return texto;
+  try {
+    return JSON.parse(texto);
+  } catch {
+    // Pasa cuando en vez del API contesta un portal de error o un muro de bot.
+    abortar(`${url} no devolvió JSON sino ${r.headers.get('content-type') ?? '?'}: ${texto.slice(0, 180)}`);
+  }
 }
+
+const traerJSON = (url) => pedir(url, true);
 
 /** Busca en el portal el recurso tabular de la serie del IPC. */
 async function ubicarRecurso() {
@@ -50,8 +109,8 @@ async function ubicarRecurso() {
     abortar(`El portal no devolvió datasets para "${BUSQUEDA}".`);
   }
 
-  console.log(`Datasets encontrados: ${paquetes.length}`);
-  for (const p of paquetes) console.log(`  · ${p.title ?? p.name}`);
+  informar(`Datasets encontrados: ${paquetes.length}`);
+  for (const p of paquetes.slice(0, 6)) informar(`· ${p.title ?? p.name}`);
 
   const formatosUtiles = ['CSV', 'XLSX', 'XLS', 'JSON'];
   for (const paquete of paquetes) {
@@ -124,7 +183,7 @@ function normalizarPeriodo(crudo) {
 /* ─────────────────────────────── Corrida ─────────────────────────── */
 
 const recurso = await ubicarRecurso();
-console.log(`\nUsando: ${recurso.nombre}\n  ${recurso.url}`);
+informar(`Usando: ${recurso.nombre} — ${recurso.url}`);
 
 if (recurso.formato !== 'CSV' && recurso.formato !== 'JSON') {
   abortar(
@@ -133,12 +192,12 @@ if (recurso.formato !== 'CSV' && recurso.formato !== 'JSON') {
   );
 }
 
-const respuesta = await fetch(recurso.url);
-if (!respuesta.ok) abortar(`La descarga respondió ${respuesta.status}`);
-const serieNueva = parsearCSV(await respuesta.text());
+const serieNueva = parsearCSV(await pedir(recurso.url, false));
 
 const periodos = [...serieNueva.keys()].sort();
-console.log(`Períodos leídos: ${periodos.length} (de ${periodos[0]} a ${periodos[periodos.length - 1]})`);
+informar(
+  `Períodos leídos: ${periodos.length} (de ${periodos[0]} a ${periodos[periodos.length - 1]})`,
+);
 
 const previo = existsSync(ARCHIVO)
   ? JSON.parse(await readFile(ARCHIVO, 'utf8'))
@@ -154,7 +213,8 @@ for (const [periodo, valor] of serieNueva) {
 }
 
 if (cambios === 0) {
-  console.log('\n✓ Sin novedades: la serie publicada ya estaba al día.');
+  informar('Sin novedades: la serie publicada ya estaba al día.');
+  volcarResumen('IPC de Córdoba');
   process.exit(0);
 }
 
@@ -165,11 +225,13 @@ const salida = {
   serie: [...porPeriodo.values()].sort((a, b) => a.periodo.localeCompare(b.periodo)),
 };
 
-console.log(`\n✓ ${cambios} períodos nuevos o corregidos.`);
+informar(`${cambios} períodos nuevos o corregidos.`);
 if (SOLO_INFORMAR) {
   console.log('(--dry-run: no se escribió nada)');
+  volcarResumen('IPC de Córdoba');
   process.exit(0);
 }
 
 await writeFile(ARCHIVO, `${JSON.stringify(salida, null, 2)}\n`);
-console.log('Escrito public/indices.json');
+informar('Escrito public/indices.json');
+volcarResumen('IPC de Córdoba');

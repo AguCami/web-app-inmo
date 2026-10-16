@@ -7,7 +7,7 @@ jobs:
   sondear:
     runs-on: ubuntu-latest
     steps:
-      - name: De dónde saca los datos el sitio, y qué tiene datos.gob.ar
+      - name: Buscar el IPC en el portal ArcGIS
         run: |
           node -e '
           const UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36";
@@ -16,18 +16,20 @@ jobs:
             const r = await fetch(u, { headers: { "user-agent": UA, accept: "*/*" } });
             return { s: r.status, t: await r.text() };
           };
+          const B = "https://estadistica.cba.gov.ar/portal/sharing/rest";
 
-          // 1. La cáscara del sitio de estadística, entera.
-          const home = await traer("https://estadistica.cba.gov.ar/");
-          nota("SHELL " + home.s + "%0A" + home.t);
-
-          // 2. La API de series de tiempo del Estado nacional.
-          for (const q of ["ipc cordoba", "precios consumidor cordoba", "cordoba nivel general"]) {
+          for (const q of ["IPC", "precios al consumidor"]) {
+            const u = `${B}/search?q=${encodeURIComponent(q)}&num=20&f=json`;
             try {
-              const r = await traer("https://apis.datos.gob.ar/series/api/search/?q=" + encodeURIComponent(q) + "&limit=12");
+              const r = await traer(u);
               const j = JSON.parse(r.t);
-              const filas = (j.data ?? []).map((d) => `${d.field.id} | ${d.field.description} | ${d.dataset.title}`);
-              nota(`BUSQUEDA "${q}" (${j.meta?.[0]?.available ?? "?"}):%0A` + filas.join("%0A"));
-            } catch (e) { nota(`BUSQUEDA "${q}" ERR ${e.message}`); }
+              const filas = (j.results ?? []).map((x) => `${x.type} | ${x.title} | ${x.id} | ${x.url ?? ""}`);
+              nota(`BUSCAR "${q}" total=${j.total}:%0A` + filas.join("%0A"));
+            } catch (e) { nota(`BUSCAR "${q}" ERR ${e.message}`); }
+          }
+
+          for (const u of [`${B}/portals/self?f=json`, "https://estadistica.cba.gov.ar/server/rest/services?f=json"]) {
+            try { const r = await traer(u); nota(`${u} -> ${r.s}%0A${r.t.slice(0, 900)}`); }
+            catch (e) { nota(`${u} ERR ${e.message}`); }
           }
           ' --input-type=module

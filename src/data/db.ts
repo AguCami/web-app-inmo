@@ -19,11 +19,12 @@ export function cargarBase(): BaseDatos {
         // Repara bases que quedaron con huérfanos de versiones anteriores,
         // cuando borrar un contrato no arrastraba sus cuotas.
         const { db, huboCambios, archivosHuerfanos } = sanear(datos);
-        if (huboCambios) {
-          guardarBase(db);
+        const conNombre = migrarNombre(db);
+        if (huboCambios || conNombre !== db) {
+          guardarBase(conNombre);
           void borrarArchivos(archivosHuerfanos);
         }
-        return db;
+        return conNombre;
       }
     }
   } catch {
@@ -33,6 +34,21 @@ export function cargarBase(): BaseDatos {
   const demo = crearBaseDemo();
   guardarBase(demo);
   return demo;
+}
+
+/**
+ * La demo salió con un nombre de fantasía inventado y quedó guardado en los
+ * navegadores que la abrieron antes. Si sigue ahí, se reemplaza por el real;
+ * si el usuario ya puso el suyo, no se toca.
+ */
+const NOMBRE_DEMO_VIEJO = 'Camino Propiedades';
+
+function migrarNombre(db: BaseDatos): BaseDatos {
+  if (db.configuracion.nombre !== NOMBRE_DEMO_VIEJO) return db;
+  return {
+    ...db,
+    configuracion: { ...db.configuracion, nombre: 'Inversiones Generales M & M' },
+  };
 }
 
 export function guardarBase(db: BaseDatos): void {

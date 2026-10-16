@@ -28,6 +28,13 @@ Arranca con una administración de ejemplo: 14 unidades, 12 contratos activos, u
 año de cobranzas y liquidaciones. Desde **Ajustes → Respaldo** se vacía para
 cargar datos reales.
 
+### El logo
+
+Dejá el archivo en **`public/logo.png`** y aparece en el menú. Mientras no esté,
+la app usa un ícono genérico: no queda un cuadro roto ni un hueco.
+
+El nombre, el CUIT, el teléfono y el email se editan en **Ajustes → Mis datos**.
+
 Ya está el workflow de GitHub Pages. Falta un solo paso a mano, una vez:
 **Settings → Pages → Source: «GitHub Actions»**.
 

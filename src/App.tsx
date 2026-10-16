@@ -14,6 +14,8 @@ import { useApp, useDb } from './data/store';
 import { saldoDeCuota } from './domain/cobranzas';
 import { hoy, periodoActual } from './domain/util';
 
+import { Logo } from './components/Logo';
+
 import Inicio from './pages/Inicio';
 import Propiedades from './pages/Propiedades';
 import Contratos from './pages/Contratos';
@@ -57,12 +59,10 @@ export default function App() {
     <div className="app">
       <nav className="rail no-imprimir" aria-label="Navegación principal">
         <div className="marca">
-          <span className="marca__logo" aria-hidden="true">
-            <IconoPanel tam={19} />
-          </span>
+          <Logo />
           <span className="marca__texto">
             <strong>{db.configuracion.nombre || 'Alquileres'}</strong>
-            <span>Gestión de alquileres</span>
+            <span>Inmobiliaria</span>
           </span>
         </div>
 

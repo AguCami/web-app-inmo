@@ -270,10 +270,11 @@ export function crearBaseDemo(): BaseDatos {
   const db: BaseDatos = {
     version: VERSION_BD,
     configuracion: {
-      nombre: 'Camino Propiedades',
-      cuit: '30-71588420-6',
-      telefono: '351 486-5500',
-      email: 'hola@caminopropiedades.com.ar',
+      nombre: 'Inversiones Generales M & M',
+      // Reemplazar por los datos reales: salen impresos en las liquidaciones.
+      cuit: '',
+      telefono: '',
+      email: '',
       comisionAdminPctDefault: 8,
       punitorioDiarioPctDefault: 0.15,
       diasAvisoVencimiento: 5,

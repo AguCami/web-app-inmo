@@ -1,5 +1,4 @@
-# Temporal: averigua qué endpoints contesta el portal del organismo.
-# Se borra apenas se sepa cuál es el bueno.
+# Temporal: busca dónde publica hoy el IPC la Dirección de Estadística.
 name: Sondeo del portal
 
 on:
@@ -9,26 +8,35 @@ jobs:
   sondear:
     runs-on: ubuntu-latest
     steps:
-      - name: Probar rutas
+      - name: Buscar la página del IPC
         run: |
           node -e '
           const UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36";
-          const urls = [
-            "https://datosestadistica.cba.gov.ar/",
-            "https://datosestadistica.cba.gov.ar/api/3/action/package_search?q=ipc&rows=5",
-            "https://datosestadistica.cba.gov.ar/dataset/?q=ipc",
-            "https://estadistica.cba.gov.ar/",
-            "https://www.estadisticacordoba.gob.ar/",
-          ];
-          for (const u of urls) {
-            for (const conUA of [true, false]) {
-              try {
-                const res = await fetch(u, { redirect: "manual", headers: conUA ? { "user-agent": UA, accept: "*/*" } : {} });
-                const t = (await res.text()).replace(/\s+/g, " ").slice(0, 150);
-                console.log(`::notice::[UA=${conUA}] ${res.status} ${u} -> ${res.headers.get("location") ?? res.headers.get("content-type")} :: ${t}`);
-              } catch (e) {
-                console.log(`::notice::[UA=${conUA}] ERR ${u} -> ${e.cause?.message ?? e.message}`);
-              }
+          const nota = (t) => console.log("::notice::" + String(t).replace(/\r?\n/g, "%0A").slice(0, 3000));
+
+          async function traer(u) {
+            const res = await fetch(u, { headers: { "user-agent": UA, accept: "*/*" } });
+            return { status: res.status, tipo: res.headers.get("content-type"), texto: await res.text() };
+          }
+
+          function enlaces(html, base) {
+            const out = new Set();
+            for (const m of html.matchAll(/href="([^"]+)"/g)) {
+              try { out.add(new URL(m[1], base).href); } catch {}
             }
+            return [...out];
+          }
+
+          const inicio = "https://estadistica.cba.gov.ar/";
+          const r = await traer(inicio);
+          nota(`HOME ${r.status} ${r.tipo} largo=${r.texto.length}`);
+          const todos = enlaces(r.texto, inicio);
+          const precios = todos.filter((u) => /precio|ipc|consumidor|canasta/i.test(u));
+          nota("CANDIDATOS:%0A" + precios.slice(0, 25).join("%0A"));
+          nota("MUESTRA DE ENLACES:%0A" + todos.slice(0, 40).join("%0A"));
+
+          for (const otro of ["https://datosabiertos.cba.gov.ar/", "https://gobiernoabierto.cordoba.gob.ar/"]) {
+            try { const x = await traer(otro); nota(`${otro} -> ${x.status} ${x.tipo}`); }
+            catch (e) { nota(`${otro} -> ERR ${e.cause?.message ?? e.message}`); }
           }
           ' --input-type=module

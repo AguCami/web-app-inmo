@@ -1,4 +1,3 @@
-# Temporal: busca dónde publica hoy el IPC la Dirección de Estadística.
 name: Sondeo del portal
 
 on:
@@ -8,35 +7,26 @@ jobs:
   sondear:
     runs-on: ubuntu-latest
     steps:
-      - name: Buscar la página del IPC
+      - name: Probar URLs que sí existen según el buscador
         run: |
           node -e '
           const UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36";
           const nota = (t) => console.log("::notice::" + String(t).replace(/\r?\n/g, "%0A").slice(0, 3000));
-
-          async function traer(u) {
-            const res = await fetch(u, { headers: { "user-agent": UA, accept: "*/*" } });
-            return { status: res.status, tipo: res.headers.get("content-type"), texto: await res.text() };
-          }
-
-          function enlaces(html, base) {
-            const out = new Set();
-            for (const m of html.matchAll(/href="([^"]+)"/g)) {
-              try { out.add(new URL(m[1], base).href); } catch {}
-            }
-            return [...out];
-          }
-
-          const inicio = "https://estadistica.cba.gov.ar/";
-          const r = await traer(inicio);
-          nota(`HOME ${r.status} ${r.tipo} largo=${r.texto.length}`);
-          const todos = enlaces(r.texto, inicio);
-          const precios = todos.filter((u) => /precio|ipc|consumidor|canasta/i.test(u));
-          nota("CANDIDATOS:%0A" + precios.slice(0, 25).join("%0A"));
-          nota("MUESTRA DE ENLACES:%0A" + todos.slice(0, 40).join("%0A"));
-
-          for (const otro of ["https://datosabiertos.cba.gov.ar/", "https://gobiernoabierto.cordoba.gob.ar/"]) {
-            try { const x = await traer(otro); nota(`${otro} -> ${x.status} ${x.tipo}`); }
-            catch (e) { nota(`${otro} -> ERR ${e.cause?.message ?? e.message}`); }
+          const urls = [
+            "https://datosestadistica.cba.gov.ar/dataset/indic",
+            "https://datosestadistica.cba.gov.ar/dataset/indic/resource/2b4a7c60-1c8a-45b1-be8f-2bd59bfe2364",
+            "https://datosestadistica.cba.gov.ar/api/3/action/package_show?id=indic",
+            "https://estadistica.cba.gov.ar/wp-json/wp/v2/posts?search=precios&per_page=3",
+          ];
+          for (const u of urls) {
+            try {
+              const res = await fetch(u, { headers: { "user-agent": UA, accept: "*/*", "accept-language": "es-AR,es;q=0.9" } });
+              const h = [...res.headers].map(([k, v]) => `${k}: ${v}`).join("%0A");
+              const t = (await res.text()).replace(/\s+/g, " ").slice(0, 400);
+              nota(`${res.status} ${u}%0A${h}%0A--%0A${t}`);
+            } catch (e) { nota(`ERR ${u} -> ${e.cause?.message ?? e.message}`); }
           }
           ' --input-type=module
+
+      - name: Qué ve la IP del runner
+        run: curl -s https://ipinfo.io/json | tr -d "\n" | sed "s/^/::notice::/"

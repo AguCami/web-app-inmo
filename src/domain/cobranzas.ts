@@ -109,6 +109,30 @@ export function numerarRecibos(pagos: Pago[]): Pago[] {
   return pagos.map((p) => (p.recibo ? p : { ...p, recibo: numeros.get(p.id) }));
 }
 
+/**
+ * Las cuotas anteriores del mismo contrato que todavía deben algo.
+ *
+ * Importa por una razón concreta: el artículo 899 inc. b) del Código Civil y
+ * Comercial presume que, si se da recibo por un período, los anteriores están
+ * cancelados. Dar el recibo de noviembre con octubre impago es, salvo prueba
+ * en contrario, regalar octubre. Por eso la app frena el cobro, y si igual se
+ * cobra, el recibo sale con la reserva del artículo 898 nombrando lo que se
+ * adeuda.
+ *
+ * Es por contrato: un inquilino con dos unidades tiene dos deudas distintas.
+ */
+export function cuotasAdeudadasAntes(cuota: Cuota, cuotas: Cuota[], pagos: Pago[]): Cuota[] {
+  return cuotas
+    .filter(
+      (c) =>
+        c.contratoId === cuota.contratoId &&
+        c.periodo < cuota.periodo &&
+        c.estado !== 'anulada' &&
+        saldoDeCuota(c, pagos) > 0.01,
+    )
+    .sort((a, b) => a.periodo.localeCompare(b.periodo));
+}
+
 /** Orden estable de los pagos de una cuota: por fecha y, a igual fecha, por id. */
 export function pagosOrdenados(pagos: Pago[], cuotaId: string): Pago[] {
   return pagosDeCuota(pagos, cuotaId).sort(

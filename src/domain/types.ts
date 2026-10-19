@@ -176,6 +176,12 @@ export interface Pago {
   recibo?: string;
   /** Referencia de la transferencia o del comprobante que trajo el inquilino. */
   comprobante?: string;
+  /**
+   * Períodos anteriores que estaban impagos al cobrar este. Se guarda, no se
+   * recalcula: el recibo tiene que decir lo que decía el día que se entregó,
+   * aunque después el inquilino se ponga al día.
+   */
+  periodosAdeudados?: Periodo[];
   /** Punitorios incluidos en este pago. */
   punitorios?: number;
   notas?: string;

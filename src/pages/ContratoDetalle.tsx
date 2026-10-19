@@ -450,7 +450,13 @@ export default function ContratoDetalle() {
         />
       )}
 
-      {cobrando && <PagoModal cuota={cobrando} onCerrar={() => setCobrando(null)} />}
+      {cobrando && (
+        <PagoModal
+          cuota={cobrando}
+          onCerrar={() => setCobrando(null)}
+          onIrACuota={setCobrando}
+        />
+      )}
       {recibosDe && <RecibosModal cuota={recibosDe} onCerrar={() => setRecibosDe(null)} />}
 
       {novedadAbierta && (

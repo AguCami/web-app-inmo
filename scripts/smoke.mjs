@@ -203,9 +203,10 @@ const periodoConDeuda = await pagina.evaluate(() => {
   const db = JSON.parse(localStorage.getItem('gestion-alquileres/db/v3'));
   const cobrado = new Map();
   for (const p of db.pagos) cobrado.set(p.cuotaId, (cobrado.get(p.cuotaId) ?? 0) + p.monto);
-  const conSaldo = db.cuotas.find(
-    (c) => c.estado !== 'anulada' && c.total - (cobrado.get(c.id) ?? 0) > 1,
-  );
+  // La más vieja impaga: cualquier otra estaría frenada porque antes debe.
+  const conSaldo = db.cuotas
+    .filter((c) => c.estado !== 'anulada' && c.total - (cobrado.get(c.id) ?? 0) > 1)
+    .sort((a, b) => a.periodo.localeCompare(b.periodo))[0];
   return conSaldo?.periodo ?? null;
 });
 comprobar('queda alguna cuota con saldo para cobrar', Boolean(periodoConDeuda), periodoConDeuda ?? '');
@@ -292,7 +293,63 @@ comprobar(
   }),
 );
 
-/* ── 9. Sin desborde horizontal en el celular ────────────────────── */
+/* ── 9. No se cobra un período si debe los anteriores ───────────── */
+const conAtraso = await pagina.evaluate(() => {
+  const db = JSON.parse(localStorage.getItem('gestion-alquileres/db/v3'));
+  const cobrado = new Map();
+  for (const x of db.pagos) cobrado.set(x.cuotaId, (cobrado.get(x.cuotaId) ?? 0) + x.monto);
+  const impagas = db.cuotas.filter(
+    (c) => c.estado !== 'anulada' && c.total - (cobrado.get(c.id) ?? 0) > 1,
+  );
+  for (const c of impagas.sort((a, b) => b.periodo.localeCompare(a.periodo))) {
+    const antes = impagas.filter((o) => o.contratoId === c.contratoId && o.periodo < c.periodo);
+    if (!antes.length) continue;
+    const contrato = db.contratos.find((x) => x.id === c.contratoId);
+    return {
+      periodo: c.periodo,
+      inquilino: db.personas.find((x) => x.id === contrato.inquilinoId).nombre,
+      atrasos: antes.length,
+    };
+  }
+  return null;
+});
+comprobar('hay un caso con períodos anteriores impagos', Boolean(conAtraso), conAtraso?.periodo ?? '');
+
+await pagina.selectOption('select[aria-label="Período"]', conAtraso.periodo);
+await pagina.waitForTimeout(300);
+await pagina.locator('.buscador input').fill(conAtraso.inquilino);
+await pagina.waitForTimeout(400);
+await pagina.locator('button', { hasText: 'Cobrar' }).first().click();
+await pagina.waitForSelector('[role="dialog"]');
+await pagina.waitForTimeout(300);
+
+const botonCobrar = pagina.locator('[role="dialog"] button', { hasText: 'Cobrar y dar recibo' });
+comprobar('cobrar queda bloqueado si debe los anteriores', !(await botonCobrar.isEnabled()));
+comprobar(
+  'y dice cuáles son y por qué',
+  /art\. 899/.test(await pagina.locator('[role="dialog"] .nota--critico').first().textContent()),
+);
+
+// El atajo lleva a cobrar la más vieja, que sí se puede.
+await pagina.locator('[role="dialog"] button', { hasText: 'primero' }).click();
+await pagina.waitForTimeout(400);
+comprobar('ofrece saltar a la más vieja, que no está frenada', await botonCobrar.isEnabled());
+await pagina.locator('[role="dialog"] button', { hasText: 'Cancelar' }).click();
+await pagina.waitForTimeout(300);
+
+// Se puede forzar, y entonces el recibo sale con la reserva.
+await pagina.locator('button', { hasText: 'Cobrar' }).first().click();
+await pagina.waitForSelector('[role="dialog"]');
+await pagina.locator('[role="dialog"] input[type="checkbox"]').check();
+await pagina.waitForTimeout(200);
+comprobar('se puede forzar dejando constancia', await botonCobrar.isEnabled());
+const reciboConReserva = await bajarPDF(() => botonCobrar.click());
+comprobar(
+  'el recibo forzado deja constancia de la deuda anterior',
+  reciboConReserva.bytes.toString('latin1').includes('quedan períodos anteriores impagos'),
+);
+
+/* ── 10. Sin desborde horizontal en el celular ───────────────────── */
 const movil = await navegador.newPage({ viewport: { width: 390, height: 844 } });
 let desborda = false;
 for (const [, ruta] of RUTAS) {
@@ -303,7 +360,7 @@ for (const [, ruta] of RUTAS) {
 }
 comprobar('sin desborde horizontal en 390 px', !desborda);
 
-/* ── 10. Borrar arrastra lo que dependía, y pide confirmación ────── */
+/* ── 11. Borrar arrastra lo que dependía, y pide confirmación ────── */
 const conteos = () =>
   pagina.evaluate(() => {
     const db = JSON.parse(localStorage.getItem('gestion-alquileres/db/v3'));
@@ -363,7 +420,7 @@ const archivosQueQuedan = await pagina.evaluate(
 );
 comprobar('borrar también limpia los archivos de IndexedDB', archivosQueQuedan === 0, `${archivosQueQuedan} quedan`);
 
-/* ── 11. Una base inconsistente se repara sola al abrir ─────────── */
+/* ── 12. Una base inconsistente se repara sola al abrir ─────────── */
 await pagina.evaluate(() => {
   const CLAVE = 'gestion-alquileres/db/v3';
   localStorage.removeItem(CLAVE);

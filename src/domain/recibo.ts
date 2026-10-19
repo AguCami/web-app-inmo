@@ -54,6 +54,22 @@ function recortar(texto: string, ancho: number, tam: number, negrita = false): s
   return `${corte}…`;
 }
 
+/** Parte el texto en renglones que entren en el ancho dado. */
+function envolver(texto: string, ancho: number, tam: number): string[] {
+  const lineas: string[] = [];
+  let actual = '';
+  for (const palabra of texto.split(' ')) {
+    const tentativa = actual ? `${actual} ${palabra}` : palabra;
+    if (anchoTexto(tentativa, tam) <= ancho || !actual) actual = tentativa;
+    else {
+      lineas.push(actual);
+      actual = palabra;
+    }
+  }
+  if (actual) lineas.push(actual);
+  return lineas;
+}
+
 /** Un dato con su etiqueta arriba, que es como se leen los formularios. */
 function campo(doc: Documento, etiqueta: string, valor: string, x: number, y: number, ancho: number): void {
   doc.texto(etiqueta.toUpperCase(), x, y, { tam: 7.5, color: TENUE });
@@ -108,16 +124,26 @@ export function construirRecibo(d: DatosRecibo): Uint8Array {
 
   y += 42;
   doc.texto('LA CANTIDAD DE', MARGEN, y, { tam: 7.5, color: TENUE });
-  const enLetras = montoEnLetras(total, cuota.moneda);
-  doc.texto(
-    recortar(enLetras.charAt(0).toUpperCase() + enLetras.slice(1), DERECHA - MARGEN, 11),
-    MARGEN,
-    y + 16,
-    { tam: 11, color: TINTA },
-  );
-  doc.texto(formatearMoneda(total, cuota.moneda), DERECHA, y + 16, { tam: 15, negrita: true, color: TINTA, alinear: 'der' });
+  doc.texto(formatearMoneda(total, cuota.moneda), DERECHA, y + 3, {
+    tam: 15, negrita: true, color: TINTA, alinear: 'der',
+  });
 
-  y += 40;
+  // El importe en letras va en su propio renglón y a todo el ancho: al lado
+  // del número se pisaban apenas el monto pasaba el millón. Si no entra en
+  // uno, se parte en dos, que alcanza para cualquier importe real.
+  const enLetras = montoEnLetras(total, cuota.moneda);
+  const renglones = envolver(
+    enLetras.charAt(0).toUpperCase() + enLetras.slice(1),
+    DERECHA - MARGEN,
+    11,
+  );
+  let yLetras = y + 20;
+  for (const renglon of renglones.slice(0, 2)) {
+    doc.texto(renglon, MARGEN, yLetras, { tam: 11, color: TINTA });
+    yLetras += 14;
+  }
+
+  y = yLetras + 10;
   campo(
     doc,
     'En concepto de',
@@ -167,6 +193,31 @@ export function construirRecibo(d: DatosRecibo): Uint8Array {
   if (pago.comprobante) campo(doc, 'Comprobante', pago.comprobante, MARGEN + 260, y, 240);
 
   y += 42;
+
+  // Reserva del art. 898 CCyC. Sin esto, dar recibo por un período hace
+  // presumir que los anteriores están pagados (art. 899 inc. b).
+  const adeudados = pago.periodosAdeudados ?? [];
+  if (adeudados.length > 0) {
+    const alto = 54;
+    doc.rect(MARGEN, y, DERECHA - MARGEN, alto, AVISO);
+    doc.texto('Se deja constancia de que quedan períodos anteriores impagos', MARGEN + 16, y + 17, {
+      tam: 10, negrita: true, color: AVISO_TINTA,
+    });
+    doc.texto(
+      recortar(
+        adeudados.map((p) => formatearPeriodoLargo(p)).join(' · '),
+        DERECHA - MARGEN - 32,
+        9,
+      ),
+      MARGEN + 16, y + 31, { tam: 9, color: AVISO_TINTA },
+    );
+    doc.texto(
+      'Este recibo no cancela esos períodos ni implica conformidad con ellos.',
+      MARGEN + 16, y + 44, { tam: 8.5, color: AVISO_TINTA },
+    );
+    y += alto + 16;
+  }
+
   if (d.saldoPosterior > 0.01) {
     doc.rect(MARGEN, y, DERECHA - MARGEN, 40, AVISO);
     doc.texto('Pago parcial: la cuota no queda cancelada', MARGEN + 16, y + 17, {

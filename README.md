@@ -57,7 +57,7 @@ pipeline viejo pisa el deploy y sirve la página en blanco.
 | Pantalla | Para qué |
 |---|---|
 | **Inicio** | Cuánto se cobró del mes, quién debe, qué contratos ajustan o vencen, qué unidades están vacías |
-| **Cobranzas** | La cuota de cada inquilino del mes, con el botón de cobrar, los punitorios ya calculados y el recibo en PDF |
+| **Cobranzas** | La cuota de cada inquilino del mes, con el botón de cobrar, los punitorios ya calculados y el recibo en PDF. No deja cobrar un mes si debe los anteriores |
 | **Contratos** | Alta, cronograma de actualizaciones, cuotas con sus recibos, el legajo de archivos y la bitácora |
 | **Propiedades** | La cartera, con su estado y el alquiler vigente |
 | **Liquidaciones** | Lo que hay que transferirle a cada propietario: cobrado menos honorarios menos gastos |
@@ -118,6 +118,23 @@ de la transferencia que trae el inquilino.
 Un recibo por un pago parcial que no aclara el saldo parece cancelar la cuota
 entera, así que cuando queda algo sin pagar el PDF lo dice en un recuadro, con
 el monto y el período.
+
+**No se cobra un mes si debe los anteriores.** El artículo 899 inc. b del
+Código Civil y Comercial presume, salvo prueba en contrario, que si se da
+recibo por un período **los anteriores están cancelados**. Dar el recibo de
+noviembre con octubre impago es, en los hechos, regalar octubre. Así que la
+app frena el cobro, dice cuánto y de qué meses se adeuda, y ofrece ir a
+cobrar el más viejo de un clic.
+
+Frenar sin salida sería peor: hay casos legítimos —un plan de pago, un
+período en discusión— en los que se cobra igual. Se puede, tildando una
+casilla, y entonces el recibo sale con la reserva del artículo 898 nombrando
+los períodos impagos y aclarando que no quedan cancelados. Esos períodos se
+guardan en el pago, no se recalculan: el recibo tiene que decir lo que decía
+el día que se entregó, aunque el inquilino después se ponga al día.
+
+La regla es **por contrato**: un inquilino con dos unidades tiene dos deudas
+distintas.
 
 **El PDF se escribe a mano, sin librería.** `domain/pdf.ts` son 250 líneas que
 hacen lo que un recibo necesita: una hoja A4, las tipografías base que todo

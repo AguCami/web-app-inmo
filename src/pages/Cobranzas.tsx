@@ -267,7 +267,13 @@ export default function Cobranzas() {
         </Panel>
       </div>
 
-      {cobrando && <PagoModal cuota={cobrando} onCerrar={() => setCobrando(null)} />}
+      {cobrando && (
+        <PagoModal
+          cuota={cobrando}
+          onCerrar={() => setCobrando(null)}
+          onIrACuota={setCobrando}
+        />
+      )}
     </>
   );
 }

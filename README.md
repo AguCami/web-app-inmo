@@ -280,6 +280,32 @@ librería de componentes y sin librería de gráficos.
 - Anda hasta 390 px de ancho y tiene hoja de impresión para contratos y
   liquidaciones.
 
+## En la lista, decidido pero sin hacer
+
+Cosas que ya se evaluaron y están esperando el momento, con lo que se averiguó
+para no volver a discutirlo desde cero.
+
+**Aviso de cobranza por WhatsApp.** Un botón que abra WhatsApp con el mensaje
+ya escrito: «Hola Carolina, el alquiler de noviembre es $X y vence el 10».
+Se hace con un enlace `wa.me`, que es **gratis**: no necesita la API de
+WhatsApp Business, ni cuenta de empresa, ni registro. El mensaje lo manda la
+persona, no el sistema. La API paga —por mensaje enviado desde julio de 2025—
+haría falta solo el día que se quiera que salgan solos, sin que nadie los
+mire.
+
+**Cuentas y base de datos en Supabase.** El esquema está escrito y probado
+contra un Postgres de verdad (`npm run esquema`), y la capa de la app también
+(`npm run sincro`). Falta crear el proyecto en Supabase y cargar las dos
+variables de `.env.ejemplo`. Mientras no estén, la app corre en modo demo y no
+pide login, que es como se publica en GitHub Pages.
+
+**Estado de cuenta del inquilino en PDF**, para cuando alguien pide «mandame
+todo lo que debo». La maquinaria de PDF ya está; falta el documento.
+
+**El CUIT, el teléfono y el email de la inmobiliaria** siguen en blanco a
+propósito: se imprimen en los recibos y en las liquidaciones, así que no se
+inventan. Se cargan en Ajustes → Mis datos.
+
 ## Lo que no hace
 
 - **Un solo usuario, un solo navegador.** No hay login ni sincronización.

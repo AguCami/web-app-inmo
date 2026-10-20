@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Campo, Modal, Nota } from './ui';
-import { emitirRecibo } from '../data/recibos';
+import { emitirRecibo } from '../data/documentos';
 import { useApp, useDb } from '../data/store';
 import { cuotasAdeudadasAntes, punitoriosDeCuota, saldoDeCuota } from '../domain/cobranzas';
 import type { Cuota, MedioPago } from '../domain/types';

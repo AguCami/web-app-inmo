@@ -12,7 +12,8 @@
     "typecheck": "tsc -b",
     "indices": "node scripts/actualizar-indices.mjs",
     "esquema": "bash scripts/probar-esquema.sh",
-    "sincro": "node scripts/probar-sincronizacion.mjs"
+    "sincro": "node scripts/probar-sincronizacion.mjs",
+    "documentos": "node scripts/probar-documentos.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.118.0",

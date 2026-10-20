@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Item, Modal, Vacio } from './ui';
 import { useDb } from '../data/store';
-import { emitirRecibo } from '../data/recibos';
+import { emitirRecibo } from '../data/documentos';
 import { pagosOrdenados } from '../domain/cobranzas';
 import type { Cuota } from '../domain/types';
 import { formatearFecha, formatearMoneda, formatearPeriodo } from '../domain/util';

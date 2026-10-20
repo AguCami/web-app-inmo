@@ -349,7 +349,43 @@ comprobar(
   reciboConReserva.bytes.toString('latin1').includes('quedan períodos anteriores impagos'),
 );
 
-/* ── 10. Sin desborde horizontal en el celular ───────────────────── */
+/* ── 10. La liquidación al propietario, en PDF ───────────────────── */
+await pagina.goto(`${BASE}/#/liquidaciones`, { waitUntil: 'networkidle' });
+await pagina.waitForTimeout(500);
+await pagina.locator('.item').first().click();
+await pagina.waitForSelector('[role="dialog"]');
+await pagina.waitForTimeout(300);
+
+const liquidacion = await bajarPDF(() =>
+  pagina.locator('[role="dialog"] button', { hasText: 'Descargar PDF' }).click(),
+);
+const textoLiq = liquidacion.bytes.toString('latin1');
+comprobar(
+  'la liquidación se baja como PDF',
+  textoLiq.startsWith('%PDF-1.4') && textoLiq.trimEnd().endsWith('%%EOF'),
+  `${liquidacion.bytes.length} bytes`,
+);
+comprobar(
+  'el archivo se llama por su número y su propietario',
+  /^Liquidacion LIQ-[\d-]+ - .+\.pdf$/.test(liquidacion.nombre),
+  liquidacion.nombre,
+);
+// Chrome descarta el nombre entero si tiene un solo carácter fuera de ASCII:
+// el archivo se baja como "download", sin nombre ni extensión.
+comprobar(
+  'y no tiene acentos, que harían que el navegador lo descarte',
+  /^[\x20-\x7E]+$/.test(liquidacion.nombre),
+);
+comprobar('dice el neto a transferir', textoLiq.includes('NETO A TRANSFERIR'));
+comprobar(
+  'y explica que se rinde lo cobrado, no lo facturado',
+  textoLiq.includes('Se liquida lo efectivamente cobrado'),
+);
+await pagina.locator('[role="dialog"] button[aria-label], [role="dialog"] button').last().isVisible();
+await pagina.keyboard.press('Escape');
+await pagina.waitForTimeout(300);
+
+/* ── 11. Sin desborde horizontal en el celular ───────────────────── */
 const movil = await navegador.newPage({ viewport: { width: 390, height: 844 } });
 let desborda = false;
 for (const [, ruta] of RUTAS) {
@@ -360,7 +396,7 @@ for (const [, ruta] of RUTAS) {
 }
 comprobar('sin desborde horizontal en 390 px', !desborda);
 
-/* ── 11. Borrar arrastra lo que dependía, y pide confirmación ────── */
+/* ── 12. Borrar arrastra lo que dependía, y pide confirmación ────── */
 const conteos = () =>
   pagina.evaluate(() => {
     const db = JSON.parse(localStorage.getItem('gestion-alquileres/db/v3'));
@@ -420,7 +456,7 @@ const archivosQueQuedan = await pagina.evaluate(
 );
 comprobar('borrar también limpia los archivos de IndexedDB', archivosQueQuedan === 0, `${archivosQueQuedan} quedan`);
 
-/* ── 12. Una base inconsistente se repara sola al abrir ─────────── */
+/* ── 13. Una base inconsistente se repara sola al abrir ─────────── */
 await pagina.evaluate(() => {
   const CLAVE = 'gestion-alquileres/db/v3';
   localStorage.removeItem(CLAVE);

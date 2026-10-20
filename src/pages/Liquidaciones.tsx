@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Encabezado } from '../components/Encabezado';
 import { Avatar, Dato, Item, Modal, Panel, Pastilla, Segmentos, Vacio } from '../components/ui';
+import { emitirLiquidacion } from '../data/documentos';
 import { IconoLiquidaciones } from '../components/iconos';
 import { useApp, useDb } from '../data/store';
 import { ETIQUETA_ITEM_LIQUIDACION } from '../domain/liquidaciones';
@@ -186,6 +187,7 @@ function DetalleLiquidacion({
 }) {
   const db = useDb();
   const propietario = db.personas.find((p) => p.id === liquidacion.propietarioId);
+  const [bajando, setBajando] = useState(false);
 
   return (
     <Modal
@@ -200,7 +202,17 @@ function DetalleLiquidacion({
               Eliminar
             </button>
           )}
-          <button className="btn btn--fantasma" onClick={() => window.print()}>Imprimir</button>
+          <button
+            className="btn"
+            disabled={bajando}
+            onClick={async () => {
+              setBajando(true);
+              await emitirLiquidacion(db, liquidacion);
+              setBajando(false);
+            }}
+          >
+            {bajando ? 'Armando el PDF…' : 'Descargar PDF'}
+          </button>
           {liquidacion.estado === 'borrador' && (
             <button className="btn btn--primario" onClick={() => onCambiarEstado('aprobada')}>
               Aprobar

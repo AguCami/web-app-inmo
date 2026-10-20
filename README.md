@@ -26,6 +26,9 @@ npm run dev        # http://localhost:5173
 | `npm run preview` | Sirve `dist/` en http://127.0.0.1:4173 |
 | `npm run smoke` | Verificación de humo con Playwright (requiere `preview` levantado) |
 | `npm run indices` | Trae el IPC de Córdoba publicado y actualiza `public/indices.json` |
+| `npm run documentos` | Prueba el importe en letras y los nombres de archivo |
+| `npm run sincro` | Prueba el cálculo de diferencias contra Supabase |
+| `npm run esquema` | Prueba el esquema SQL contra un Postgres efímero |
 
 Arranca con una administración de ejemplo: 14 unidades, 12 contratos activos, un
 año de cobranzas y liquidaciones. Desde **Ajustes → Respaldo** se vacía para
@@ -60,7 +63,7 @@ pipeline viejo pisa el deploy y sirve la página en blanco.
 | **Cobranzas** | La cuota de cada inquilino del mes, con el botón de cobrar, los punitorios ya calculados y el recibo en PDF. No deja cobrar un mes si debe los anteriores |
 | **Contratos** | Alta, cronograma de actualizaciones, cuotas con sus recibos, el legajo de archivos y la bitácora |
 | **Propiedades** | La cartera, con su estado y el alquiler vigente |
-| **Liquidaciones** | Lo que hay que transferirle a cada propietario: cobrado menos honorarios menos gastos |
+| **Liquidaciones** | Lo que hay que transferirle a cada propietario: cobrado menos honorarios menos gastos, con su PDF |
 | **Gastos** | Arreglos y servicios de cada unidad, para descontarlos de la liquidación |
 | **Personas** | Propietarios, inquilinos y garantes |
 | **Ajustes** | Tus datos, los índices mes a mes y el respaldo |
@@ -136,12 +139,29 @@ el día que se entregó, aunque el inquilino después se ponga al día.
 La regla es **por contrato**: un inquilino con dos unidades tiene dos deudas
 distintas.
 
+**El propietario también recibe su papel.** El recibo es para el inquilino;
+la liquidación es el documento que justifica tu comisión, y es lo que el
+propietario mira todos los meses. Sale en PDF desde la liquidación, con el
+detalle por unidad, los honorarios y los gastos descontados, el neto en
+números y en letras, y el CBU adonde va la transferencia.
+
+![Liquidación al propietario](docs/liquidacion.png)
+
+Lleva escrito el criterio —se rinde lo **cobrado**, no lo facturado— porque es
+la pregunta que todo propietario hace cuando el número no coincide con el
+alquiler. Mejor que esté en el papel y no en una llamada.
+
 **El PDF se escribe a mano, sin librería.** `domain/pdf.ts` son 250 líneas que
 hacen lo que un recibo necesita: una hoja A4, las tipografías base que todo
 lector de PDF ya trae, texto alineado, líneas, recuadros y el logo embebido
 como JPEG. jsPDF pesa más que toda esta app junta; esto suma 6 kB. El importe
 va también en letras, que es lo que evita que a un recibo le agreguen un cero
 después de firmado.
+
+Un detalle que costó encontrar: **Chrome descarta el nombre del archivo entero
+si tiene un solo carácter fuera de ASCII**. «Recibo REC-7 - Julieta Ávila.pdf»
+se bajaba como `download`, sin nombre ni extensión, para la mitad de los
+inquilinos. Los nombres de archivo salen sin acentos a propósito.
 
 **Los honorarios salen del alquiler cobrado, no de la cuota entera.** Las
 expensas se las lleva el consorcio: cobrarles comisión sería cobrar de más.
@@ -216,8 +236,10 @@ src/
 │   ├── cobranzas.ts     Emisión de cuotas, punitorios, mora, recibos
 │   ├── liquidaciones.ts Rendición a propietarios (incremental)
 │   ├── pdf.ts           Escritor de PDF mínimo, sin dependencias
+│   ├── documento.ts     Membrete, colores y medidas que comparten los PDF
 │   ├── letras.ts        El importe escrito con todas las letras
 │   ├── recibo.ts        Qué dice y cómo se ve el recibo de alquiler
+│   ├── liquidacion-pdf.ts  Lo mismo para la liquidación al propietario
 │   └── resumen.ts       Los números de Inicio
 ├── data/            Persistencia, índices y datos de ejemplo
 ├── components/      Kit de interfaz e íconos

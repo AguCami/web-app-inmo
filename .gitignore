@@ -6,3 +6,7 @@ dist
 
 # Artefactos del build de TypeScript
 *.tsbuildinfo
+
+# Claves de Supabase: nunca al repositorio
+.env
+.env.local

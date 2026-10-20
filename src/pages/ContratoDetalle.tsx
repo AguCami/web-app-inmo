@@ -23,6 +23,7 @@ import {
 } from '../components/NovedadModal';
 import { PagoModal } from '../components/PagoModal';
 import { RecibosModal } from '../components/RecibosModal';
+import { RenovacionModal } from '../components/RenovacionModal';
 import { FormularioContrato, TEXTO_VIGENCIA, TONO_VIGENCIA } from './Contratos';
 import { TEXTO_CUOTA, TONO_CUOTA } from './Cobranzas';
 import { useApp, useDb } from '../data/store';
@@ -58,6 +59,7 @@ export default function ContratoDetalle() {
 
   const [vista, setVista] = useState<Vista>('cuotas');
   const [recibosDe, setRecibosDe] = useState<Cuota | null>(null);
+  const [renovando, setRenovando] = useState(false);
   const [editando, setEditando] = useState(false);
   const [cobrando, setCobrando] = useState<Cuota | null>(null);
   const [confirmandoBorrado, setConfirmandoBorrado] = useState(false);
@@ -121,6 +123,9 @@ export default function ContratoDetalle() {
           Volver
         </button>
         <button className="btn no-imprimir" onClick={() => window.print()}>Imprimir</button>
+        {contrato.estado === 'activo' && (
+          <button className="btn no-imprimir" onClick={() => setRenovando(true)}>Renovar</button>
+        )}
         <button className="btn btn--primario no-imprimir" onClick={() => setEditando(true)}>Editar</button>
       </Encabezado>
 
@@ -458,6 +463,16 @@ export default function ContratoDetalle() {
         />
       )}
       {recibosDe && <RecibosModal cuota={recibosDe} onCerrar={() => setRecibosDe(null)} />}
+      {renovando && (
+        <RenovacionModal
+          contrato={contrato}
+          onCerrar={() => setRenovando(false)}
+          onRenovado={(nuevo) => {
+            setRenovando(false);
+            navegar(`/contratos/${nuevo.id}`);
+          }}
+        />
+      )}
 
       {novedadAbierta && (
         <NovedadModal novedad={novedadAbierta} onCerrar={() => setNovedadAbierta(null)} />

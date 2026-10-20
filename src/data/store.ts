@@ -44,6 +44,8 @@ interface EstadoApp {
   eliminarAdjunto: (id: ID) => void;
   guardarPropiedad: (p: Propiedad) => void;
   guardarContrato: (c: Contrato) => void;
+  /** Finaliza el contrato que vence y da de alta el que sigue, en un solo paso. */
+  renovarContrato: (viejoId: ID, nuevo: Contrato) => void;
   guardarGasto: (g: Gasto) => void;
   eliminar: (coleccion: ColeccionBorrable, id: ID) => void;
 
@@ -160,6 +162,20 @@ export const useApp = create<EstadoApp>((set, get) => {
           p.id === c.propiedadId
             ? { ...p, estado: c.estado === 'activo' ? 'alquilada' : 'disponible' }
             : p,
+        ),
+      })),
+
+    renovarContrato: (viejoId, nuevo) =>
+      mutar((db) => ({
+        ...db,
+        contratos: upsert(
+          db.contratos.map((c) => (c.id === viejoId ? { ...c, estado: 'finalizado' } : c)),
+          nuevo,
+        ),
+        // Los dos pasos van juntos a propósito: si se guardaran por separado,
+        // entre uno y otro la propiedad quedaría marcada como disponible.
+        propiedades: db.propiedades.map((p) =>
+          p.id === nuevo.propiedadId ? { ...p, estado: 'alquilada' } : p,
         ),
       })),
 

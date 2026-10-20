@@ -385,7 +385,71 @@ await pagina.locator('[role="dialog"] button[aria-label], [role="dialog"] button
 await pagina.keyboard.press('Escape');
 await pagina.waitForTimeout(300);
 
-/* ── 11. Sin desborde horizontal en el celular ───────────────────── */
+/* ── 11. Renovar un contrato ─────────────────────────────────────── */
+const queVence = await pagina.evaluate(() => {
+  const db = JSON.parse(localStorage.getItem('gestion-alquileres/db/v3'));
+  const c = db.contratos
+    .filter((x) => x.estado === 'activo')
+    .sort((a, b) => a.fechaFin.localeCompare(b.fechaFin))[0];
+  return { id: c.id, fin: c.fechaFin, propiedadId: c.propiedadId };
+});
+
+await pagina.goto(`${BASE}/#/contratos/${queVence.id}`, { waitUntil: 'networkidle' });
+await pagina.waitForTimeout(500);
+await pagina.locator('button', { hasText: 'Renovar' }).click();
+await pagina.waitForSelector('[role="dialog"]');
+await pagina.waitForTimeout(300);
+await pagina.locator('[role="dialog"] button', { hasText: 'Renovar por' }).click();
+await pagina.waitForTimeout(700);
+
+const renovacion = await pagina.evaluate((viejo) => {
+  const db = JSON.parse(localStorage.getItem('gestion-alquileres/db/v3'));
+  const anterior = db.contratos.find((c) => c.id === viejo.id);
+  const nuevo = db.contratos.find(
+    (c) => c.propiedadId === viejo.propiedadId && c.id !== viejo.id && c.fechaInicio > viejo.fin,
+  );
+  return {
+    anteriorFinalizado: anterior.estado === 'finalizado',
+    nuevoActivo: nuevo?.estado === 'activo',
+    mismoInquilino: nuevo?.inquilinoId === anterior.inquilinoId,
+    arrancaDespues: nuevo && nuevo.fechaInicio.slice(0, 7) > anterior.fechaFin.slice(0, 7),
+    propiedadAlquilada:
+      db.propiedades.find((p) => p.id === viejo.propiedadId)?.estado === 'alquilada',
+  };
+}, queVence);
+
+comprobar('renovar cierra el contrato anterior', renovacion.anteriorFinalizado);
+comprobar('y deja uno nuevo activo con el mismo inquilino',
+  renovacion.nuevoActivo && renovacion.mismoInquilino);
+comprobar('que arranca después del último mes que facturó el anterior', renovacion.arrancaDespues);
+comprobar('la unidad sigue alquilada', renovacion.propiedadAlquilada);
+
+// Lo que de verdad importa: que no queden dos cuotas del mismo mes para la
+// misma unidad, que es lo que pasaría si los contratos se solaparan.
+await pagina.goto(`${BASE}/#/cobranzas`, { waitUntil: 'networkidle' });
+await pagina.waitForTimeout(300);
+await pagina.locator('button', { hasText: 'Emitir cuotas' }).click();
+await pagina.waitForTimeout(600);
+const duplicadas = await pagina.evaluate(() => {
+  const db = JSON.parse(localStorage.getItem('gestion-alquileres/db/v3'));
+  const porContrato = new Map(db.contratos.map((c) => [c.id, c.propiedadId]));
+  const vistas = new Set();
+  const repetidas = [];
+  for (const cu of db.cuotas) {
+    if (cu.estado === 'anulada') continue;
+    const clave = `${porContrato.get(cu.contratoId)}|${cu.periodo}`;
+    if (vistas.has(clave)) repetidas.push(clave);
+    vistas.add(clave);
+  }
+  return repetidas;
+});
+comprobar(
+  'ninguna unidad queda con dos cuotas del mismo mes',
+  duplicadas.length === 0,
+  duplicadas.slice(0, 3).join(', '),
+);
+
+/* ── 12. Sin desborde horizontal en el celular ───────────────────── */
 const movil = await navegador.newPage({ viewport: { width: 390, height: 844 } });
 let desborda = false;
 for (const [, ruta] of RUTAS) {
@@ -396,7 +460,7 @@ for (const [, ruta] of RUTAS) {
 }
 comprobar('sin desborde horizontal en 390 px', !desborda);
 
-/* ── 12. Borrar arrastra lo que dependía, y pide confirmación ────── */
+/* ── 13. Borrar arrastra lo que dependía, y pide confirmación ────── */
 const conteos = () =>
   pagina.evaluate(() => {
     const db = JSON.parse(localStorage.getItem('gestion-alquileres/db/v3'));
@@ -456,7 +520,7 @@ const archivosQueQuedan = await pagina.evaluate(
 );
 comprobar('borrar también limpia los archivos de IndexedDB', archivosQueQuedan === 0, `${archivosQueQuedan} quedan`);
 
-/* ── 13. Una base inconsistente se repara sola al abrir ─────────── */
+/* ── 14. Una base inconsistente se repara sola al abrir ─────────── */
 await pagina.evaluate(() => {
   const CLAVE = 'gestion-alquileres/db/v3';
   localStorage.removeItem(CLAVE);

@@ -26,7 +26,7 @@ npm run dev        # http://localhost:5173
 | `npm run preview` | Sirve `dist/` en http://127.0.0.1:4173 |
 | `npm run smoke` | Verificación de humo con Playwright (requiere `preview` levantado) |
 | `npm run indices` | Trae el IPC de Córdoba publicado y actualiza `public/indices.json` |
-| `npm run documentos` | Prueba el importe en letras y los nombres de archivo |
+| `npm run dominio` | Prueba las reglas puras: importe en letras, nombres de archivo, renovación |
 | `npm run sincro` | Prueba el cálculo de diferencias contra Supabase |
 | `npm run esquema` | Prueba el esquema SQL contra un Postgres efímero |
 
@@ -61,7 +61,7 @@ pipeline viejo pisa el deploy y sirve la página en blanco.
 |---|---|
 | **Inicio** | Cuánto se cobró del mes, quién debe, qué contratos ajustan o vencen, qué unidades están vacías |
 | **Cobranzas** | La cuota de cada inquilino del mes, con el botón de cobrar, los punitorios ya calculados y el recibo en PDF. No deja cobrar un mes si debe los anteriores |
-| **Contratos** | Alta, cronograma de actualizaciones, cuotas con sus recibos, el legajo de archivos y la bitácora |
+| **Contratos** | Alta, renovación, cronograma de actualizaciones, cuotas con sus recibos, el legajo de archivos y la bitácora |
 | **Propiedades** | La cartera, con su estado y el alquiler vigente |
 | **Liquidaciones** | Lo que hay que transferirle a cada propietario: cobrado menos honorarios menos gastos, con su PDF |
 | **Gastos** | Arreglos y servicios de cada unidad, para descontarlos de la liquidación |
@@ -121,6 +121,20 @@ de la transferencia que trae el inquilino.
 Un recibo por un pago parcial que no aclara el saldo parece cancelar la cuota
 entera, así que cuando queda algo sin pagar el PDF lo dice en un recuadro, con
 el monto y el período.
+
+**Renovar es crear un contrato nuevo, no estirar el viejo.** El cronograma
+encadena los coeficientes desde el monto inicial, así que estirarle la fecha
+de fin al contrato que vence seguiría actualizando sobre el alquiler de hace
+dos años. El contrato nuevo arranca por el alquiler que regía al final, y el
+anterior queda cerrado con sus cuotas, recibos y liquidaciones intactos, que
+es lo que hay que poder mostrar si algo se discute.
+
+![Renovar un contrato](docs/renovar.png)
+
+Arranca **el mes siguiente**, no el día siguiente. Un contrato que termina el
+1 de noviembre igual factura noviembre entero: si el nuevo empezara el 2, la
+unidad quedaría con dos cuotas del mismo mes. La fecha se puede editar, y si
+se la pisa dentro del mes del anterior el formulario lo frena.
 
 **No se cobra un mes si debe los anteriores.** El artículo 899 inc. b del
 Código Civil y Comercial presume, salvo prueba en contrario, que si se da

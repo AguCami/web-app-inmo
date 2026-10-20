@@ -10,8 +10,10 @@ import {
   diasEntre,
   diferenciaPeriodos,
   hoy,
+  nuevoId,
   periodoDe,
   redondear,
+  sumarMeses,
   sumarPeriodos,
 } from './util';
 
@@ -156,3 +158,56 @@ export const ETIQUETA_INDICE: Record<IndiceAjuste, string> = {
 export const INDICES_CON_SERIE = ['ICL', 'IPC', 'IPC_CBA', 'CASA_PROPIA'] as const;
 
 export type IndiceConSerie = (typeof INDICES_CON_SERIE)[number];
+
+/* ──────────────────────────── Renovación ──────────────────────────── */
+
+/**
+ * El número que sigue, con el formato LOC-AAAA-NNN que usa la cartera.
+ * Si la inmobiliaria numera de otra forma, es solo una sugerencia editable.
+ */
+export function siguienteNumeroContrato(
+  contratos: Contrato[],
+  anio = new Date().getFullYear(),
+): string {
+  let mayor = 0;
+  for (const c of contratos) {
+    const m = c.numero.match(/^LOC-(\d{4})-(\d+)$/);
+    if (m && Number(m[1]) === anio) mayor = Math.max(mayor, Number(m[2]));
+  }
+  return `LOC-${anio}-${String(mayor + 1).padStart(3, '0')}`;
+}
+
+/**
+ * Propone el contrato que sigue al que vence.
+ *
+ * Es un contrato NUEVO, no una extensión del viejo, y eso importa: el
+ * cronograma de actualizaciones encadena coeficientes desde el monto inicial,
+ * así que estirarle la fecha de fin al viejo seguiría ajustando sobre una
+ * base vieja. Además el anterior queda intacto con sus cuotas, sus recibos y
+ * sus liquidaciones, que es lo que hay que poder mostrar si algo se discute.
+ *
+ * Arranca el mes siguiente al último que factura el anterior, y por el
+ * alquiler que regía al final, no por el original. Lo del mes y no el día
+ * siguiente importa: las cuotas son mensuales, así que un contrato que
+ * termina el 1 de noviembre igual factura noviembre entero. Si el nuevo
+ * empezara el 2, los dos emitirían la cuota de ese mes para la misma unidad.
+ *
+ * Todo lo demás se hereda y se puede editar.
+ */
+export function contratoRenovado(
+  viejo: Contrato,
+  indices: ValorIndice[],
+  numero: string,
+  meses = mesesDeContrato(viejo),
+): Contrato {
+  const inicio = `${sumarPeriodos(periodoDe(viejo.fechaFin), 1)}-01`;
+  return {
+    ...viejo,
+    id: nuevoId('c'),
+    numero,
+    fechaInicio: inicio,
+    fechaFin: sumarMeses(inicio, meses - 1),
+    montoInicial: montoVigente(viejo, periodoDe(inicio), indices),
+    estado: 'activo',
+  };
+}

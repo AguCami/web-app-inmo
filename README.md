@@ -68,6 +68,59 @@ pipeline viejo pisa el deploy y sirve la página en blanco.
 | **Personas** | Propietarios, inquilinos y garantes |
 | **Ajustes** | Tus datos, los índices mes a mes y el respaldo |
 
+## Los dos modos: demo y cuentas
+
+La app funciona de dos maneras, y lo decide el build, no el usuario:
+
+| | **Modo demo** | **Modo cuentas** |
+|---|---|---|
+| Cuándo | sin variables de entorno | con las claves de Supabase |
+| Login | no pide | email y contraseña |
+| Dónde viven los datos | en ese navegador | en Supabase, online |
+| Varias personas a la vez | no | sí, ven lo mismo |
+| Qué queda en el disco | toda la base | nada |
+
+El modo demo no es un resto: es la app que se muestra en una reunión sin
+pedirle a nadie que se cree una cuenta, y es lo que está publicado en GitHub
+Pages. Por eso el cliente de Supabase entra con import dinámico: son 59 kB
+que la demo no descarga.
+
+### Cómo se prende el modo cuentas
+
+1. Crear un proyecto en [supabase.com](https://supabase.com), región South
+   America (São Paulo).
+2. **SQL Editor → New query**, pegar `supabase/esquema.sql` entero y *Run*.
+3. **Project Settings → API**: copiar la *Project URL* y la clave *anon
+   public* a `.env.local` (ver `.env.ejemplo`).
+4. Crear los usuarios en **Authentication → Users**, y por cada uno una fila
+   en `miembro` con la organización y el rol.
+
+La clave `anon` es pública por diseño: viaja en el navegador y lo que protege
+los datos son las políticas por fila del esquema. La `service_role` no va
+nunca al repositorio ni al navegador.
+
+### Qué pasa con la seguridad
+
+Sin sesión no se ve nada: ni la app, ni un dato, ni entrando por una URL
+directa. Y con servidor **la app no escribe nada en el navegador** — ni la
+base, ni una copia—, así que cerrar sesión en una máquina compartida no deja
+la cartera en el disco.
+
+Del otro lado, cada tabla tiene una política que filtra por organización, y
+las claves foráneas son compuestas: una inmobiliaria no puede leer, escribir
+ni referenciar una fila de otra. Está probado en `npm run esquema`.
+
+### Cuándo se guarda
+
+No hay botón de guardar: cada cambio sale solo. Se espera un momento antes de
+mandar —escribir un nombre dispara una mutación por tecla— y el punto de
+referencia solo avanza cuando el servidor confirma, así que una escritura que
+falla se reintenta entera en vez de darse por guardada.
+
+Si algo no se pudo guardar, aparece un aviso que no se puede ignorar y el
+navegador pregunta antes de cerrar la pestaña. Lo peor que podría hacer la
+app es mostrar los datos como si estuvieran guardados cuando no lo están.
+
 ## Empezar a cargar datos reales
 
 La app arranca con una administración de ejemplo. Para pasar a lo real, una
@@ -330,12 +383,6 @@ WhatsApp Business, ni cuenta de empresa, ni registro. El mensaje lo manda la
 persona, no el sistema. La API paga —por mensaje enviado desde julio de 2025—
 haría falta solo el día que se quiera que salgan solos, sin que nadie los
 mire.
-
-**Cuentas y base de datos en Supabase.** El esquema está escrito y probado
-contra un Postgres de verdad (`npm run esquema`), y la capa de la app también
-(`npm run sincro`). Falta crear el proyecto en Supabase y cargar las dos
-variables de `.env.ejemplo`. Mientras no estén, la app corre en modo demo y no
-pide login, que es como se publica en GitHub Pages.
 
 **Estado de cuenta del inquilino en PDF**, para cuando alguien pide «mandame
 todo lo que debo». La maquinaria de PDF ya está; falta el documento.

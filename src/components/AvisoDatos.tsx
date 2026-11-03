@@ -17,7 +17,12 @@ import { IconoAlerta } from './iconos';
 export function AvisoDatos() {
   const db = useDb();
   const registrarRespaldo = useApp((e) => e.registrarRespaldo);
+  const modoServidor = useApp((e) => e.modoServidor);
   const [bajando, setBajando] = useState(false);
+
+  // Con servidor, los datos no dependen de este navegador: el respaldo lo
+  // hace Supabase y el aviso que importa es el de la sincronización.
+  if (modoServidor) return null;
 
   const salud = saludDeLosDatos(db);
   if (salud.alerta === 'ninguna') return null;

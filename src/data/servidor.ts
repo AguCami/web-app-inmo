@@ -87,14 +87,26 @@ export async function sesionActual(): Promise<Sesion | null> {
 }
 
 export async function ingresar(email: string, clave: string): Promise<string | null> {
-  const sb = await obtenerCliente();
+  let sb;
+  try {
+    sb = await obtenerCliente();
+  } catch {
+    return 'No se pudo cargar el acceso. Revisá la conexión y volvé a probar.';
+  }
+
   const { error } = await sb.auth.signInWithPassword({ email, password: clave });
   if (!error) return null;
 
   // Los mensajes de Supabase vienen en inglés y son crípticos para quien usa
-  // la app; los dos casos que pasan de verdad se traducen.
+  // la app. Se traducen los casos que pasan de verdad.
   if (/invalid login credentials/i.test(error.message)) return 'Email o contraseña incorrectos.';
   if (/email not confirmed/i.test(error.message)) return 'Falta confirmar el email.';
+  if (/failed to fetch|networkerror|load failed/i.test(error.message)) {
+    return 'No se pudo contactar al servidor. Revisá la conexión y volvé a probar.';
+  }
+  if (/too many requests|rate limit/i.test(error.message)) {
+    return 'Demasiados intentos seguidos. Esperá un minuto.';
+  }
   return error.message;
 }
 

@@ -20,12 +20,31 @@ import { sanear, type ColeccionBorrable } from '../domain/integridad';
 import { hoy, nuevoId, periodoActual } from '../domain/util';
 import { borrarArchivos, guardarArchivo, MAXIMO_POR_ARCHIVO } from './archivos';
 import { cargarBase, conRecibos, guardarBase } from './db';
+import { aplicarCambios, calcularCambios, cargarDesdeServidor } from './remoto';
+import { HAY_SERVIDOR, ingresar, salir, sesionActual, type Sesion } from './servidor';
+import { Sincronizador, type EstadoSincronizacion } from './sincronizador';
 import { baseVacia, crearBaseDemo } from './seed';
 import { combinarIndices, traerIndicesPublicados } from './indices';
 
 
 interface EstadoApp {
   db: BaseDatos;
+
+  /* ── Cuentas y servidor. En modo demo todo esto queda en su valor neutro. ── */
+  /** El build trae las claves de Supabase: hay login y los datos son online. */
+  modoServidor: boolean;
+  /** Todavía no se sabe si hay sesión: no mostrar ni la app ni el login. */
+  verificandoSesion: boolean;
+  sesion: Sesion | null;
+  sincronizacion: EstadoSincronizacion;
+  errorSincronizacion?: string;
+
+  iniciarSesion: (email: string, clave: string) => Promise<string | null>;
+  cerrarSesion: () => Promise<void>;
+  reintentarSincronizacion: () => void;
+  /** Sube al servidor la base que está abierta. Para mudar lo cargado local. */
+  subirBaseAlServidor: () => Promise<string | null>;
+
   /** Última vez que se sincronizó la serie publicada de índices. */
   indicesSincronizados: 'pendiente' | 'ok' | 'sin_archivo';
 
@@ -71,17 +90,90 @@ function upsert<T extends { id: ID }>(lista: T[], item: T): T[] {
 }
 
 export const useApp = create<EstadoApp>((set, get) => {
-  /** Toda mutación pasa por acá: muta el estado y persiste en un solo lugar. */
+  let sincronizador: Sincronizador | null = null;
+
+  const anotarEstado = (estado: EstadoSincronizacion, error?: string) =>
+    set({ sincronizacion: estado, errorSincronizacion: error });
+
+  /**
+   * Toda mutación pasa por acá: muta el estado y lo persiste en un solo
+   * lugar. Con servidor NO se escribe en el navegador: así la cartera de la
+   * inmobiliaria no queda tirada en el disco de una máquina compartida
+   * después de cerrar sesión. Se pierden, como mucho, los últimos segundos.
+   */
   const mutar = (fn: (db: BaseDatos) => BaseDatos) =>
     set((estado) => {
       const db = fn(estado.db);
-      guardarBase(db);
+      if (sincronizador) sincronizador.encolar(db);
+      else guardarBase(db);
       return { db };
     });
 
+  /** Trae la base del servidor y deja el sincronizador listo para esa sesión. */
+  const abrirSesion = async (sesion: Sesion) => {
+    set({ verificandoSesion: false, sesion, sincronizacion: 'guardando' });
+    try {
+      const db = conRecibos(await cargarDesdeServidor());
+      sincronizador = new Sincronizador(sesion.organizacionId, db, anotarEstado);
+      set({ db, sincronizacion: 'al_dia', errorSincronizacion: undefined });
+    } catch (e) {
+      set({
+        sincronizacion: 'error',
+        errorSincronizacion: e instanceof Error ? e.message : String(e),
+      });
+    }
+  };
+
+  // Con servidor, la base no sale del navegador: se espera a saber si hay
+  // sesión antes de mostrar nada.
+  if (HAY_SERVIDOR) {
+    void sesionActual().then((s) => (s ? abrirSesion(s) : set({ verificandoSesion: false })));
+  }
+
   return {
-    db: cargarBase(),
+    db: HAY_SERVIDOR ? baseVacia() : cargarBase(),
     indicesSincronizados: 'pendiente',
+
+    modoServidor: HAY_SERVIDOR,
+    verificandoSesion: HAY_SERVIDOR,
+    sesion: null,
+    sincronizacion: 'al_dia',
+
+    iniciarSesion: async (email, clave) => {
+      const error = await ingresar(email, clave);
+      if (error) return error;
+      const s = await sesionActual();
+      if (!s) return 'Entraste, pero tu usuario no está asignado a ninguna inmobiliaria.';
+      await abrirSesion(s);
+      return null;
+    },
+
+    cerrarSesion: async () => {
+      // Lo pendiente se manda antes de soltar la sesión, o se pierde.
+      await sincronizador?.vaciarCola();
+      sincronizador = null;
+      await salir();
+      set({ sesion: null, db: baseVacia(), sincronizacion: 'al_dia' });
+    },
+
+    reintentarSincronizacion: () => sincronizador?.reintentar(),
+
+    subirBaseAlServidor: async () => {
+      const { db, sesion } = get();
+      if (!sesion) return 'No hay sesión abierta.';
+      try {
+        anotarEstado('guardando');
+        await aplicarCambios(calcularCambios(baseVacia(), db), sesion.organizacionId);
+        sincronizador = new Sincronizador(sesion.organizacionId, db, anotarEstado);
+        anotarEstado('al_dia');
+        return null;
+      } catch (e) {
+        const texto = e instanceof Error ? e.message : String(e);
+        anotarEstado('error', texto);
+        return texto;
+      }
+    },
+
 
     reemplazarBase: (db) => mutar(() => db),
     cargarDemo: () => mutar(() => conRecibos(crearBaseDemo())),

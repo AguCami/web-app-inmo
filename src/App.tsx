@@ -1,6 +1,8 @@
 import { useEffect, useMemo } from 'react';
 import { NavLink, Route, Routes } from 'react-router-dom';
 import { AvisoDatos } from './components/AvisoDatos';
+import { EstadoSincronizacion } from './components/EstadoSincronizacion';
+import { Ingresar } from './components/Ingresar';
 import {
   IconoAjustes,
   IconoCobranzas,
@@ -30,6 +32,10 @@ import Ajustes from './pages/Ajustes';
 export default function App() {
   const db = useDb();
   const sincronizarIndices = useApp((e) => e.sincronizarIndices);
+  const modoServidor = useApp((e) => e.modoServidor);
+  const verificandoSesion = useApp((e) => e.verificandoSesion);
+  const sesion = useApp((e) => e.sesion);
+  const cerrarSesion = useApp((e) => e.cerrarSesion);
 
   // Al abrir, se busca la serie de índices que publica la tarea programada.
   // Si no está, la app sigue con la que tiene guardada.
@@ -55,6 +61,11 @@ export default function App() {
     { a: '/personas', Icono: IconoPersonas, texto: 'Personas' },
     { a: '/ajustes', Icono: IconoAjustes, texto: 'Ajustes' },
   ];
+
+  if (verificandoSesion) {
+    return <div className="ingreso"><span className="tenue">Abriendo…</span></div>;
+  }
+  if (modoServidor && !sesion) return <Ingresar />;
 
   return (
     <div className="app">
@@ -83,11 +94,22 @@ export default function App() {
         <div className="rail__pie">
           Período {periodoActual()}
           <br />
-          Los datos se guardan en este navegador.
+          {modoServidor ? (
+            <>
+              {sesion?.email}
+              <br />
+              <button className="btn btn--fantasma btn--chico" onClick={() => void cerrarSesion()}>
+                Cerrar sesión
+              </button>
+            </>
+          ) : (
+            'Los datos se guardan en este navegador.'
+          )}
         </div>
       </nav>
 
       <main className="principal">
+        <EstadoSincronizacion />
         <AvisoDatos />
         <Routes>
           <Route path="/" element={<Inicio />} />

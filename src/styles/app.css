@@ -627,6 +627,64 @@ select.suelto { width: auto; border-radius: var(--r-pill); background: var(--pan
 .panel--acciones { --acciones-min: 140px; }         /* Cobranzas: Cobrar + Ver */
 .panel--acciones-cuotas { --acciones-min: 172px; }  /* Contrato: Cobrar + Recibos */
 
+/* ─────────────────────────── Ingreso ───────────────────────────── */
+
+.ingreso {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 24px 16px;
+  background: var(--fondo);
+}
+.ingreso__caja {
+  width: 100%;
+  max-width: 380px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 28px 26px 24px;
+  background: var(--panel);
+  border: 1px solid var(--borde);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sombra-suave);
+}
+.ingreso__marca {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+.ingreso__marca strong {
+  font-family: var(--fuente-titulo);
+  font-size: 15px;
+  line-height: 1.25;
+  margin-top: 8px;
+}
+.ingreso__marca span { font-size: 12px; color: var(--tinta-3); }
+.btn--ancho { width: 100%; justify-content: center; }
+
+/* Estado de la sincronización, en la cabecera. */
+.sincro {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  color: var(--tinta-3);
+  white-space: nowrap;
+}
+.sincro__punto {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--r-pill);
+  background: var(--ok);
+  flex: none;
+}
+.sincro--guardando .sincro__punto { background: var(--alerta); }
+.sincro--error { color: var(--critico); }
+.sincro--error .sincro__punto { background: var(--critico); }
+
 /* Barra de aviso sobre el estado de los datos. No se puede cerrar, así que
    tiene que ser legible sin gritar: color de fondo, no un bloque entero. */
 .aviso-datos {

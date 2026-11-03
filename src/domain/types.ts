@@ -307,12 +307,21 @@ export interface Configuracion {
   punitorioDiarioPctDefault: number;
   /** Días antes del vencimiento en que una cuota se marca como "por vencer". */
   diasAvisoVencimiento: number;
+  /** Cuándo se bajó la última copia de seguridad. */
+  ultimoRespaldo?: ISODate;
 }
 
 /* ───────────────────────── Estado completo ────────────────────────── */
 
 export interface BaseDatos {
   version: number;
+  /**
+   * Son los datos de ejemplo con los que arranca la app. Mientras esté en
+   * true, la app avisa que lo que se ve no es real: es el estado peligroso,
+   * porque es fácil empezar a cargar propiedades de verdad encima de la demo
+   * y después no poder distinguirlas.
+   */
+  demo?: boolean;
   configuracion: Configuracion;
   personas: Persona[];
   propiedades: Propiedad[];

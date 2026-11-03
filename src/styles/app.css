@@ -627,6 +627,38 @@ select.suelto { width: auto; border-radius: var(--r-pill); background: var(--pan
 .panel--acciones { --acciones-min: 140px; }         /* Cobranzas: Cobrar + Ver */
 .panel--acciones-cuotas { --acciones-min: 172px; }  /* Contrato: Cobrar + Recibos */
 
+/* Barra de aviso sobre el estado de los datos. No se puede cerrar, así que
+   tiene que ser legible sin gritar: color de fondo, no un bloque entero. */
+.aviso-datos {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 16px;
+  border-radius: var(--r);
+  border: 1px solid;
+  font-size: 13.5px;
+  line-height: 1.45;
+  margin-bottom: 16px;
+}
+.aviso-datos span { flex: 1; min-width: 0; }
+.aviso-datos .btn { flex: none; }
+.aviso-datos--demo {
+  background: var(--alerta-fondo);
+  border-color: color-mix(in oklab, var(--alerta) 35%, transparent);
+  color: var(--alerta);
+}
+.aviso-datos--riesgo {
+  background: var(--critico-fondo);
+  border-color: color-mix(in oklab, var(--critico) 35%, transparent);
+  color: var(--critico);
+}
+.aviso-datos svg { flex: none; }
+
+@media (max-width: 620px) {
+  .aviso-datos { flex-wrap: wrap; }
+  .aviso-datos span { flex: 1 1 100%; }
+}
+
 /* ────────────────────────── Responsivo ──────────────────────────── */
 
 /* En un panel angosto el ítem se parte en dos filas: arriba quién y qué, abajo

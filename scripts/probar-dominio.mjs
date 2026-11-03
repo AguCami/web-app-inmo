@@ -26,6 +26,7 @@ const { nombreArchivoRecibo } = await empaquetar('src/domain/recibo.ts', 'recibo
 const { nombreArchivoLiquidacion } = await empaquetar('src/domain/liquidacion-pdf.ts', 'liq.mjs');
 const { contratoRenovado, mesesDeContrato, periodosDelContrato, siguienteNumeroContrato } =
   await empaquetar('src/domain/contratos.ts', 'contratos.mjs');
+const { saludDeLosDatos, DIAS_TOLERADOS } = await empaquetar('src/domain/salud.ts', 'salud.mjs');
 
 let fallos = 0;
 const ok = (n, c, d = '') => { if (!c) fallos += 1; console.log(`${c ? '✓' : '✗'} ${n}${d ? ` — ${d}` : ''}`); };
@@ -114,6 +115,45 @@ ok('el número propuesto sigue al último del año',
     'LOC-2026-015');
 ok('y arranca en 001 si no hay ninguno de este año',
   siguienteNumeroContrato([{ numero: 'LOC-2025-099' }], 2026) === 'LOC-2026-001');
+
+/* ── Cuándo avisar que los datos están en riesgo ──
+   La app guarda todo en el navegador: si nadie baja una copia y alguien
+   limpia los datos del sitio, no queda nada.                               */
+const base = (extra = {}) => ({
+  demo: false,
+  configuracion: {},
+  propiedades: [], contratos: [], personas: [], pagos: [],
+  ...extra,
+});
+const HOY = '2026-11-03';
+
+ok('una base vacía no molesta con avisos',
+  saludDeLosDatos(base(), HOY).alerta === 'ninguna');
+
+ok('con la demo cargada avisa que no son datos reales',
+  saludDeLosDatos(base({ demo: true, propiedades: [{}, {}] }), HOY).alerta === 'demo');
+
+ok('y mientras sea la demo no pide respaldos, que no sirven de nada',
+  saludDeLosDatos(base({ demo: true, propiedades: [{}] }), HOY).alerta !== 'sin_respaldo');
+
+ok('con datos reales y ninguna copia, avisa',
+  saludDeLosDatos(base({ propiedades: [{}] }), HOY).alerta === 'sin_respaldo');
+
+ok('recién respaldado no molesta',
+  saludDeLosDatos(base({ propiedades: [{}], configuracion: { ultimoRespaldo: HOY } }), HOY)
+    .alerta === 'ninguna');
+
+ok(`una copia de hace ${DIAS_TOLERADOS} días todavía pasa`,
+  saludDeLosDatos(base({ propiedades: [{}], configuracion: { ultimoRespaldo: '2026-10-27' } }), HOY)
+    .alerta === 'ninguna');
+
+ok('una de hace 20 días ya no',
+  saludDeLosDatos(base({ propiedades: [{}], configuracion: { ultimoRespaldo: '2026-10-14' } }), HOY)
+    .alerta === 'respaldo_viejo');
+
+ok('y cuenta bien los días',
+  saludDeLosDatos(base({ propiedades: [{}], configuracion: { ultimoRespaldo: '2026-10-14' } }), HOY)
+    .diasSinRespaldo === 20);
 
 console.log(fallos === 0 ? '\nTodo en orden.' : `\n${fallos} fallaron.`);
 process.exit(fallos ? 1 : 0);

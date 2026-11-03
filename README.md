@@ -68,6 +68,44 @@ pipeline viejo pisa el deploy y sirve la página en blanco.
 | **Personas** | Propietarios, inquilinos y garantes |
 | **Ajustes** | Tus datos, los índices mes a mes y el respaldo |
 
+## Empezar a cargar datos reales
+
+La app arranca con una administración de ejemplo. Para pasar a lo real, una
+sola vez:
+
+1. **Abrir siempre desde la misma computadora y el mismo navegador.** No hay
+   cuentas todavía: los datos viven en ese navegador y no se sincronizan.
+   Conviene dejarlo en Favoritos.
+2. **Ajustes → Respaldo → Empezar de cero.** Borra el ejemplo. En ese momento
+   la app le pide al navegador que no descarte los datos.
+3. **Ajustes → Mis datos:** nombre, CUIT, teléfono y email. Se imprimen en
+   los recibos y en las liquidaciones.
+4. **Cargar en este orden:** personas (propietarios e inquilinos) →
+   propiedades → contratos. Cada paso necesita el anterior.
+5. **Cobranzas → Emitir cuotas** genera las del mes.
+
+Mientras haya datos de ejemplo, una barra lo avisa en todas las pantallas:
+es fácil empezar a cargar propiedades de verdad encima de la demo y después
+no poder distinguirlas.
+
+### El respaldo no es opcional
+
+Los datos están en el navegador. Si alguien limpia los datos del sitio, o se
+reinstala la máquina, **no hay de dónde recuperarlos**: no están en ningún
+servidor. La única red es el archivo que se baja desde Ajustes → Respaldo,
+que incluye también los contratos escaneados.
+
+La app no confía en que alguien se acuerde: si pasan más de 7 días sin bajar
+una copia, aparece una barra en todas las pantallas con el botón para bajarla
+ahí mismo. No se puede cerrar, pero se va sola apenas se baja la copia.
+
+En **Ajustes → Respaldo → Dónde viven los datos** se ve si el navegador se
+comprometió a no descartarlos. Chrome lo concede según cuánto se use el
+sitio; tenerlo en Favoritos o instalado como aplicación ayuda.
+
+Todo esto deja de hacer falta el día que la app pase a Supabase, que está
+escrito y probado esperando las claves.
+
 ## Las decisiones que explican el resto
 
 **El alquiler vigente se calcula, no se guarda.** El contrato guarda el monto

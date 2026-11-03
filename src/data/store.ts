@@ -31,6 +31,8 @@ interface EstadoApp {
 
   reemplazarBase: (db: BaseDatos) => void;
   cargarDemo: () => void;
+  /** Deja constancia de que se bajó una copia, para dejar de avisar. */
+  registrarRespaldo: () => void;
   vaciar: () => void;
   actualizarConfiguracion: (cambios: Partial<BaseDatos['configuracion']>) => void;
   guardarIndices: (indices: ValorIndice[]) => void;
@@ -83,6 +85,9 @@ export const useApp = create<EstadoApp>((set, get) => {
 
     reemplazarBase: (db) => mutar(() => db),
     cargarDemo: () => mutar(() => conRecibos(crearBaseDemo())),
+
+    registrarRespaldo: () =>
+      mutar((db) => ({ ...db, configuracion: { ...db.configuracion, ultimoRespaldo: hoy() } })),
     vaciar: () => mutar(() => baseVacia()),
 
     actualizarConfiguracion: (cambios) =>

@@ -1,13 +1,18 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Encabezado } from '../components/Encabezado';
 import { Campo, Dato, Nota, Panel, Pastilla, Segmentos } from '../components/ui';
 import { Confirmar } from '../components/Confirmar';
 import { useApp, useDb } from '../data/store';
 import { exportarJSON, importarJSON } from '../data/db';
+import {
+  estadoDeAlmacenamiento,
+  pedirPersistencia,
+  type EstadoAlmacenamiento,
+} from '../data/almacenamiento';
 import { ETIQUETA_INDICE, INDICES_CON_SERIE } from '../domain/contratos';
 import type { IndiceConSerie } from '../domain/contratos';
 import type { ValorIndice } from '../domain/types';
-import { formatearPeriodo, periodoActual, plural, redondear } from '../domain/util';
+import { formatearFecha, formatearPeriodo, periodoActual, plural, redondear } from '../domain/util';
 
 type Vista = 'datos' | 'indices' | 'respaldo';
 
@@ -20,6 +25,15 @@ export default function Ajustes() {
   const reemplazar = useApp((e) => e.reemplazarBase);
   const cargarDemo = useApp((e) => e.cargarDemo);
   const vaciar = useApp((e) => e.vaciar);
+  const registrarRespaldo = useApp((e) => e.registrarRespaldo);
+  const [almacenamiento, setAlmacenamiento] = useState<EstadoAlmacenamiento | null>(null);
+  const [negado, setNegado] = useState(false);
+
+  // Solo se consulta: pedir persistencia al abrir la app haría que Firefox
+  // muestre un permiso sin que nadie entienda por qué.
+  useEffect(() => {
+    void estadoDeAlmacenamiento().then(setAlmacenamiento);
+  }, []);
 
   const [vista, setVista] = useState<Vista>('datos');
   const [indiceVisible, setIndiceVisible] = useState<IndiceConSerie>('IPC_CBA');
@@ -215,10 +229,23 @@ export default function Ajustes() {
             <Panel titulo="Copia de seguridad" subtitulo="Los datos viven en este navegador: bajá una copia seguido">
               <p className="mini tenue" style={{ marginBottom: 14 }}>
                 El respaldo es un archivo con todo: personas, propiedades, contratos, cuotas, pagos, liquidaciones,
-                gastos e índices.
+                gastos, índices y los contratos escaneados.
+              </p>
+              <p className="mini" style={{ marginBottom: 14 }}>
+                <strong>
+                  {db.configuracion.ultimoRespaldo
+                    ? `Última copia: ${formatearFecha(db.configuracion.ultimoRespaldo)}`
+                    : 'Todavía no se bajó ninguna copia.'}
+                </strong>
               </p>
               <div className="fila">
-                <button className="btn btn--primario" onClick={() => exportarJSON(db)}>
+                <button
+                  className="btn btn--primario"
+                  onClick={async () => {
+                    await exportarJSON(db);
+                    registrarRespaldo();
+                  }}
+                >
                   Descargar copia
                 </button>
                 <button className="btn" onClick={() => archivoRef.current?.click()}>
@@ -242,6 +269,61 @@ export default function Ajustes() {
                   }}
                 />
               </div>
+            </Panel>
+
+            <Panel
+              titulo="Dónde viven los datos"
+              subtitulo="En este navegador, en esta computadora"
+            >
+              {almacenamiento?.persistente ? (
+                <Nota tono="ok" titulo="Protegidos contra el borrado automático">
+                  <span>
+                    El navegador se comprometió a no descartarlos por falta de espacio. Igual se
+                    pierden si alguien limpia los datos del sitio, así que la copia sigue siendo
+                    la única red.
+                  </span>
+                </Nota>
+              ) : (
+                <Nota tono="alerta" titulo="El navegador los puede descartar">
+                  <span>
+                    Si le falta espacio, puede borrarlos sin avisar. Se le puede pedir que no lo
+                    haga; en Chrome lo concede solo, en Firefox pregunta.
+                  </span>
+                  <div className="fila" style={{ marginTop: 10 }}>
+                    <button
+                      className="btn btn--chico"
+                      disabled={!almacenamiento?.soportado}
+                      onClick={async () => {
+                        const concedido = await pedirPersistencia();
+                        setNegado(!concedido);
+                        setAlmacenamiento(await estadoDeAlmacenamiento());
+                      }}
+                    >
+                      {almacenamiento?.soportado
+                        ? 'Pedir que no los borre'
+                        : 'Este navegador no lo permite'}
+                    </button>
+                  </div>
+                </Nota>
+              )}
+
+              {negado && !almacenamiento?.persistente && (
+                <p className="mini tenue" style={{ marginTop: 10 }}>
+                  El navegador no lo concedió todavía. Chrome lo decide según cuánto se use el
+                  sitio: si lo agregás a Favoritos o lo instalás como aplicación y volvés a
+                  probar, suele concederlo.
+                </p>
+              )}
+
+              {almacenamiento?.usadoMB !== undefined && (
+                <p className="mini tenue" style={{ marginTop: 12 }}>
+                  Ocupado:{' '}
+                  {almacenamiento.usadoMB < 1 ? 'menos de 1 MB' : `${almacenamiento.usadoMB} MB`}
+                  {almacenamiento.disponibleMB !== undefined &&
+                    ` de ${Math.round(almacenamiento.disponibleMB)} MB disponibles`}
+                  . Los contratos escaneados son lo que más pesa.
+                </p>
+              )}
             </Panel>
 
             <Panel titulo="Qué hay cargado">
@@ -300,6 +382,11 @@ export default function Ajustes() {
           textoAccion="Sí, borrar todo"
           onConfirmar={() => {
             vaciar();
+            // Es el momento en que empiezan los datos de verdad, y hay un
+            // clic de por medio, que es lo que el navegador necesita.
+            void pedirPersistencia().then(() =>
+              estadoDeAlmacenamiento().then(setAlmacenamiento),
+            );
             setAviso({ tono: 'ok', texto: 'Listo, la app quedó vacía para cargar tus datos.' });
           }}
           onCerrar={() => setConfirmando(null)}

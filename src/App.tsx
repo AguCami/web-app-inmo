@@ -1,5 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import { NavLink, Route, Routes } from 'react-router-dom';
+import { AvisoDatos } from './components/AvisoDatos';
 import {
   IconoAjustes,
   IconoCobranzas,
@@ -87,6 +88,7 @@ export default function App() {
       </nav>
 
       <main className="principal">
+        <AvisoDatos />
         <Routes>
           <Route path="/" element={<Inicio />} />
           <Route path="/cobranzas" element={<Cobranzas />} />

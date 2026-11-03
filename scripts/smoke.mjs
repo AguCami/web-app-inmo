@@ -52,21 +52,38 @@ for (const [titulo, ruta] of RUTAS) {
   comprobar(`carga ${titulo}`, h1?.includes(titulo) && alto < 6000, `${alto} px`);
 }
 
+/* ── 1 bis. El aviso de que los datos están en riesgo ────────────── */
+comprobar(
+  'con la demo cargada avisa que no son datos reales',
+  (await pagina.locator('.aviso-datos--demo').count()) === 1,
+);
+// Va en el marco de la app, no en una pantalla: si alguien trabaja todo el
+// día en Cobranzas tiene que verlo igual.
+await pagina.goto(`${BASE}/#/cobranzas`, { waitUntil: 'networkidle' });
+comprobar(
+  'y el aviso está en todas las pantallas, no solo en Inicio',
+  (await pagina.locator('.aviso-datos--demo').count()) === 1,
+);
+
 /* ── 2. Cobrar baja la deuda y persiste ──────────────────────────── */
 await pagina.goto(`${BASE}/#/cobranzas`, { waitUntil: 'networkidle' });
-const vencido = () =>
-  pagina.locator('.dato', { hasText: 'Vencido' }).locator('.dato__valor').first().textContent();
-const antes = await vencido();
+
+// Se mira «Falta cobrar» y no «Vencido»: lo vencido depende del día del mes,
+// y los primeros días no hay nada vencido todavía. La prueba fallaba sola el
+// primero de cada mes.
+const faltaCobrar = () =>
+  pagina.locator('.dato', { hasText: 'Falta cobrar' }).locator('.dato__valor').first().textContent();
+const antes = await faltaCobrar();
 await pagina.locator('button', { hasText: 'Cobrar' }).first().click();
 await pagina.waitForSelector('[role="dialog"]');
 await pagina.locator('[role="dialog"] button', { hasText: 'Cobrar' }).click();
 await pagina.waitForTimeout(400);
-const despues = await vencido();
-comprobar('cobrar baja el vencido', antes !== despues, `${antes?.trim()} → ${despues?.trim()}`);
+const despues = await faltaCobrar();
+comprobar('cobrar baja lo que falta cobrar', antes !== despues, `${antes?.trim()} → ${despues?.trim()}`);
 
 await pagina.reload({ waitUntil: 'networkidle' });
 await pagina.waitForTimeout(300);
-comprobar('la cobranza persiste tras recargar', (await vencido()) === despues);
+comprobar('la cobranza persiste tras recargar', (await faltaCobrar()) === despues);
 
 /* ── 3. La cobranza tardía se rinde en una complementaria ────────── */
 await pagina.goto(`${BASE}/#/liquidaciones`, { waitUntil: 'networkidle' });

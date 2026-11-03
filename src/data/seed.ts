@@ -270,6 +270,7 @@ export function crearBaseDemo(): BaseDatos {
   }
 
   const db: BaseDatos = {
+    demo: true,
     version: VERSION_BD,
     configuracion: {
       nombre: 'Inversiones Generales M & M',
@@ -338,7 +339,7 @@ export function crearBaseDemo(): BaseDatos {
 export function baseVacia(): BaseDatos {
   return {
     version: VERSION_BD,
-    configuracion: crearBaseDemo().configuracion,
+    configuracion: { ...crearBaseDemo().configuracion, ultimoRespaldo: undefined },
     personas: [],
     propiedades: [],
     contratos: [],

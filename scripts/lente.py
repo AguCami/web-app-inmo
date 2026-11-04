@@ -31,9 +31,26 @@ INDEX = RAIZ / 'index.html'
 # Una lente por tamaño de pieza. El canto pesa más en una pieza chica,
 # así que su banda de refracción es proporcionalmente más ancha.
 LENTES = {
-    'lente': dict(margen=0.25, banda=0.16),        # menú, diálogo, cabecera
-    'lente-chica': dict(margen=0.30, banda=0.26),  # botones, pastillas
+    'lente': dict(margen=0.25, banda=0.16, escala=72, croma=0.0),
+    'lente-chica': dict(margen=0.30, banda=0.26, escala=34, croma=0.0),
 }
+
+# Aberración cromática: tres pasadas a escalas levemente distintas, tomando
+# R de una, G de otra y B de la tercera.
+#
+# Queda en 0 a propósito, y conviene no subirlo con este fondo. Medido: el
+# fondo de esta variante es una retícula de líneas de 1 px, y cualquier
+# separación de canales de ese orden parte cada línea en tres copias de
+# color. Con croma 0,03 y escala 72 la separación es ~2 px y aparecen
+# franjas de cian saturado (medido: saturación 0,90 sobre un fondo que no
+# tiene ningún color). La aberración se luce sobre fotos o degradés suaves,
+# no sobre líneas finas. El camino de código queda porque es correcto y
+# sirve si algún día el fondo cambia.
+CANALES = (
+    ('R', (1, 0, 0)),
+    ('G', (0, 1, 0)),
+    ('B', (0, 0, 1)),
+)
 
 PASOS = 7  # stops por rampa; con menos se ve el escalón
 
@@ -88,6 +105,38 @@ def mapa(margen: float, banda: float):
     return svg, region
 
 
+def filtro(ident, margen, banda, escala, croma):
+    """Devuelve el elemento <filter> completo, con aberración cromática."""
+    svg, region = mapa(margen, banda)
+    partes = [f'<filter id="{ident}" {region} color-interpolation-filters="sRGB">']
+    partes.append(f'<feImage result="m" preserveAspectRatio="none" href="data:image/svg+xml;utf8,{svg}" />')
+
+    if croma <= 0:
+        partes.append(
+            f'<feDisplacementMap in="SourceGraphic" in2="m" scale="{escala}"'
+            ' xChannelSelector="R" yChannelSelector="G" />'
+        )
+    else:
+        # Una pasada por canal, a escalas levemente distintas.
+        for i, (canal, fila) in enumerate(CANALES):
+            k = escala * (1 + croma * (1 - i))      # R más, G igual, B menos
+            partes.append(
+                f'<feDisplacementMap in="SourceGraphic" in2="m" scale="{k:.2f}"'
+                f' xChannelSelector="R" yChannelSelector="G" result="d{canal}" />'
+            )
+            r, g, b = fila
+            partes.append(
+                f'<feColorMatrix in="d{canal}" type="matrix" result="c{canal}"'
+                f' values="{r} 0 0 0 0  0 {g} 0 0 0  0 0 {b} 0 0  0 0 0 1 0" />'
+            )
+        # Recombinar los tres canales.
+        partes.append('<feBlend in="cR" in2="cG" mode="screen" result="rg" />')
+        partes.append('<feBlend in="rg" in2="cB" mode="screen" />')
+
+    partes.append('</filter>')
+    return ''.join(partes)
+
+
 def comprobar(escala: int):
     """El centro del mapa tiene que quedar en 128, o la lente arrastra."""
     centro = 1 - (1 - 0.0) * (1 - 128 / 255)      # X sin verde, Y al medio
@@ -100,25 +149,18 @@ def main() -> int:
     original = texto
 
     for ident, cfg in LENTES.items():
-        svg, region = mapa(**cfg)
+        nuevo = filtro(ident, **cfg)
         patron = re.compile(r'<filter\s+id="' + re.escape(ident) + r'".*?</filter>', re.S)
         if not patron.search(texto):
             print(f'no encontré el filtro «{ident}» en index.html', file=sys.stderr)
             return 1
-
-        def rehacer(m):
-            cuerpo = m.group(0)
-            cuerpo = re.sub(
-                r'x="[^"]*"\s+y="[^"]*"\s+width="[^"]*"\s+height="[^"]*"', region, cuerpo, count=1
-            )
-            return re.sub(
-                r'href="data:image/svg\+xml;utf8,[^"]*"',
-                'href="data:image/svg+xml;utf8,' + svg + '"',
-                cuerpo,
-            )
-
-        texto = patron.sub(rehacer, texto, count=1)
-        print(f'{ident}: región {region}, desplazamiento en el centro {comprobar(72):+.2f} px')
+        texto = patron.sub(lambda m: nuevo, texto, count=1)
+        pasadas = 3 if cfg['croma'] > 0 else 1
+        print(
+            f"{ident}: banda {cfg['banda']:.2f}, escala {cfg['escala']}, "
+            f"croma {cfg['croma']:.2f} ({pasadas} pasada{'s' if pasadas > 1 else ''}), "
+            f"centro {comprobar(cfg['escala']):+.2f} px"
+        )
 
     if solo_ver:
         return 0

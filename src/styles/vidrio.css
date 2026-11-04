@@ -207,13 +207,29 @@
     rgba(255, 255, 255, 0.35) 72%,
     rgba(255, 255, 255, 0.85) 100%
   );
-  /* El reflejo de la superficie, encima del material. */
-  --vidrio-reflejo: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.55),
-    rgba(255, 255, 255, 0.06) 46%,
-    rgba(255, 255, 255, 0) 60%
-  );
+  /* El especular: un brillo ANCHO y difuso en el cuarto superior
+     izquierdo, no una línea. Es lo que hace que una pieza se lea como
+     vidrio incluso sobre un fondo liso, sin nada que refractar —medido
+     sobre una referencia cuyo fondo es un color plano y las piezas igual
+     se leen como vidrio—. El anillo fino del canto va aparte. */
+  --vidrio-reflejo:
+    radial-gradient(
+      120% 90% at 18% 8%,
+      rgba(255, 255, 255, 0.62),
+      rgba(255, 255, 255, 0.18) 38%,
+      rgba(255, 255, 255, 0) 68%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.4),
+      rgba(255, 255, 255, 0.05) 46%,
+      rgba(255, 255, 255, 0) 60%
+    );
+  /* El contorno exterior: una línea oscura finita, más marcada abajo a la
+     derecha. Sin esto el canto brillante flota y no cierra la forma. */
+  --vidrio-contorno:
+    inset 0 0 0 0.5px rgba(22, 36, 64, 0.1),
+    inset -1px -1px 2px -1px rgba(22, 36, 64, 0.3);
 }
 
 :root[data-vidrio][data-theme="dark"] {
@@ -225,6 +241,9 @@
     rgba(255, 255, 255, 0.12) 74%,
     rgba(255, 255, 255, 0.4) 100%
   );
+  --vidrio-contorno:
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.09),
+    inset -1px -1px 2px -1px rgba(0, 0, 0, 0.45);
   --vidrio-reflejo: linear-gradient(
     180deg,
     rgba(255, 255, 255, 0.14),
@@ -243,6 +262,9 @@
       rgba(255, 255, 255, 0.12) 74%,
       rgba(255, 255, 255, 0.4) 100%
     );
+    --vidrio-contorno:
+      inset 0 0 0 0.5px rgba(255, 255, 255, 0.09),
+      inset -1px -1px 2px -1px rgba(0, 0, 0, 0.45);
     --vidrio-reflejo: linear-gradient(
       180deg,
       rgba(255, 255, 255, 0.14),
@@ -478,35 +500,38 @@
  */
 :root[data-vidrio] {
   --volumen:
-    0 20px 44px -14px rgba(16, 36, 70, 0.3),
+    var(--vidrio-contorno), 0 20px 44px -14px rgba(16, 36, 70, 0.3),
     0 5px 12px -5px rgba(16, 36, 70, 0.14),
     inset 0 7px 14px -10px rgba(16, 36, 70, 0.55),
     inset 0 -9px 16px -12px rgba(255, 255, 255, 0.95);
   --volumen-chico:
-    0 8px 18px -6px rgba(16, 36, 70, 0.26),
+    var(--vidrio-contorno), 0 8px 18px -6px rgba(16, 36, 70, 0.26),
     0 2px 5px -2px rgba(16, 36, 70, 0.14),
     inset 0 4px 8px -6px rgba(16, 36, 70, 0.5),
     inset 0 -5px 9px -7px rgba(255, 255, 255, 0.95);
 }
 :root[data-vidrio][data-theme="dark"] {
   --volumen:
-    0 22px 48px -14px rgba(0, 0, 0, 0.6), 0 5px 12px -5px rgba(0, 0, 0, 0.4),
+    var(--vidrio-contorno), 0 22px 48px -14px rgba(0, 0, 0, 0.6),
+    0 5px 12px -5px rgba(0, 0, 0, 0.4),
     inset 0 7px 14px -10px rgba(0, 0, 0, 0.75),
     inset 0 -9px 16px -12px rgba(255, 255, 255, 0.3);
   --volumen-chico:
-    0 8px 18px -6px rgba(0, 0, 0, 0.5), 0 2px 5px -2px rgba(0, 0, 0, 0.35),
-    inset 0 4px 8px -6px rgba(0, 0, 0, 0.7),
+    var(--vidrio-contorno), 0 8px 18px -6px rgba(0, 0, 0, 0.5),
+    0 2px 5px -2px rgba(0, 0, 0, 0.35), inset 0 4px 8px -6px rgba(0, 0, 0, 0.7),
     inset 0 -5px 9px -7px rgba(255, 255, 255, 0.28);
 }
 
 @media (prefers-color-scheme: dark) {
   :root[data-vidrio]:where(:not([data-theme="light"])) {
     --volumen:
-      0 22px 48px -14px rgba(0, 0, 0, 0.6), 0 5px 12px -5px rgba(0, 0, 0, 0.4),
+      var(--vidrio-contorno), 0 22px 48px -14px rgba(0, 0, 0, 0.6),
+      0 5px 12px -5px rgba(0, 0, 0, 0.4),
       inset 0 7px 14px -10px rgba(0, 0, 0, 0.75),
       inset 0 -9px 16px -12px rgba(255, 255, 255, 0.3);
     --volumen-chico:
-      0 8px 18px -6px rgba(0, 0, 0, 0.5), 0 2px 5px -2px rgba(0, 0, 0, 0.35),
+      var(--vidrio-contorno), 0 8px 18px -6px rgba(0, 0, 0, 0.5),
+      0 2px 5px -2px rgba(0, 0, 0, 0.35),
       inset 0 4px 8px -6px rgba(0, 0, 0, 0.7),
       inset 0 -5px 9px -7px rgba(255, 255, 255, 0.28);
   }

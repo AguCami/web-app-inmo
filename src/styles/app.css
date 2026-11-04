@@ -777,23 +777,21 @@ select.suelto { width: auto; border-radius: var(--r-pill); background: var(--pan
   inset: 0;
   z-index: -1;
   border-radius: inherit;
-  background: linear-gradient(160deg, rgba(10, 32, 64, 0.58), rgba(7, 22, 46, 0.72));
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.72), rgba(234, 242, 252, 0.84));
   pointer-events: none;
 }
-/* Sobre el fondo de color la tinta se invierte. */
-.ingreso[data-vidrio-liquido] .ingreso__caja,
-.ingreso[data-vidrio-liquido] .ingreso__marca strong,
-.ingreso[data-vidrio-liquido] .campo > span {
-  color: #fff;
-}
-.ingreso[data-vidrio-liquido] .ingreso__marca span,
-.ingreso[data-vidrio-liquido] .mini.tenue {
-  color: rgba(255, 255, 255, 0.92);
+/* El velo es claro, así que la tinta se queda oscura. Pero los grises
+ * secundarios del tema están calculados contra un panel OPACO, y acá el
+ * panel deja pasar el fondo: medido, el terciario caía a 3,9:1. Se
+ * oscurecen un paso solo en esta pantalla, que es más barato que subir
+ * el velo hasta tapar el vidrio. */
+.ingreso[data-vidrio-liquido] .ingreso__caja {
+  --tinta-2: #3c4654;
+  --tinta-3: #44505f;
 }
 .ingreso[data-vidrio-liquido] .ingreso__caja input {
-  background: rgba(255, 255, 255, 0.18);
-  border-color: rgba(255, 255, 255, 0.38);
-  color: #fff;
+  background: rgba(255, 255, 255, 0.55);
+  border-color: rgba(24, 48, 86, 0.22);
 }
 .ingreso__marca {
   display: flex;

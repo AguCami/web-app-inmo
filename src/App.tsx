@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { NavLink, Route, Routes } from 'react-router-dom';
+import { NavLink, Route, Routes, useLocation } from 'react-router-dom';
 import { AvisoDatos } from './components/AvisoDatos';
 import { EstadoSincronizacion } from './components/EstadoSincronizacion';
 import { Ingresar } from './components/Ingresar';
@@ -30,6 +30,7 @@ import Gastos from './pages/Gastos';
 import Ajustes from './pages/Ajustes';
 
 export default function App() {
+  const { pathname: ruta } = useLocation();
   const db = useDb();
   const sincronizarIndices = useApp((e) => e.sincronizarIndices);
   const modoServidor = useApp((e) => e.modoServidor);
@@ -66,12 +67,19 @@ export default function App() {
     return <div className="ingreso"><span className="tenue">Abriendo…</span></div>;
   }
   if (modoServidor && !sesion) return <Ingresar />;
-  // Vista previa del ingreso con ?ingreso en la dirección.
+  // Vista previa del ingreso.
   //
   // Sin Supabase configurado `modoServidor` es falso y esta pantalla no se
   // alcanza nunca, así que no habría forma de mirarla ni de mostrarla. El
   // formulario sin servidor no hace nada: no hay a quién autenticar.
-  if (new URLSearchParams(window.location.search).has('ingreso')) return <Ingresar />;
+  //
+  // Se acepta por el hash —/#/ingreso— y también por ?ingreso. La forma
+  // buena es la del hash: en GitHub Pages, una dirección sin la barra
+  // final redirige y en esa redirección se pierde la query, así que
+  // ?ingreso puede no llegar nunca. El hash siempre sobrevive.
+  if (ruta === '/ingreso' || new URLSearchParams(window.location.search).has('ingreso')) {
+    return <Ingresar />;
+  }
 
   return (
     <div className="app">

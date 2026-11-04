@@ -438,16 +438,32 @@ Apple es el que no puede mostrar el material de Apple.
 
 | | Cómo se prende | Se lee | Se ve |
 |---|---|---|---|
-| Sobrio | `?vidrio` | 5,0:1 | la lente está, pero el fondo es pálido y casi no hay qué deformar |
-| Saturado | `?vidrio=max` | **3,4:1** | se parece a la galería de Apple |
+| Claro con volumen | `?vidrio` | **5,0:1** | fondo claro, piezas con espesor y sombra. Es el bueno |
+| Saturado | `?vidrio=max` | 3,4:1 | fondo de colores. Se ve más, se lee peor |
 | Sin lente | `?vidrio=simple` | 5,0:1 | solo desenfoque, anda en todos los navegadores |
 
 ![Modo saturado](docs/vidrio-max.png)
 
-Ese 3,4:1 es el costo real, medido: por debajo del 4,5:1 que pide la norma
-para texto chico. **El material necesita un fondo con color para parecer
-vidrio, y los importes necesitan un fondo plano para leerse.** No hay forma
-de tener las dos cosas: es una elección, no un problema a resolver.
+### Lo que resolvió el empate: la sombra, no el color
+
+Durante un rato la conclusión fue que había que elegir entre que se viera
+el vidrio o que se leyeran los importes. Estaba mal, y lo destrabó mirar
+bien la referencia de Apple: **ahí el fondo es claro.** Lo que hace que esas
+piezas parezcan vidrio no es el color de atrás, son dos cosas:
+
+- **La sombra proyectada.** Las piezas no flotan por el desenfoque: flotan
+  porque tiran sombra y tienen espesor. Son cuatro sombras que describen un
+  vidrio iluminado desde arriba — la que proyecta sobre la página, una corta
+  que la apoya, una interior bajo el canto de arriba que es el espesor visto
+  desde adentro, y un rebote de luz en el canto de abajo.
+- **Una retícula tenue en el fondo.** Una lente sobre un blanco plano es
+  invisible: no hay nada que deformar. Las líneas finas se doblan al pasar
+  por el canto y es ahí donde se ve la refracción, sin ensuciar la lectura
+  como sí lo hace un color saturado.
+
+Con eso, `?vidrio` mantiene los importes en 5,0:1 y aun así se ve el
+material. `?vidrio=max` queda como la versión llamativa, para una pantalla
+sin números.
 
 Lo que cuesta: `backdrop-filter` en muchos elementos a la vez es trabajo para
 la placa de video. En una lista larga en un celular viejo se puede notar.

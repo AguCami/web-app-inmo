@@ -82,11 +82,27 @@
 
 /* El fondo que el vidrio refracta. Fijo: no se mueve con el scroll, así el
    material cambia de color según por dónde pasa el contenido. */
+:root[data-vidrio] {
+  --retícula: rgba(14, 40, 80, 0.055);
+}
+:root[data-vidrio][data-theme='dark'],
+:root[data-vidrio]:where(:not([data-theme='light'])) {
+  --retícula: rgba(255, 255, 255, 0.05);
+}
+
+/*
+ * El fondo es claro, como en la referencia de Apple. La clave no es el
+ * color: es que tenga TEXTURA FINA. Una lente sobre un blanco plano no se
+ * ve, porque no hay nada que deformar. La retícula tenue hace visible la
+ * refracción —sus líneas se doblan al pasar por el canto— sin ensuciar la
+ * lectura de los importes, que es lo que un color saturado sí haría.
+ */
 :root[data-vidrio] body {
   background:
-    radial-gradient(1100px 760px at 8% -8%, var(--vidrio-fondo-1), transparent 62%),
-    radial-gradient(980px 720px at 102% 4%, var(--vidrio-fondo-2), transparent 58%),
-    radial-gradient(900px 900px at 48% 108%, var(--vidrio-fondo-3), transparent 60%),
+    linear-gradient(var(--retícula) 1px, transparent 1px) 0 0 / 46px 46px,
+    linear-gradient(90deg, var(--retícula) 1px, transparent 1px) 0 0 / 46px 46px,
+    radial-gradient(1200px 820px at 10% -10%, var(--vidrio-fondo-1), transparent 60%),
+    radial-gradient(1000px 760px at 100% 2%, var(--vidrio-fondo-2), transparent 55%),
     var(--fondo);
   background-attachment: fixed;
 }
@@ -380,4 +396,68 @@
 :root[data-vidrio='max'] .buscador {
   backdrop-filter: url(#lente-chica) blur(6px) saturate(190%);
   -webkit-backdrop-filter: url(#lente-chica) blur(6px) saturate(190%);
+}
+
+
+/* ─────────────────────────── El volumen ───────────────────────────────
+ *
+ * Esto es lo que faltaba, y lo vio Agu mirando la referencia: las piezas de
+ * Apple no flotan por el desenfoque, flotan por la SOMBRA. Tienen espesor.
+ *
+ * Son cuatro sombras que describen una pieza de vidrio iluminada desde
+ * arriba:
+ *   1. la que proyecta sobre la página, grande y suave: el volumen;
+ *   2. una más corta y cerrada, que la apoya;
+ *   3. una sombra interior justo debajo del canto de arriba: el espesor
+ *      del vidrio visto desde adentro;
+ *   4. un rebote de luz en el canto de abajo, por donde la luz vuelve.
+ *
+ * El canto en sí lo pone el anillo de degradé del pseudo-elemento.
+ */
+:root[data-vidrio] {
+  --volumen:
+    0 20px 44px -14px rgba(16, 36, 70, 0.3),
+    0 5px 12px -5px rgba(16, 36, 70, 0.14),
+    inset 0 7px 14px -10px rgba(16, 36, 70, 0.55),
+    inset 0 -9px 16px -12px rgba(255, 255, 255, 0.95);
+  --volumen-chico:
+    0 8px 18px -6px rgba(16, 36, 70, 0.26),
+    0 2px 5px -2px rgba(16, 36, 70, 0.14),
+    inset 0 4px 8px -6px rgba(16, 36, 70, 0.5),
+    inset 0 -5px 9px -7px rgba(255, 255, 255, 0.95);
+}
+:root[data-vidrio][data-theme='dark'],
+:root[data-vidrio]:where(:not([data-theme='light'])) {
+  --volumen:
+    0 22px 48px -14px rgba(0, 0, 0, 0.6),
+    0 5px 12px -5px rgba(0, 0, 0, 0.4),
+    inset 0 7px 14px -10px rgba(0, 0, 0, 0.75),
+    inset 0 -9px 16px -12px rgba(255, 255, 255, 0.3);
+  --volumen-chico:
+    0 8px 18px -6px rgba(0, 0, 0, 0.5),
+    0 2px 5px -2px rgba(0, 0, 0, 0.35),
+    inset 0 4px 8px -6px rgba(0, 0, 0, 0.7),
+    inset 0 -5px 9px -7px rgba(255, 255, 255, 0.28);
+}
+
+:root[data-vidrio] .rail,
+:root[data-vidrio] .panel,
+:root[data-vidrio] .dato,
+:root[data-vidrio] .carta { box-shadow: var(--volumen); }
+
+:root[data-vidrio] .modal {
+  box-shadow: 0 34px 90px -20px rgba(10, 25, 55, 0.5), var(--volumen);
+}
+
+:root[data-vidrio] .btn,
+:root[data-vidrio] .pastilla,
+:root[data-vidrio] .segmentos,
+:root[data-vidrio] .buscador { box-shadow: var(--volumen-chico); }
+
+:root[data-vidrio] .btn--primario {
+  box-shadow:
+    0 10px 24px -6px rgba(11, 87, 181, 0.5),
+    0 3px 8px -3px rgba(11, 87, 181, 0.3),
+    inset 0 2px 5px -3px rgba(255, 255, 255, 0.8),
+    inset 0 -6px 10px -8px rgba(0, 0, 0, 0.45);
 }

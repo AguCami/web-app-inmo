@@ -694,11 +694,12 @@ select.suelto { width: auto; border-radius: var(--r-pill); background: var(--pan
 
 .ingreso {
   position: relative;
-  overflow: clip;
+  overflow-x: clip;
   min-height: 100dvh;
-  display: grid;
-  place-items: center;
-  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 16px 32px;
   background: var(--fondo);
 }
 
@@ -707,6 +708,8 @@ select.suelto { width: auto; border-radius: var(--r-pill); background: var(--pan
  * Va como elemento y no como `background` de .ingreso porque así se puede
  * usar object-fit: cover y recorta bien en cualquier proporción, también
  * en vertical. */
+.ingreso--abriendo { justify-content: center; }
+
 .ingreso__fondo {
   position: absolute;
   inset: 0;
@@ -714,19 +717,144 @@ select.suelto { width: auto; border-radius: var(--r-pill); background: var(--pan
   height: 100%;
   object-fit: cover;
 }
-.ingreso__caja {
+
+/* ── La credencial colgada ──
+ *
+ * .colgante no se mueve: su borde de arriba es el pivote. .colgante__brazo
+ * —cinta, gancho y tarjeta, todo junto— gira alrededor de ese punto; el
+ * ángulo lo escribe colgante.ts. El largo de la cinta acompaña el alto de la
+ * pantalla para que la tarjeta quede más o menos al medio. */
+.colgante {
+  --cinta: clamp(44px, calc(50dvh - 300px), 260px);
   position: relative;
   width: 100%;
   max-width: 380px;
+}
+.colgante--entra { animation: colgante-cae 900ms cubic-bezier(0.22, 1.25, 0.4, 1) both; }
+@keyframes colgante-cae {
+  from { transform: translateY(-110dvh); }
+  to { transform: none; }
+}
+.colgante__brazo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transform-origin: 50% 0;
+  will-change: transform;
+}
+
+.colgante__cinta {
+  width: 24px;
+  height: var(--cinta);
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  /* Una cinta tejida: el azul de la marca, con un lomo más claro al medio. */
+  background:
+    linear-gradient(90deg, rgba(0, 0, 0, 0.28), transparent 22%, rgba(255, 255, 255, 0.14) 50%, transparent 78%, rgba(0, 0, 0, 0.28)),
+    var(--acento-fuerte);
+  box-shadow: 0 2px 6px rgba(10, 40, 90, 0.25);
+}
+.colgante__cinta span {
+  writing-mode: vertical-rl;
+  /* El texto termina abajo, junto al gancho, y se pierde hacia arriba. */
+  align-self: flex-end;
+  white-space: nowrap;
+  font-family: var(--fuente-titulo);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.82);
+  padding-bottom: 10px;
+}
+
+/* El broche de metal donde termina la cinta. */
+.colgante__gancho {
+  position: relative;
+  width: 20px;
+  height: 22px;
+  margin-top: -2px;
+  border-radius: 4px 4px 6px 6px;
+  background: linear-gradient(90deg, #8d97a3, #eef2f6 38%, #b9c2cc 62%, #7e8894);
+  box-shadow: 0 2px 4px rgba(10, 30, 60, 0.3), inset 0 -2px 0 rgba(0, 0, 0, 0.12);
+}
+
+.ingreso__caja {
+  position: relative;
+  margin-top: 4px;
+  width: 100%;
+  padding: 44px 26px 24px;
+  border-radius: var(--r-lg);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  /* Vidrio esmerilado: deja pasar la espiral, borrosa, sin perder lectura. */
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.52));
+  -webkit-backdrop-filter: blur(28px) saturate(1.6);
+  backdrop-filter: blur(28px) saturate(1.6);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    inset 0 -1px 0 rgba(11, 87, 181, 0.06),
+    0 10px 24px -10px rgba(10, 40, 90, 0.28),
+    0 40px 70px -30px rgba(10, 40, 90, 0.4);
+}
+.ingreso__caja.es-arrastrada { cursor: grabbing; }
+/* El reflejo: una franja de luz que corre al hamacarse (--brillo es el ángulo). */
+.ingreso__caja::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, 0.55) 46%, transparent 60%);
+  background-size: 260% 100%;
+  background-position: calc(50% + var(--brillo, 0) * 160%) 0;
+  mix-blend-mode: soft-light;
+}
+.ingreso__caja input,
+.ingreso__caja textarea { user-select: text; }
+
+/* El ojal de la tarjeta y la argolla que pasa por él. */
+.ingreso__ojal {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  width: 40px;
+  height: 10px;
+  margin-left: -20px;
+  border-radius: var(--r-pill);
+  background: rgba(20, 45, 80, 0.16);
+  box-shadow: inset 0 1px 2px rgba(10, 30, 60, 0.35), 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+.colgante__argolla {
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  width: 18px;
+  height: 34px;
+  margin-left: -9px;
+  border-radius: 9px;
+  border: 3px solid #c3cbd4;
+  border-top-color: #eef2f6;
+  border-bottom-color: #8d97a3;
+  box-shadow: 0 1px 2px rgba(10, 30, 60, 0.3);
+  pointer-events: none;
+}
+
+.ingreso__form {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 14px;
-  padding: 28px 26px 24px;
-  background: var(--panel);
-  border: 1px solid var(--borde);
-  border-radius: var(--r-lg);
-  box-shadow: var(--sombra-suave);
 }
+.ingreso__caja input {
+  background: rgba(255, 255, 255, 0.62);
+  border-color: rgba(11, 87, 181, 0.14);
+}
+.ingreso__caja input:hover { border-color: rgba(11, 87, 181, 0.3); }
+.ingreso__caja input:focus { background: #fff; border-color: var(--acento); }
 
 .ingreso__previa a {
   color: var(--acento);
@@ -749,6 +877,10 @@ select.suelto { width: auto; border-radius: var(--r-pill); background: var(--pan
   margin-top: 8px;
 }
 .ingreso__marca span { font-size: 12px; color: var(--tinta-3); }
+
+@media (prefers-reduced-motion: reduce) {
+  .ingreso__caja { cursor: auto; touch-action: auto; user-select: auto; }
+}
 .btn--ancho { width: 100%; justify-content: center; }
 
 /* Estado de la sincronización, en la cabecera. */

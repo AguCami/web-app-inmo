@@ -64,7 +64,7 @@ export default function App() {
   ];
 
   if (verificandoSesion) {
-    return <div className="ingreso"><span className="tenue">Abriendo…</span></div>;
+    return <div className="ingreso ingreso--abriendo"><span className="tenue">Abriendo…</span></div>;
   }
   if (modoServidor && !sesion) return <Ingresar />;
   // Vista previa del ingreso.

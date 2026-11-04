@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Campo, Nota } from './ui';
 import { Logo } from './Logo';
@@ -9,6 +9,8 @@ import fondo from '../assets/ingreso-fondo.webp';
  * La pantalla de ingreso. Es lo único que se ve sin sesión: con servidor, la
  * app no muestra ni un dato antes de saber quién está del otro lado.
  *
+ * Va siempre en claro: el fondo es la espiral sobre blanco, y una tarjeta
+ * oscura encima no combina. Al salir se devuelve el tema que había.
  */
 export function Ingresar() {
   const iniciarSesion = useApp((e) => e.iniciarSesion);
@@ -20,6 +22,16 @@ export function Ingresar() {
   const [clave, setClave] = useState('');
   const [error, setError] = useState('');
   const [entrando, setEntrando] = useState(false);
+
+  useEffect(() => {
+    const raiz = document.documentElement;
+    const antes = raiz.getAttribute('data-theme');
+    raiz.setAttribute('data-theme', 'light');
+    return () => {
+      if (antes === null) raiz.removeAttribute('data-theme');
+      else raiz.setAttribute('data-theme', antes);
+    };
+  }, []);
 
   const enviar = async (e: React.FormEvent) => {
     e.preventDefault();

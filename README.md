@@ -415,6 +415,32 @@ Respeta `prefers-reduced-transparency`: quien pidió menos transparencia en
 su sistema recibe superficies opacas. Y al imprimir se desactiva entero, que
 si no los recibos salen grises.
 
+### Hasta dónde llega, y por qué no es el de Apple
+
+![El canto, al triple de tamaño](docs/vidrio-canto.png)
+
+El canto no es un `border`: es un anillo de degradé recortado con máscara,
+claro arriba a la izquierda, apagado al medio y claro otra vez abajo. Eso es
+lo que hace que se lea como una pieza con espesor. Un `border` dibuja una
+línea del mismo color en los cuatro lados y queda plano.
+
+Aun así **no se ve como la galería de Apple**, por dos razones que conviene
+tener claras:
+
+1. **CSS no refracta.** `backdrop-filter` desenfoca y satura lo que hay
+   detrás, pero no lo deforma ni lo agranda. La lente que se ve en los
+   bordes de las piezas de Apple necesita deformar el fondo, y eso en un
+   navegador pide WebGL o filtros SVG de desplazamiento: caro y con mal
+   soporte.
+2. **No hay nada que refractar.** Las imágenes de Apple son cinco formas
+   grandes sobre un fondo vacío con barras de color saturado. Esta app son
+   ciento cincuenta filas de números sobre blanco. El vidrio necesita un
+   fondo con color y contraste para parecer vidrio; un panel de cobranzas es
+   lo contrario por diseño.
+
+Donde sí rinde es donde hay algo detrás: el diálogo sobre el listado, el
+menú sobre la página, los botones con relleno saturado.
+
 Lo que cuesta: `backdrop-filter` en muchos elementos a la vez es trabajo para
 la placa de video. En una lista larga en un celular viejo se puede notar.
 

@@ -16,9 +16,9 @@
   /* El fondo deja de ser plano: es lo que el vidrio refracta. */
   /* Más claro que antes: en la referencia de Apple el fondo es casi blanco
      y el color lo ponen los acentos, no un lavado general. */
-  --vidrio-fondo-1: #e3edfb;
-  --vidrio-fondo-2: #f0e9fd;
-  --vidrio-fondo-3: #e6f5f7;
+  --vidrio-fondo-1: #eef3fb;
+  --vidrio-fondo-2: #f6f1fd;
+  --vidrio-fondo-3: #eff8f9;
 
   --vidrio-material: rgba(255, 255, 255, 0.62);
   --vidrio-material-fuerte: rgba(255, 255, 255, 0.82);
@@ -92,27 +92,95 @@
 }
 
 /*
- * El canto.
+ * El canto, en serio.
  *
- * Es lo que separa «vidrio» de «rectángulo semitransparente»: en un vidrio
- * real el borde es más grueso que la lámina y desvía la luz, así que se ve
- * un brillo arriba, una sombra adentro abajo, y un hilo claro alrededor.
- * Se arma con tres sombras superpuestas, no con un border.
+ * Un `border` dibuja una línea del mismo color en los cuatro lados. El canto
+ * de un vidrio no es eso: es grueso, y brilla distinto arriba que abajo
+ * porque desvía la luz. Se consigue con un anillo de degradé —un
+ * pseudo-elemento relleno con un linear-gradient y recortado con máscara
+ * para que quede solo el borde—. Es lo que hace que se lea como una pieza
+ * con espesor y no como un rectángulo semitransparente.
+ *
+ * Lo que NO se puede hacer en CSS: refractar. `backdrop-filter` desenfoca y
+ * satura lo que hay detrás, pero no lo deforma ni lo agranda. La lente de
+ * Apple necesita deformar, y eso en la web pide WebGL.
  */
-:root[data-vidrio] {
-  --vidrio-canto:
-    inset 0 1.5px 0 rgba(255, 255, 255, 0.95),
-    inset 0 -1px 1px rgba(14, 40, 80, 0.07),
-    inset 1.5px 0 1px rgba(255, 255, 255, 0.5),
-    inset -1.5px 0 1px rgba(255, 255, 255, 0.5);
+:root[data-vidrio] .rail,
+:root[data-vidrio] .modal,
+:root[data-vidrio] .btn,
+:root[data-vidrio] .pastilla,
+:root[data-vidrio] .segmentos,
+:root[data-vidrio] .buscador,
+:root[data-vidrio] .panel,
+:root[data-vidrio] .dato,
+:root[data-vidrio] .carta {
+  position: relative;
+  isolation: isolate;
 }
+
+:root[data-vidrio] .rail::before,
+:root[data-vidrio] .modal::before,
+:root[data-vidrio] .btn::before,
+:root[data-vidrio] .pastilla::before,
+:root[data-vidrio] .segmentos::before,
+:root[data-vidrio] .buscador::before,
+:root[data-vidrio] .panel::before,
+:root[data-vidrio] .dato::before,
+:root[data-vidrio] .carta::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: var(--canto-grosor, 1.6px);
+  background: var(--canto-luz);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: 2;
+}
+
+:root[data-vidrio] {
+  /* Claro arriba a la izquierda, apagado al medio, vuelve abajo: así se ve
+     un borde redondeado que recoge la luz del ambiente. */
+  --canto-luz: linear-gradient(
+    150deg,
+    rgba(255, 255, 255, 0.98) 0%,
+    rgba(255, 255, 255, 0.5) 22%,
+    rgba(255, 255, 255, 0.08) 45%,
+    rgba(255, 255, 255, 0.35) 72%,
+    rgba(255, 255, 255, 0.85) 100%
+  );
+  /* El reflejo de la superficie, encima del material. */
+  --vidrio-reflejo: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.55),
+    rgba(255, 255, 255, 0.06) 46%,
+    rgba(255, 255, 255, 0) 60%
+  );
+}
+
 :root[data-vidrio][data-theme='dark'],
 :root[data-vidrio]:where(:not([data-theme='light'])) {
-  --vidrio-canto:
-    inset 0 1.5px 0 rgba(255, 255, 255, 0.22),
-    inset 0 -1px 1px rgba(0, 0, 0, 0.35),
-    inset 1.5px 0 1px rgba(255, 255, 255, 0.08),
-    inset -1.5px 0 1px rgba(255, 255, 255, 0.08);
+  --canto-luz: linear-gradient(
+    150deg,
+    rgba(255, 255, 255, 0.55) 0%,
+    rgba(255, 255, 255, 0.18) 24%,
+    rgba(255, 255, 255, 0.03) 48%,
+    rgba(255, 255, 255, 0.12) 74%,
+    rgba(255, 255, 255, 0.4) 100%
+  );
+  --vidrio-reflejo: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.14),
+    rgba(255, 255, 255, 0.02) 46%,
+    rgba(255, 255, 255, 0) 60%
+  );
 }
 
 /* ── El cromo: acá sí va el vidrio ── */
@@ -122,15 +190,20 @@
   backdrop-filter: var(--vidrio-desenfoque);
   -webkit-backdrop-filter: var(--vidrio-desenfoque);
   border-color: var(--vidrio-borde);
-  box-shadow: var(--vidrio-sombra), var(--vidrio-canto);
+  background: var(--vidrio-reflejo), var(--vidrio-material);
+  box-shadow: var(--vidrio-sombra);
+  border-color: transparent;
+  --canto-grosor: 2px;
 }
 
 :root[data-vidrio] .modal {
-  background: var(--vidrio-material-fuerte);
+  background: var(--vidrio-reflejo), var(--vidrio-material-fuerte);
+  --canto-grosor: 2.4px;
   backdrop-filter: blur(30px) saturate(180%);
   -webkit-backdrop-filter: blur(30px) saturate(180%);
   border: 1px solid var(--vidrio-borde);
-  box-shadow: 0 24px 70px rgba(10, 25, 55, 0.3), var(--vidrio-canto);
+  border-color: transparent;
+  box-shadow: 0 24px 70px rgba(10, 25, 55, 0.3);
 }
 
 /* Los controles son cápsulas, como en la referencia: el radio completo es
@@ -139,10 +212,10 @@
 :root[data-vidrio] .segmentos,
 :root[data-vidrio] .buscador,
 :root[data-vidrio] .btn {
-  backdrop-filter: blur(12px) saturate(160%);
-  -webkit-backdrop-filter: blur(12px) saturate(160%);
-  box-shadow: var(--vidrio-canto);
+  backdrop-filter: blur(14px) saturate(180%);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
   border-radius: var(--r-pill);
+  --canto-grosor: 1.8px;
 }
 :root[data-vidrio] .segmentos button { border-radius: var(--r-pill); }
 
@@ -162,16 +235,20 @@
   backdrop-filter: blur(14px) saturate(140%);
   -webkit-backdrop-filter: blur(14px) saturate(140%);
   border-color: var(--borde);
-  box-shadow: 0 6px 22px rgba(16, 36, 70, 0.07), var(--vidrio-canto);
+  box-shadow: 0 6px 22px rgba(16, 36, 70, 0.07);
+  border-color: transparent;
 }
 
 :root[data-vidrio] .btn--primario {
   /* El acento saturado dentro de la cápsula de vidrio: es el contraste de
      color contra material que sostiene toda la referencia. */
-  box-shadow:
-    0 6px 18px rgba(11, 87, 181, 0.38),
-    inset 0 1.5px 0 rgba(255, 255, 255, 0.45),
-    inset 0 -2px 3px rgba(0, 0, 0, 0.14);
+  /* El relleno saturado dentro de la cápsula, como la pastilla verde de la
+     referencia: color pleno adentro, canto de vidrio alrededor. */
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0) 52%),
+    linear-gradient(180deg, var(--acento), var(--acento-fuerte));
+  box-shadow: 0 8px 20px rgba(11, 87, 181, 0.42);
+  --canto-grosor: 2px;
 }
 
 /* ── Accesibilidad ──
@@ -180,6 +257,7 @@
    devuelven superficies opacas y sin desenfoque. */
 @media (prefers-reduced-transparency: reduce) {
   :root[data-vidrio] body { background: var(--fondo); }
+  :root[data-vidrio] *::before { background: none !important; }
   :root[data-vidrio] .rail,
   :root[data-vidrio] .modal,
   :root[data-vidrio] .panel,

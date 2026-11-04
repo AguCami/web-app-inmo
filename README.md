@@ -469,6 +469,28 @@ Las tarjetas de datos quedaron fuera a propósito: están apoyadas
 directamente sobre el fondo, no tienen nada detrás que mostrar, y el
 material solo les sacaba contraste a los importes.
 
+### La opacidad: lo que de verdad lo tenía plano
+
+Las superficies estaban en 93 % de opacidad. Una superficie opaca no deja
+ver nada detrás, así que todo el material —la lente, el canto, las sombras—
+estaba tapado por una pared blanca. **Bajarlas a 25 % fue el cambio que más
+se nota de todos.**
+
+Medido antes de bajarlas, barriendo niveles sobre este fondo claro:
+
+| Opacidad del panel | Importe | Subtítulo |
+|---|---|---|
+| 93 % | 5,0:1 | 5,0:1 |
+| 60 % | 4,8:1 | 4,9:1 |
+| 40 % | 4,7:1 | 4,8:1 |
+| **25 %** | **4,6:1** | **4,7:1** |
+| 12 % | 4,6:1 | 4,6:1 |
+
+La conclusión corrige una anterior: **lo que rompía la legibilidad no era la
+transparencia, era el fondo de colores.** Sobre un fondo claro se puede bajar
+hasta el 12 % y el texto sigue cumpliendo, porque lo que se filtra también es
+claro. Quedó en 25 %, que deja margen y le da algo de cuerpo a la superficie.
+
 ### Lo que resolvió el empate: la sombra, no el color
 
 Durante un rato la conclusión fue que había que elegir entre que se viera

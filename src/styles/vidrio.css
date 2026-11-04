@@ -20,8 +20,11 @@
   --vidrio-fondo-2: #f6f1fd;
   --vidrio-fondo-3: #eff8f9;
 
-  --vidrio-material: rgba(255, 255, 255, 0.62);
-  --vidrio-material-fuerte: rgba(255, 255, 255, 0.82);
+  /* Medido: sobre este fondo claro, con 25 % el texto todavía llega a
+     4,6:1. Antes estaban en 0,62 y 0,93 —prácticamente opacas— y por eso
+     se veía plano: una superficie opaca no deja ver nada detrás. */
+  --vidrio-material: rgba(255, 255, 255, 0.25);
+  --vidrio-material-fuerte: rgba(255, 255, 255, 0.4);
   --vidrio-borde: rgba(255, 255, 255, 0.75);
   --vidrio-sombra: 0 10px 32px rgba(16, 36, 70, 0.12);
   /* El brillo del canto superior: es lo que lo hace parecer vidrio y no
@@ -30,9 +33,9 @@
   --vidrio-desenfoque: blur(22px) saturate(170%);
 
   /* El contenido se mantiene casi opaco a propósito. */
-  --panel: rgba(255, 255, 255, 0.93);
-  --panel-2: rgba(255, 255, 255, 0.72);
-  --panel-hover: rgba(255, 255, 255, 0.99);
+  --panel: rgba(255, 255, 255, 0.28);
+  --panel-2: rgba(255, 255, 255, 0.18);
+  --panel-hover: rgba(255, 255, 255, 0.45);
   --borde: rgba(14, 40, 80, 0.1);
   --borde-fuerte: rgba(14, 40, 80, 0.17);
 }
@@ -48,15 +51,15 @@
     --vidrio-fondo-2: #241c3a;
     --vidrio-fondo-3: #112b2e;
 
-    --vidrio-material: rgba(28, 36, 50, 0.6);
-    --vidrio-material-fuerte: rgba(26, 33, 46, 0.86);
+    --vidrio-material: rgba(28, 36, 50, 0.28);
+    --vidrio-material-fuerte: rgba(26, 33, 46, 0.42);
     --vidrio-borde: rgba(255, 255, 255, 0.14);
     --vidrio-sombra: 0 10px 34px rgba(0, 0, 0, 0.45);
     --vidrio-brillo: inset 0 1px 0 rgba(255, 255, 255, 0.12);
 
-    --panel: rgba(23, 29, 40, 0.92);
-    --panel-2: rgba(32, 40, 54, 0.7);
-    --panel-hover: rgba(36, 45, 60, 0.95);
+    --panel: rgba(23, 29, 40, 0.3);
+    --panel-2: rgba(32, 40, 54, 0.22);
+    --panel-hover: rgba(36, 45, 60, 0.45);
     --borde: rgba(255, 255, 255, 0.1);
     --borde-fuerte: rgba(255, 255, 255, 0.17);
   }
@@ -67,15 +70,15 @@
   --vidrio-fondo-2: #241c3a;
   --vidrio-fondo-3: #112b2e;
 
-  --vidrio-material: rgba(28, 36, 50, 0.6);
-  --vidrio-material-fuerte: rgba(26, 33, 46, 0.86);
+  --vidrio-material: rgba(28, 36, 50, 0.28);
+  --vidrio-material-fuerte: rgba(26, 33, 46, 0.42);
   --vidrio-borde: rgba(255, 255, 255, 0.14);
   --vidrio-sombra: 0 10px 34px rgba(0, 0, 0, 0.45);
   --vidrio-brillo: inset 0 1px 0 rgba(255, 255, 255, 0.12);
 
-  --panel: rgba(23, 29, 40, 0.92);
-  --panel-2: rgba(32, 40, 54, 0.7);
-  --panel-hover: rgba(36, 45, 60, 0.95);
+  --panel: rgba(23, 29, 40, 0.3);
+  --panel-2: rgba(32, 40, 54, 0.22);
+  --panel-hover: rgba(36, 45, 60, 0.45);
   --borde: rgba(255, 255, 255, 0.1);
   --borde-fuerte: rgba(255, 255, 255, 0.17);
 }
@@ -490,12 +493,12 @@
   box-shadow: var(--volumen-chico);
 }
 
-/* Las tarjetas vuelven a ser superficie, no vidrio: no tienen nada detrás
-   y el material solo les sacaba contraste a los importes. */
-:root[data-vidrio] .panel,
-:root[data-vidrio] .dato,
-:root[data-vidrio] .carta {
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-  background: var(--panel);
+/* Las tarjetas sí llevan material ahora. Con 25 % de opacidad la retícula
+   del fondo se ve a través y la lente la dobla en el canto; con 93 % no
+   había nada que mostrar y por eso parecían cartón. */
+:root[data-vidrio='1'] .panel,
+:root[data-vidrio='1'] .dato,
+:root[data-vidrio='1'] .carta {
+  backdrop-filter: url(#lente) blur(26px) saturate(165%);
+  -webkit-backdrop-filter: url(#lente) blur(26px) saturate(165%);
 }

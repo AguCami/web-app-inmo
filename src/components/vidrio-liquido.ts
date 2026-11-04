@@ -53,34 +53,34 @@ export function useVidrioLiquido(
         const { LiquidGlass } = await import('@ybouane/liquidglass');
         if (!vivo) return;
 
-        instancia = await LiquidGlass.init({
-          root: elRaiz,
-          glassElements: [elVidrio],
-          defaults: {
-            // Desenfoque: detrás hay una ciudad con ventanas, y el
-            // formulario tiene que leerse por encima sin pelearse con
-            // ella. Es el parámetro que más cuida la legibilidad.
-            blurAmount: 1.2,
-            refraction: 0.9,
-            chromAberration: 0.1,
-            // El canto y el especular son lo que delimita la pieza. Con
-            // los valores de fábrica (0,05 y 0) el panel no se veía.
-            edgeHighlight: 0.9,
-            specular: 0.85,
-            fresnel: 1,
-            // Un velo apenas, para despegar el cuerpo del fondo y que el
-            // texto blanco tenga sobre qué apoyarse.
-            tintStrength: 0.12,
-            brightness: 0.04,
-            // Tiene que coincidir con el --r-lg de la tarjeta, o el
-            // shader redondea distinto que el borde del CSS.
-            cornerRadius: 24,
-            zRadius: 26,
-            shadowOpacity: 0.26,
-            shadowSpread: 26,
-            shadowOffsetY: 10,
-          },
-        });
+        // La config va por `dataset.config` en el elemento y NO por la
+        // opción `defaults` de init(). Medido: con `defaults` el shader
+        // ignora todo —cambiar `shadowOpacity` de 0 a 1 y `shadowSpread`
+        // de 26 a 60 daba una imagen idéntica píxel a píxel—. Por
+        // `dataset.config` sí toma. Si alguien lo mueve de vuelta a
+        // `defaults`, los valores de acá dejan de hacer nada en silencio.
+        const cfg = {
+          // `blurAmount` queda documentado pero es inerte: en esta app
+          // no produce ningún cambio de píxel a ningún valor, de 0 a 9.
+          // El esmerilado del cuerpo lo pone `backdrop-filter` en el CSS.
+          blurAmount: 0,
+          distortion: 0.5,
+          refraction: 1.1,
+          chromAberration: 0.12,
+          edgeHighlight: 1.2,
+          specular: 0.9,
+          fresnel: 1.4,
+          saturation: 0.25,
+          brightness: 0.06,
+          tintStrength: 0.1,
+          cornerRadius: 24,
+          zRadius: 34,
+          shadowOpacity: 0.3,
+          shadowSpread: 30,
+          shadowOffsetY: 12,
+        };
+        elVidrio.dataset.config = JSON.stringify(cfg);
+        instancia = await LiquidGlass.init({ root: elRaiz, glassElements: [elVidrio] });
 
         if (!vivo) {
           instancia.destroy();

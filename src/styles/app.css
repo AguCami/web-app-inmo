@@ -689,16 +689,33 @@ select.suelto { width: auto; border-radius: var(--r-pill); background: var(--pan
  * El atributo lo pone el hook SOLO cuando el efecto arrancó de verdad, así
  * que sin WebGL nada de esto aplica y queda la tarjeta de arriba. */
 .ingreso[data-vidrio-liquido] .ingreso__caja {
-  /* Un velo oscuro, no transparencia total.
+  /* El reparto del efecto, y por qué está partido en tres.
    *
-   * El shader aporta el canto, la refracción y la sombra, pero no da
-   * cuerpo: su `tint` solo enfría el color, no opaca. Sin velo el
-   * formulario queda sobre los edificios del fondo y no se lee, y acá hay
-   * que tipear credenciales. El velo va por encima del canvas del shader,
-   * así que el canto y la refracción del borde se siguen viendo. */
-  background: rgba(11, 24, 45, 0.58);
-  border-color: rgba(255, 255, 255, 0.22);
+   * El shader de la librería pone la REFRACCIÓN y el CANTO: eso lo hace
+   * bien y no se puede con CSS. Pero su `blurAmount` no produce ningún
+   * cambio de píxel en esta app, a ningún valor, y su `tint` solo enfría
+   * el color sin opacar. O sea: no da cuerpo ni esmerilado.
+   *
+   * Así que el cuerpo esmerilado lo pone `backdrop-filter`, y el velo que
+   * hace legible el formulario va en ::after. Tiene que ir ahí y no en el
+   * `background` de la tarjeta porque el canvas del shader es un hijo con
+   * z-index -1: se pinta POR ENCIMA del fondo de la tarjeta, así que un
+   * velo puesto ahí queda tapado. Medido: con el velo en `background` el
+   * contraste quedaba en 1,02:1. */
+  background: transparent;
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  border-color: rgba(255, 255, 255, 0.32);
   box-shadow: none;
+}
+.ingreso[data-vidrio-liquido] .ingreso__caja::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: linear-gradient(160deg, rgba(10, 32, 64, 0.58), rgba(7, 22, 46, 0.72));
+  pointer-events: none;
 }
 /* Sobre el fondo de color la tinta se invierte. */
 .ingreso[data-vidrio-liquido] .ingreso__caja,

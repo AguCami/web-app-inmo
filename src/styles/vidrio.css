@@ -23,12 +23,6 @@
   /* Medido: sobre este fondo claro, con 25 % el texto todavía llega a
      4,6:1. Antes estaban en 0,62 y 0,93 —prácticamente opacas— y por eso
      se veía plano: una superficie opaca no deja ver nada detrás. */
-  /* Medido sobre el fondo real: con la retícula visible detrás del menú,
-     el gris secundario de fábrica quedaba en 4,49:1 —falla por un pelo—.
-     Acá la tinta se oscurece un paso en vez de tapar el vidrio. */
-  --tinta-2: #4b5560;
-  --tinta-3: #5c6672;
-
   --vidrio-material: rgba(255, 255, 255, 0.1);
   --vidrio-material-fuerte: rgba(255, 255, 255, 0.22);
   --vidrio-borde: rgba(255, 255, 255, 0.75);
@@ -68,10 +62,6 @@
     --vidrio-sombra: 0 10px 34px rgba(0, 0, 0, 0.45);
     --vidrio-brillo: inset 0 1px 0 rgba(255, 255, 255, 0.12);
 
-    /* La tinta vuelve a los pasos del tema oscuro: el oscurecimiento de
-       arriba es para el fondo claro y acá dejaría el menú ilegible. */
-    --tinta-2: #a8b2bd;
-    --tinta-3: #7c858f;
     --panel: rgba(23, 29, 40, 0.3);
     --panel-2: rgba(32, 40, 54, 0.22);
     --panel-hover: rgba(36, 45, 60, 0.45);
@@ -91,10 +81,6 @@
   --vidrio-sombra: 0 10px 34px rgba(0, 0, 0, 0.45);
   --vidrio-brillo: inset 0 1px 0 rgba(255, 255, 255, 0.12);
 
-  /* La tinta vuelve a los pasos del tema oscuro: el oscurecimiento de
-     arriba es para el fondo claro y acá dejaría el menú ilegible. */
-  --tinta-2: #a8b2bd;
-  --tinta-3: #7c858f;
   --panel: rgba(23, 29, 40, 0.3);
   --panel-2: rgba(32, 40, 54, 0.22);
   --panel-hover: rgba(36, 45, 60, 0.45);
@@ -105,29 +91,34 @@
 /* El fondo que el vidrio refracta. Fijo: no se mueve con el scroll, así el
    material cambia de color según por dónde pasa el contenido. */
 :root[data-vidrio] {
-  --retícula: rgba(90, 100, 120, 0.16);
 }
 :root[data-vidrio][data-theme="dark"] {
-  --retícula: rgba(255, 255, 255, 0.07);
 }
 
 @media (prefers-color-scheme: dark) {
   :root[data-vidrio]:where(:not([data-theme="light"])) {
-    --retícula: rgba(255, 255, 255, 0.07);
   }
 }
 
 /*
- * El fondo es claro, como en la referencia de Apple. La clave no es el
- * color: es que tenga TEXTURA FINA. Una lente sobre un blanco plano no se
- * ve, porque no hay nada que deformar. La retícula tenue hace visible la
- * refracción —sus líneas se doblan al pasar por el canto— sin ensuciar la
- * lectura de los importes, que es lo que un color saturado sí haría.
+ * El fondo es claro y LISO. Acá hubo una retícula tenue, puesta sobre la
+ * teoría de que una lente sobre un fondo plano es invisible porque no
+ * tiene nada que deformar.
+ *
+ * Esa teoría era falsa, y lo zanjó una medición: en la demo de
+ * liquidglass.dev el fondo es un color plano, rgb(184,202,205), sin
+ * ninguna textura, y las piezas se leen como vidrio igual. Lo que hace
+ * que una superficie se lea como vidrio es la ILUMINACION DEL CANTO
+ * —especular ancho, filo interior, contorno exterior—, no la refracción
+ * de un patrón. La refracción es un extra donde hay algo detrás, y en
+ * esta app eso pasa de verdad en la cabecera pegajosa y el diálogo,
+ * donde el contenido real scrollea por debajo.
+ *
+ * Así que la retícula no estaba sosteniendo el efecto: solo competía con
+ * los importes, que es lo que esta app tiene que dejar leer.
  */
 :root[data-vidrio] body {
   background:
-    linear-gradient(var(--retícula) 1px, transparent 1px) 0 0 / 38px 38px,
-    linear-gradient(90deg, var(--retícula) 1px, transparent 1px) 0 0 / 38px 38px,
     radial-gradient(
       1200px 820px at 10% -10%,
       var(--vidrio-fondo-1),
@@ -592,15 +583,14 @@
   box-shadow: var(--volumen-chico);
 }
 
-/* Acá va el reparto que ordena toda la variante, y es el que faltaba:
+/* Acá va el reparto que ordena toda la variante:
  *
- *   · el CROMO lleva cristal CLARO —lente, sin desenfoque—. Es lo que hace
- *     el efecto: la retícula se ve nítida por el centro y se dobla en el
- *     canto. Un desenfoque encima destruye exactamente eso.
+ *   · el CROMO lleva cristal CLARO —lente, sin desenfoque—. Lo que pasa
+ *     por debajo se ve nítido por el centro y se dobla en el canto. Un
+ *     desenfoque encima destruye exactamente eso.
  *   · el CONTENIDO lleva lo contrario: esmerilado y sin lente. Un importe
- *     no se lee a través de una lente —el canto le dobla los dígitos— y la
- *     retícula detrás de una columna de números hay que apagarla, no
- *     deformarla.
+ *     no se lee a través de una lente, porque el canto le dobla los
+ *     dígitos.
  *
  * Antes las tarjetas llevaban lente y 25 % de opacidad. Por eso los
  * números quedaban sobre una cuadrícula torcida y el conjunto se veía

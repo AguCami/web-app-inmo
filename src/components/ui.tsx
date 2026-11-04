@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useContador } from './animacion';
 import { IconoAlerta, IconoCerrar, IconoCheck, IconoInfo } from './iconos';
 
 /* ───────────────────────────── Panel ────────────────────────────── */
@@ -408,5 +409,78 @@ export function Paginador({
         </button>
       </span>
     </div>
+  );
+}
+
+/* ─────────────────────── Importe que cuenta ─────────────────────── */
+
+/**
+ * Un importe que llega a su valor en vez de aparecer de golpe.
+ *
+ * Va solo en las tarjetas de resumen del panel. En las tablas no: ahí los
+ * números se comparan entre sí y uno moviéndose mientras los otros están
+ * quietos confunde más de lo que ayuda.
+ */
+export function Importe({
+  valor,
+  formato,
+}: {
+  valor: number;
+  formato: (v: number) => string;
+}) {
+  const mostrado = useContador(valor);
+  // El valor final va en el DOM para quien use lector de pantalla: lo que
+  // se anuncia es el importe, no los pasos intermedios.
+  return (
+    <span aria-label={formato(valor)}>
+      <span aria-hidden="true">{formato(mostrado)}</span>
+    </span>
+  );
+}
+
+/* ──────────────────────────── Chispa ────────────────────────────── */
+
+/**
+ * El mini-gráfico de una tarjeta: la forma de los últimos meses, sin ejes
+ * ni números. No reemplaza al gráfico grande, da el contorno de una ojeada.
+ *
+ * Es decorativo a propósito —`aria-hidden`—: el dato que importa ya está
+ * escrito al lado en texto, y una curva sin escala no agrega nada a quien
+ * la escucha en vez de verla.
+ */
+export function Chispa({ datos, tono = 'neutro' }: { datos: number[]; tono?: Tono | 'acento' }) {
+  if (datos.length < 2) return null;
+
+  const an = 100;
+  const al = 28;
+  const max = Math.max(...datos);
+  const min = Math.min(...datos);
+  const rango = max - min || 1;
+  const puntos = datos.map((v, i) => {
+    const x = (i / (datos.length - 1)) * an;
+    // 2px de aire arriba y abajo, para que el trazo no se corte.
+    const y = al - 2 - ((v - min) / rango) * (al - 4);
+    return [x, y] as const;
+  });
+
+  const linea = puntos.map(([x, y], i) => `${i === 0 ? 'M' : 'L'}${x.toFixed(1)} ${y.toFixed(1)}`).join(' ');
+  const area = `${linea} L${an} ${al} L0 ${al} Z`;
+  const color =
+    tono === 'ok'
+      ? 'var(--ok)'
+      : tono === 'critico'
+        ? 'var(--critico)'
+        : tono === 'alerta'
+          ? 'var(--alerta)'
+          : tono === 'acento'
+            ? 'var(--acento)'
+            : 'var(--tinta-3)';
+
+  return (
+    <svg className="chispa" viewBox={`0 0 ${an} ${al}`} preserveAspectRatio="none" aria-hidden="true">
+      <path d={area} fill={color} opacity="0.12" />
+      <path d={linea} fill="none" stroke={color} strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round"
+        vectorEffect="non-scaling-stroke" />
+    </svg>
   );
 }

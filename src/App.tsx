@@ -66,6 +66,12 @@ export default function App() {
     return <div className="ingreso"><span className="tenue">Abriendo…</span></div>;
   }
   if (modoServidor && !sesion) return <Ingresar />;
+  // Vista previa del ingreso con ?ingreso en la dirección.
+  //
+  // Sin Supabase configurado `modoServidor` es falso y esta pantalla no se
+  // alcanza nunca, así que no habría forma de mirarla ni de mostrarla. El
+  // formulario sin servidor no hace nada: no hay a quién autenticar.
+  if (new URLSearchParams(window.location.search).has('ingreso')) return <Ingresar />;
 
   return (
     <div className="app">

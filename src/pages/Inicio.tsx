@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Encabezado } from '../components/Encabezado';
-import { Avatar, Dato, Item, Panel, Pastilla, Progreso, Serie, Vacio } from '../components/ui';
+import { Avatar, Chispa, Dato, Importe, Item, Panel, Pastilla, Progreso, Serie, Vacio } from '../components/ui';
 import {
   IconoAlerta,
   IconoContratos,
@@ -64,7 +64,7 @@ export default function Inicio() {
         <div className="grid grid--resumen">
           <Dato
             etiqueta="Cobrado este mes"
-            valor={formatearMoneda(mes.cobrado)}
+            valor={<Importe valor={mes.cobrado} formato={(v) => formatearMoneda(v)} />}
             tono="ok"
             pie={`${formatearPorcentaje(mes.tasaCobranza)} de ${formatearMoneda(mes.emitido)}`}
           >
@@ -72,25 +72,31 @@ export default function Inicio() {
           </Dato>
           <Dato
             etiqueta="Falta cobrar"
-            valor={formatearMoneda(mes.pendiente)}
+            valor={<Importe valor={mes.pendiente} formato={(v) => formatearMoneda(v)} />}
             pie={mes.pendiente > 0 ? 'de las cuotas de este mes' : 'no queda nada del mes'}
-          />
+          >
+            <Chispa datos={serie.map((s) => s.pendiente)} />
+          </Dato>
           <Dato
             etiqueta="Deuda atrasada"
-            valor={formatearMoneda(alerta.deudaTotal)}
+            valor={<Importe valor={alerta.deudaTotal} formato={(v) => formatearMoneda(v)} />}
             tono={alerta.deudaTotal > 0 ? 'critico' : 'ok'}
             pie={
               alerta.cuotasVencidas > 0
                 ? `${plural(alerta.cuotasVencidas, 'cuota vencida', 'cuotas vencidas')}, de todos los meses`
                 : 'al día'
             }
-          />
+          >
+            <Chispa datos={serie.map((s) => s.vencido)} tono="critico" />
+          </Dato>
           <Dato
             etiqueta="Tus honorarios"
-            valor={formatearMoneda(mes.honorarios)}
+            valor={<Importe valor={mes.honorarios} formato={(v) => formatearMoneda(v)} />}
             tono="acento"
             pie="sobre el alquiler ya cobrado"
-          />
+          >
+            <Chispa datos={serie.map((s) => s.honorarios)} tono="acento" />
+          </Dato>
         </div>
 
         <div className="grid grid--2">

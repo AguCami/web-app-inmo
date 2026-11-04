@@ -23,8 +23,14 @@
   /* Medido: sobre este fondo claro, con 25 % el texto todavía llega a
      4,6:1. Antes estaban en 0,62 y 0,93 —prácticamente opacas— y por eso
      se veía plano: una superficie opaca no deja ver nada detrás. */
-  --vidrio-material: rgba(255, 255, 255, 0.25);
-  --vidrio-material-fuerte: rgba(255, 255, 255, 0.4);
+  /* Medido sobre el fondo real: con la retícula visible detrás del menú,
+     el gris secundario de fábrica quedaba en 4,49:1 —falla por un pelo—.
+     Acá la tinta se oscurece un paso en vez de tapar el vidrio. */
+  --tinta-2: #4b5560;
+  --tinta-3: #5c6672;
+
+  --vidrio-material: rgba(255, 255, 255, 0.1);
+  --vidrio-material-fuerte: rgba(255, 255, 255, 0.22);
   --vidrio-borde: rgba(255, 255, 255, 0.75);
   --vidrio-sombra: 0 10px 32px rgba(16, 36, 70, 0.12);
   /* El brillo del canto superior: es lo que lo hace parecer vidrio y no
@@ -33,20 +39,25 @@
   --vidrio-desenfoque: blur(22px) saturate(170%);
 
   /* El contenido se mantiene casi opaco a propósito. */
-  --panel: rgba(255, 255, 255, 0.28);
-  --panel-2: rgba(255, 255, 255, 0.18);
-  --panel-hover: rgba(255, 255, 255, 0.45);
+  --panel: rgba(255, 255, 255, 0.52);
+  --panel-2: rgba(255, 255, 255, 0.38);
+  --panel-hover: rgba(255, 255, 255, 0.66);
   --borde: rgba(14, 40, 80, 0.1);
   --borde-fuerte: rgba(14, 40, 80, 0.17);
 }
 
-:root[data-vidrio][data-theme='dark'],
-:root[data-vidrio]:where(:not([data-theme='light'])) {
+:root[data-vidrio][data-theme="dark"] {
   color-scheme: dark;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root[data-vidrio]:where(:not([data-theme='light'])) {
+  :root[data-vidrio]:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-vidrio]:where(:not([data-theme="light"])) {
     --vidrio-fondo-1: #16233c;
     --vidrio-fondo-2: #241c3a;
     --vidrio-fondo-3: #112b2e;
@@ -57,6 +68,10 @@
     --vidrio-sombra: 0 10px 34px rgba(0, 0, 0, 0.45);
     --vidrio-brillo: inset 0 1px 0 rgba(255, 255, 255, 0.12);
 
+    /* La tinta vuelve a los pasos del tema oscuro: el oscurecimiento de
+       arriba es para el fondo claro y acá dejaría el menú ilegible. */
+    --tinta-2: #a8b2bd;
+    --tinta-3: #7c858f;
     --panel: rgba(23, 29, 40, 0.3);
     --panel-2: rgba(32, 40, 54, 0.22);
     --panel-hover: rgba(36, 45, 60, 0.45);
@@ -65,7 +80,7 @@
   }
 }
 
-:root[data-vidrio][data-theme='dark'] {
+:root[data-vidrio][data-theme="dark"] {
   --vidrio-fondo-1: #16233c;
   --vidrio-fondo-2: #241c3a;
   --vidrio-fondo-3: #112b2e;
@@ -76,6 +91,10 @@
   --vidrio-sombra: 0 10px 34px rgba(0, 0, 0, 0.45);
   --vidrio-brillo: inset 0 1px 0 rgba(255, 255, 255, 0.12);
 
+  /* La tinta vuelve a los pasos del tema oscuro: el oscurecimiento de
+     arriba es para el fondo claro y acá dejaría el menú ilegible. */
+  --tinta-2: #a8b2bd;
+  --tinta-3: #7c858f;
   --panel: rgba(23, 29, 40, 0.3);
   --panel-2: rgba(32, 40, 54, 0.22);
   --panel-hover: rgba(36, 45, 60, 0.45);
@@ -86,11 +105,16 @@
 /* El fondo que el vidrio refracta. Fijo: no se mueve con el scroll, así el
    material cambia de color según por dónde pasa el contenido. */
 :root[data-vidrio] {
-  --retícula: rgba(14, 40, 80, 0.055);
+  --retícula: rgba(90, 100, 120, 0.16);
 }
-:root[data-vidrio][data-theme='dark'],
-:root[data-vidrio]:where(:not([data-theme='light'])) {
-  --retícula: rgba(255, 255, 255, 0.05);
+:root[data-vidrio][data-theme="dark"] {
+  --retícula: rgba(255, 255, 255, 0.07);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-vidrio]:where(:not([data-theme="light"])) {
+    --retícula: rgba(255, 255, 255, 0.07);
+  }
 }
 
 /*
@@ -102,10 +126,18 @@
  */
 :root[data-vidrio] body {
   background:
-    linear-gradient(var(--retícula) 1px, transparent 1px) 0 0 / 46px 46px,
-    linear-gradient(90deg, var(--retícula) 1px, transparent 1px) 0 0 / 46px 46px,
-    radial-gradient(1200px 820px at 10% -10%, var(--vidrio-fondo-1), transparent 60%),
-    radial-gradient(1000px 760px at 100% 2%, var(--vidrio-fondo-2), transparent 55%),
+    linear-gradient(var(--retícula) 1px, transparent 1px) 0 0 / 38px 38px,
+    linear-gradient(90deg, var(--retícula) 1px, transparent 1px) 0 0 / 38px 38px,
+    radial-gradient(
+      1200px 820px at 10% -10%,
+      var(--vidrio-fondo-1),
+      transparent 60%
+    ),
+    radial-gradient(
+      1000px 760px at 100% 2%,
+      var(--vidrio-fondo-2),
+      transparent 55%
+    ),
     var(--fondo);
   background-attachment: fixed;
 }
@@ -120,9 +152,9 @@
  * para que quede solo el borde—. Es lo que hace que se lea como una pieza
  * con espesor y no como un rectángulo semitransparente.
  *
- * Lo que NO se puede hacer en CSS: refractar. `backdrop-filter` desenfoca y
- * satura lo que hay detrás, pero no lo deforma ni lo agranda. La lente de
- * Apple necesita deformar, y eso en la web pide WebGL.
+ * `backdrop-filter` por sí solo desenfoca y satura, pero no deforma. La
+ * deformación la agrega el filtro SVG más abajo, que sí refracta de verdad
+ * —en Chromium—. Ver «La refracción de verdad».
  */
 :root[data-vidrio] .rail,
 :root[data-vidrio] .modal,
@@ -146,7 +178,7 @@
 :root[data-vidrio] .panel::before,
 :root[data-vidrio] .dato::before,
 :root[data-vidrio] .carta::before {
-  content: '';
+  content: "";
   position: absolute;
   inset: 0;
   border-radius: inherit;
@@ -184,8 +216,7 @@
   );
 }
 
-:root[data-vidrio][data-theme='dark'],
-:root[data-vidrio]:where(:not([data-theme='light'])) {
+:root[data-vidrio][data-theme="dark"] {
   --canto-luz: linear-gradient(
     150deg,
     rgba(255, 255, 255, 0.55) 0%,
@@ -200,6 +231,25 @@
     rgba(255, 255, 255, 0.02) 46%,
     rgba(255, 255, 255, 0) 60%
   );
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-vidrio]:where(:not([data-theme="light"])) {
+    --canto-luz: linear-gradient(
+      150deg,
+      rgba(255, 255, 255, 0.55) 0%,
+      rgba(255, 255, 255, 0.18) 24%,
+      rgba(255, 255, 255, 0.03) 48%,
+      rgba(255, 255, 255, 0.12) 74%,
+      rgba(255, 255, 255, 0.4) 100%
+    );
+    --vidrio-reflejo: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.14),
+      rgba(255, 255, 255, 0.02) 46%,
+      rgba(255, 255, 255, 0) 60%
+    );
+  }
 }
 
 /* ── El cromo: acá sí va el vidrio ── */
@@ -236,7 +286,9 @@
   border-radius: var(--r-pill);
   --canto-grosor: 1.8px;
 }
-:root[data-vidrio] .segmentos button { border-radius: var(--r-pill); }
+:root[data-vidrio] .segmentos button {
+  border-radius: var(--r-pill);
+}
 
 :root[data-vidrio] .rail__link {
   border-radius: var(--r-pill);
@@ -264,7 +316,11 @@
   /* El relleno saturado dentro de la cápsula, como la pastilla verde de la
      referencia: color pleno adentro, canto de vidrio alrededor. */
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0) 52%),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.3),
+      rgba(255, 255, 255, 0) 52%
+    ),
     linear-gradient(180deg, var(--acento), var(--acento-fuerte));
   box-shadow: 0 8px 20px rgba(11, 87, 181, 0.42);
   --canto-grosor: 2px;
@@ -275,8 +331,12 @@
    suele ser alguien que no llega a leer sobre fondos translúcidos. Se le
    devuelven superficies opacas y sin desenfoque. */
 @media (prefers-reduced-transparency: reduce) {
-  :root[data-vidrio] body { background: var(--fondo); }
-  :root[data-vidrio] *::before { background: none !important; }
+  :root[data-vidrio] body {
+    background: var(--fondo);
+  }
+  :root[data-vidrio] *::before {
+    background: none !important;
+  }
   :root[data-vidrio] .rail,
   :root[data-vidrio] .modal,
   :root[data-vidrio] .panel,
@@ -292,7 +352,9 @@
 }
 
 @media print {
-  :root[data-vidrio] body { background: #fff; }
+  :root[data-vidrio] body {
+    background: #fff;
+  }
   :root[data-vidrio] .panel,
   :root[data-vidrio] .dato,
   :root[data-vidrio] .carta,
@@ -303,7 +365,6 @@
     box-shadow: none;
   }
 }
-
 
 /* ─────────────────────── La refracción de verdad ───────────────────────
  *
@@ -319,23 +380,23 @@
  *
  * Con ?vidrio=simple se apaga la lente y queda solo el desenfoque.
  */
-:root[data-vidrio='1'] .rail,
-:root[data-vidrio='1'] .modal {
-  backdrop-filter: url(#lente) blur(10px) saturate(175%);
-  -webkit-backdrop-filter: url(#lente) blur(10px) saturate(175%);
+:root[data-vidrio="1"] .rail,
+:root[data-vidrio="1"] .modal {
+  backdrop-filter: url(#lente) saturate(118%) brightness(1.04);
+  -webkit-backdrop-filter: url(#lente) saturate(118%) brightness(1.04);
 }
 
-:root[data-vidrio='1'] .btn,
-:root[data-vidrio='1'] .pastilla,
-:root[data-vidrio='1'] .segmentos,
-:root[data-vidrio='1'] .buscador {
-  backdrop-filter: url(#lente-chica) blur(5px) saturate(180%);
-  -webkit-backdrop-filter: url(#lente-chica) blur(5px) saturate(180%);
+:root[data-vidrio="1"] .btn,
+:root[data-vidrio="1"] .pastilla,
+:root[data-vidrio="1"] .segmentos,
+:root[data-vidrio="1"] .buscador {
+  backdrop-filter: url(#lente-chica) saturate(118%) brightness(1.04);
+  -webkit-backdrop-filter: url(#lente-chica) saturate(118%) brightness(1.04);
 }
 
 /* El relleno del botón primario es opaco: no hay fondo que refractar, pero
    el canto sigue leyéndose como vidrio. */
-:root[data-vidrio='1'] .btn--primario {
+:root[data-vidrio="1"] .btn--primario {
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
 }
@@ -352,7 +413,6 @@
   }
 }
 
-
 /* ───────────────────── ?vidrio=max — el otro extremo ─────────────────────
  *
  * Todo lo anterior cuida que los importes se lean: fondo pálido y paneles
@@ -362,7 +422,7 @@
  * lo que hace que el material se parezca a la galería de Apple. Se ve
  * mucho mejor y se lee peor. Está para poder elegir viendo, no discutiendo.
  */
-:root[data-vidrio='max'] {
+:root[data-vidrio="max"] {
   --vidrio-material: rgba(255, 255, 255, 0.34);
   --vidrio-material-fuerte: rgba(255, 255, 255, 0.5);
   --panel: rgba(255, 255, 255, 0.42);
@@ -371,7 +431,7 @@
   --borde: rgba(255, 255, 255, 0.4);
 }
 
-:root[data-vidrio='max'] body {
+:root[data-vidrio="max"] body {
   background:
     radial-gradient(900px 620px at 6% -6%, #2f7bf6, transparent 58%),
     radial-gradient(820px 640px at 98% 2%, #d946ef, transparent 56%),
@@ -380,27 +440,26 @@
   background-attachment: fixed;
 }
 
-:root[data-vidrio='max'] .rail,
-:root[data-vidrio='max'] .modal {
+:root[data-vidrio="max"] .rail,
+:root[data-vidrio="max"] .modal {
   backdrop-filter: url(#lente) blur(16px) saturate(190%);
   -webkit-backdrop-filter: url(#lente) blur(16px) saturate(190%);
 }
 
-:root[data-vidrio='max'] .panel,
-:root[data-vidrio='max'] .dato,
-:root[data-vidrio='max'] .carta {
+:root[data-vidrio="max"] .panel,
+:root[data-vidrio="max"] .dato,
+:root[data-vidrio="max"] .carta {
   backdrop-filter: url(#lente) blur(18px) saturate(170%);
   -webkit-backdrop-filter: url(#lente) blur(18px) saturate(170%);
 }
 
-:root[data-vidrio='max'] .btn,
-:root[data-vidrio='max'] .pastilla,
-:root[data-vidrio='max'] .segmentos,
-:root[data-vidrio='max'] .buscador {
+:root[data-vidrio="max"] .btn,
+:root[data-vidrio="max"] .pastilla,
+:root[data-vidrio="max"] .segmentos,
+:root[data-vidrio="max"] .buscador {
   backdrop-filter: url(#lente-chica) blur(6px) saturate(190%);
   -webkit-backdrop-filter: url(#lente-chica) blur(6px) saturate(190%);
 }
-
 
 /* ─────────────────────────── El volumen ───────────────────────────────
  *
@@ -429,33 +488,49 @@
     inset 0 4px 8px -6px rgba(16, 36, 70, 0.5),
     inset 0 -5px 9px -7px rgba(255, 255, 255, 0.95);
 }
-:root[data-vidrio][data-theme='dark'],
-:root[data-vidrio]:where(:not([data-theme='light'])) {
+:root[data-vidrio][data-theme="dark"] {
   --volumen:
-    0 22px 48px -14px rgba(0, 0, 0, 0.6),
-    0 5px 12px -5px rgba(0, 0, 0, 0.4),
+    0 22px 48px -14px rgba(0, 0, 0, 0.6), 0 5px 12px -5px rgba(0, 0, 0, 0.4),
     inset 0 7px 14px -10px rgba(0, 0, 0, 0.75),
     inset 0 -9px 16px -12px rgba(255, 255, 255, 0.3);
   --volumen-chico:
-    0 8px 18px -6px rgba(0, 0, 0, 0.5),
-    0 2px 5px -2px rgba(0, 0, 0, 0.35),
+    0 8px 18px -6px rgba(0, 0, 0, 0.5), 0 2px 5px -2px rgba(0, 0, 0, 0.35),
     inset 0 4px 8px -6px rgba(0, 0, 0, 0.7),
     inset 0 -5px 9px -7px rgba(255, 255, 255, 0.28);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-vidrio]:where(:not([data-theme="light"])) {
+    --volumen:
+      0 22px 48px -14px rgba(0, 0, 0, 0.6), 0 5px 12px -5px rgba(0, 0, 0, 0.4),
+      inset 0 7px 14px -10px rgba(0, 0, 0, 0.75),
+      inset 0 -9px 16px -12px rgba(255, 255, 255, 0.3);
+    --volumen-chico:
+      0 8px 18px -6px rgba(0, 0, 0, 0.5), 0 2px 5px -2px rgba(0, 0, 0, 0.35),
+      inset 0 4px 8px -6px rgba(0, 0, 0, 0.7),
+      inset 0 -5px 9px -7px rgba(255, 255, 255, 0.28);
+  }
 }
 
 :root[data-vidrio] .rail,
 :root[data-vidrio] .panel,
 :root[data-vidrio] .dato,
-:root[data-vidrio] .carta { box-shadow: var(--volumen); }
+:root[data-vidrio] .carta {
+  box-shadow: var(--volumen);
+}
 
 :root[data-vidrio] .modal {
-  box-shadow: 0 34px 90px -20px rgba(10, 25, 55, 0.5), var(--volumen);
+  box-shadow:
+    0 34px 90px -20px rgba(10, 25, 55, 0.5),
+    var(--volumen);
 }
 
 :root[data-vidrio] .btn,
 :root[data-vidrio] .pastilla,
 :root[data-vidrio] .segmentos,
-:root[data-vidrio] .buscador { box-shadow: var(--volumen-chico); }
+:root[data-vidrio] .buscador {
+  box-shadow: var(--volumen-chico);
+}
 
 :root[data-vidrio] .btn--primario {
   box-shadow:
@@ -464,7 +539,6 @@
     inset 0 2px 5px -3px rgba(255, 255, 255, 0.8),
     inset 0 -6px 10px -8px rgba(0, 0, 0, 0.45);
 }
-
 
 /* ──────────────────── Donde el vidrio tiene sentido ────────────────────
  *
@@ -488,17 +562,28 @@
   padding: 14px 14px 12px;
   border-radius: 0 0 var(--r) var(--r);
   background: var(--vidrio-reflejo), var(--vidrio-material);
-  backdrop-filter: url(#lente) blur(16px) saturate(180%);
-  -webkit-backdrop-filter: url(#lente) blur(16px) saturate(180%);
+  backdrop-filter: url(#lente) saturate(118%) brightness(1.04);
+  -webkit-backdrop-filter: url(#lente) saturate(118%) brightness(1.04);
   box-shadow: var(--volumen-chico);
 }
 
-/* Las tarjetas sí llevan material ahora. Con 25 % de opacidad la retícula
-   del fondo se ve a través y la lente la dobla en el canto; con 93 % no
-   había nada que mostrar y por eso parecían cartón. */
-:root[data-vidrio='1'] .panel,
-:root[data-vidrio='1'] .dato,
-:root[data-vidrio='1'] .carta {
-  backdrop-filter: url(#lente) blur(26px) saturate(165%);
-  -webkit-backdrop-filter: url(#lente) blur(26px) saturate(165%);
+/* Acá va el reparto que ordena toda la variante, y es el que faltaba:
+ *
+ *   · el CROMO lleva cristal CLARO —lente, sin desenfoque—. Es lo que hace
+ *     el efecto: la retícula se ve nítida por el centro y se dobla en el
+ *     canto. Un desenfoque encima destruye exactamente eso.
+ *   · el CONTENIDO lleva lo contrario: esmerilado y sin lente. Un importe
+ *     no se lee a través de una lente —el canto le dobla los dígitos— y la
+ *     retícula detrás de una columna de números hay que apagarla, no
+ *     deformarla.
+ *
+ * Antes las tarjetas llevaban lente y 25 % de opacidad. Por eso los
+ * números quedaban sobre una cuadrícula torcida y el conjunto se veía
+ * sucio en vez de cristalino.
+ */
+:root[data-vidrio="1"] .panel,
+:root[data-vidrio="1"] .dato,
+:root[data-vidrio="1"] .carta {
+  backdrop-filter: blur(20px) saturate(135%);
+  -webkit-backdrop-filter: blur(20px) saturate(135%);
 }

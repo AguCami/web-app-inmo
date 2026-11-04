@@ -444,6 +444,31 @@ Apple es el que no puede mostrar el material de Apple.
 
 ![Modo saturado](docs/vidrio-max.png)
 
+### Dónde se ve, y por qué en las tarjetas no
+
+![La cabecera, con el listado pasando por debajo](docs/vidrio-cabecera.png)
+
+Ahí se lee el texto de una fila **a través** de la cabecera, desenfocado y
+corrido por la lente. Eso es el material funcionando.
+
+El punto que costó entender: **una superficie translúcida sobre un fondo
+vacío se ve igual que una opaca.** No hay nada que dejar pasar. En las
+imágenes de Apple las piezas se superponen entre sí y las barras de color
+pasan por debajo; por eso se lee la transparencia.
+
+En esta app eso pasa en tres lugares, y en ninguno hay importes que leer a
+través del material:
+
+- **la cabecera**, que ahora es pegajosa y el listado se desliza por debajo;
+- **el menú**, con la página scrolleando al lado;
+- **el diálogo**, encima del listado.
+
+![El diálogo sobre el listado](docs/vidrio-modal.png)
+
+Las tarjetas de datos quedaron fuera a propósito: están apoyadas
+directamente sobre el fondo, no tienen nada detrás que mostrar, y el
+material solo les sacaba contraste a los importes.
+
 ### Lo que resolvió el empate: la sombra, no el color
 
 Durante un rato la conclusión fue que había que elegir entre que se viera

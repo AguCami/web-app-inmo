@@ -461,3 +461,41 @@
     inset 0 2px 5px -3px rgba(255, 255, 255, 0.8),
     inset 0 -6px 10px -8px rgba(0, 0, 0, 0.45);
 }
+
+
+/* ──────────────────── Donde el vidrio tiene sentido ────────────────────
+ *
+ * Una superficie translúcida sobre un fondo vacío se ve igual que una
+ * opaca: no hay nada que dejar pasar. El vidrio solo se lee cuando algo
+ * pasa POR DEBAJO. En esta app eso ocurre en tres lugares, y en ninguno
+ * hay importes que leer a través del material:
+ *
+ *   · la cabecera, cuando el listado se desliza por debajo;
+ *   · el menú, cuando la página scrollea al lado;
+ *   · el diálogo, encima del listado.
+ *
+ * Las tarjetas de datos no están en esa lista a propósito: están apoyadas
+ * directamente sobre el fondo y no tienen nada detrás que mostrar.
+ */
+:root[data-vidrio] .cabecera {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  margin: 0 -10px;
+  padding: 14px 14px 12px;
+  border-radius: 0 0 var(--r) var(--r);
+  background: var(--vidrio-reflejo), var(--vidrio-material);
+  backdrop-filter: url(#lente) blur(16px) saturate(180%);
+  -webkit-backdrop-filter: url(#lente) blur(16px) saturate(180%);
+  box-shadow: var(--volumen-chico);
+}
+
+/* Las tarjetas vuelven a ser superficie, no vidrio: no tienen nada detrás
+   y el material solo les sacaba contraste a los importes. */
+:root[data-vidrio] .panel,
+:root[data-vidrio] .dato,
+:root[data-vidrio] .carta {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  background: var(--panel);
+}

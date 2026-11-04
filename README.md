@@ -391,6 +391,33 @@ todo lo que debo». La maquinaria de PDF ya está; falta el documento.
 propósito: se imprimen en los recibos y en las liquidaciones, así que no se
 inventan. Se cargan en Ajustes → Mis datos.
 
+## La variante «vidrio líquido»
+
+Un experimento, **apagado por defecto**. Se prueba agregando `?vidrio` a la
+dirección: <https://agucami.github.io/web-app-inmo/?vidrio#/>
+
+![Vidrio, modo claro](docs/vidrio-claro.png)
+![Vidrio, modo oscuro](docs/vidrio-oscuro.png)
+
+La regla que lo ordena: **el vidrio va en el cromo —el menú, los controles,
+los diálogos— y no en el contenido.** Los paneles están llenos de importes
+que hay que leer de una ojeada, y una superficie translúcida sobre un fondo
+con color les baja el contraste. El material es para navegar, no para leer
+números. Es lo que recomienda Apple para su propio Liquid Glass: *keep
+content on a separate layer*.
+
+Medido, no supuesto: se fotografió lo que hay detrás de cada texto con el
+texto escondido, se promedió el color real y se calculó el contraste WCAG.
+Con vidrio da igual que sin vidrio —5,0:1 y 4,5:1 en los textos chicos—
+justamente porque el contenido quedó casi opaco.
+
+Respeta `prefers-reduced-transparency`: quien pidió menos transparencia en
+su sistema recibe superficies opacas. Y al imprimir se desactiva entero, que
+si no los recibos salen grises.
+
+Lo que cuesta: `backdrop-filter` en muchos elementos a la vez es trabajo para
+la placa de video. En una lista larga en un celular viejo se puede notar.
+
 ## Lo que no hace
 
 - **Un solo usuario, un solo navegador.** No hay login ni sincronización.

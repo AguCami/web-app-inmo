@@ -1,0 +1,208 @@
+/*
+ * Variante «vidrio líquido» — experimento, no es el estilo por defecto.
+ * Se prende poniendo data-vidrio="1" en <html>.
+ *
+ * La regla que ordena todo esto: el vidrio va en el CRomo —el menú, la
+ * cabecera, los diálogos— y NO en el contenido. Los paneles de esta app
+ * están llenos de importes que hay que leer de una ojeada, y una superficie
+ * translúcida sobre un fondo con color les baja el contraste. El material es
+ * para navegar, no para leer números.
+ *
+ * Por eso el fondo con color vive detrás de todo, los paneles quedan casi
+ * opacos, y el desenfoque se nota donde el contenido pasa por debajo.
+ */
+
+:root[data-vidrio] {
+  /* El fondo deja de ser plano: es lo que el vidrio refracta. */
+  /* Más claro que antes: en la referencia de Apple el fondo es casi blanco
+     y el color lo ponen los acentos, no un lavado general. */
+  --vidrio-fondo-1: #e3edfb;
+  --vidrio-fondo-2: #f0e9fd;
+  --vidrio-fondo-3: #e6f5f7;
+
+  --vidrio-material: rgba(255, 255, 255, 0.62);
+  --vidrio-material-fuerte: rgba(255, 255, 255, 0.82);
+  --vidrio-borde: rgba(255, 255, 255, 0.75);
+  --vidrio-sombra: 0 10px 32px rgba(16, 36, 70, 0.12);
+  /* El brillo del canto superior: es lo que lo hace parecer vidrio y no
+     un rectángulo semitransparente. */
+  --vidrio-brillo: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  --vidrio-desenfoque: blur(22px) saturate(170%);
+
+  /* El contenido se mantiene casi opaco a propósito. */
+  --panel: rgba(255, 255, 255, 0.93);
+  --panel-2: rgba(255, 255, 255, 0.72);
+  --panel-hover: rgba(255, 255, 255, 0.99);
+  --borde: rgba(14, 40, 80, 0.1);
+  --borde-fuerte: rgba(14, 40, 80, 0.17);
+}
+
+:root[data-vidrio][data-theme='dark'],
+:root[data-vidrio]:where(:not([data-theme='light'])) {
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-vidrio]:where(:not([data-theme='light'])) {
+    --vidrio-fondo-1: #16233c;
+    --vidrio-fondo-2: #241c3a;
+    --vidrio-fondo-3: #112b2e;
+
+    --vidrio-material: rgba(28, 36, 50, 0.6);
+    --vidrio-material-fuerte: rgba(26, 33, 46, 0.86);
+    --vidrio-borde: rgba(255, 255, 255, 0.14);
+    --vidrio-sombra: 0 10px 34px rgba(0, 0, 0, 0.45);
+    --vidrio-brillo: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+
+    --panel: rgba(23, 29, 40, 0.92);
+    --panel-2: rgba(32, 40, 54, 0.7);
+    --panel-hover: rgba(36, 45, 60, 0.95);
+    --borde: rgba(255, 255, 255, 0.1);
+    --borde-fuerte: rgba(255, 255, 255, 0.17);
+  }
+}
+
+:root[data-vidrio][data-theme='dark'] {
+  --vidrio-fondo-1: #16233c;
+  --vidrio-fondo-2: #241c3a;
+  --vidrio-fondo-3: #112b2e;
+
+  --vidrio-material: rgba(28, 36, 50, 0.6);
+  --vidrio-material-fuerte: rgba(26, 33, 46, 0.86);
+  --vidrio-borde: rgba(255, 255, 255, 0.14);
+  --vidrio-sombra: 0 10px 34px rgba(0, 0, 0, 0.45);
+  --vidrio-brillo: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+
+  --panel: rgba(23, 29, 40, 0.92);
+  --panel-2: rgba(32, 40, 54, 0.7);
+  --panel-hover: rgba(36, 45, 60, 0.95);
+  --borde: rgba(255, 255, 255, 0.1);
+  --borde-fuerte: rgba(255, 255, 255, 0.17);
+}
+
+/* El fondo que el vidrio refracta. Fijo: no se mueve con el scroll, así el
+   material cambia de color según por dónde pasa el contenido. */
+:root[data-vidrio] body {
+  background:
+    radial-gradient(1100px 760px at 8% -8%, var(--vidrio-fondo-1), transparent 62%),
+    radial-gradient(980px 720px at 102% 4%, var(--vidrio-fondo-2), transparent 58%),
+    radial-gradient(900px 900px at 48% 108%, var(--vidrio-fondo-3), transparent 60%),
+    var(--fondo);
+  background-attachment: fixed;
+}
+
+/*
+ * El canto.
+ *
+ * Es lo que separa «vidrio» de «rectángulo semitransparente»: en un vidrio
+ * real el borde es más grueso que la lámina y desvía la luz, así que se ve
+ * un brillo arriba, una sombra adentro abajo, y un hilo claro alrededor.
+ * Se arma con tres sombras superpuestas, no con un border.
+ */
+:root[data-vidrio] {
+  --vidrio-canto:
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.95),
+    inset 0 -1px 1px rgba(14, 40, 80, 0.07),
+    inset 1.5px 0 1px rgba(255, 255, 255, 0.5),
+    inset -1.5px 0 1px rgba(255, 255, 255, 0.5);
+}
+:root[data-vidrio][data-theme='dark'],
+:root[data-vidrio]:where(:not([data-theme='light'])) {
+  --vidrio-canto:
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.22),
+    inset 0 -1px 1px rgba(0, 0, 0, 0.35),
+    inset 1.5px 0 1px rgba(255, 255, 255, 0.08),
+    inset -1.5px 0 1px rgba(255, 255, 255, 0.08);
+}
+
+/* ── El cromo: acá sí va el vidrio ── */
+
+:root[data-vidrio] .rail {
+  background: var(--vidrio-material);
+  backdrop-filter: var(--vidrio-desenfoque);
+  -webkit-backdrop-filter: var(--vidrio-desenfoque);
+  border-color: var(--vidrio-borde);
+  box-shadow: var(--vidrio-sombra), var(--vidrio-canto);
+}
+
+:root[data-vidrio] .modal {
+  background: var(--vidrio-material-fuerte);
+  backdrop-filter: blur(30px) saturate(180%);
+  -webkit-backdrop-filter: blur(30px) saturate(180%);
+  border: 1px solid var(--vidrio-borde);
+  box-shadow: 0 24px 70px rgba(10, 25, 55, 0.3), var(--vidrio-canto);
+}
+
+/* Los controles son cápsulas, como en la referencia: el radio completo es
+   parte del material, no un capricho. */
+:root[data-vidrio] .pastilla,
+:root[data-vidrio] .segmentos,
+:root[data-vidrio] .buscador,
+:root[data-vidrio] .btn {
+  backdrop-filter: blur(12px) saturate(160%);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  box-shadow: var(--vidrio-canto);
+  border-radius: var(--r-pill);
+}
+:root[data-vidrio] .segmentos button { border-radius: var(--r-pill); }
+
+:root[data-vidrio] .rail__link {
+  border-radius: var(--r-pill);
+}
+:root[data-vidrio] .rail__link--activo {
+  background: var(--vidrio-material-fuerte);
+  box-shadow: var(--vidrio-canto);
+}
+
+/* ── El contenido: vidrio apenas insinuado, nunca a costa de leer ── */
+
+:root[data-vidrio] .panel,
+:root[data-vidrio] .dato,
+:root[data-vidrio] .carta {
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  border-color: var(--borde);
+  box-shadow: 0 6px 22px rgba(16, 36, 70, 0.07), var(--vidrio-canto);
+}
+
+:root[data-vidrio] .btn--primario {
+  /* El acento saturado dentro de la cápsula de vidrio: es el contraste de
+     color contra material que sostiene toda la referencia. */
+  box-shadow:
+    0 6px 18px rgba(11, 87, 181, 0.38),
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.45),
+    inset 0 -2px 3px rgba(0, 0, 0, 0.14);
+}
+
+/* ── Accesibilidad ──
+   Quien pidió menos transparencia en su sistema operativo lo pidió por algo:
+   suele ser alguien que no llega a leer sobre fondos translúcidos. Se le
+   devuelven superficies opacas y sin desenfoque. */
+@media (prefers-reduced-transparency: reduce) {
+  :root[data-vidrio] body { background: var(--fondo); }
+  :root[data-vidrio] .rail,
+  :root[data-vidrio] .modal,
+  :root[data-vidrio] .panel,
+  :root[data-vidrio] .dato,
+  :root[data-vidrio] .carta,
+  :root[data-vidrio] .pastilla,
+  :root[data-vidrio] .segmentos,
+  :root[data-vidrio] .buscador {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: var(--panel);
+  }
+}
+
+@media print {
+  :root[data-vidrio] body { background: #fff; }
+  :root[data-vidrio] .panel,
+  :root[data-vidrio] .dato,
+  :root[data-vidrio] .carta,
+  :root[data-vidrio] .rail {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: #fff;
+    box-shadow: none;
+  }
+}

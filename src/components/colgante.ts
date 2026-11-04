@@ -65,6 +65,13 @@ export function useColgante(calma: boolean) {
         const acel = -RIGIDEZ * Math.sin(a) - ROCE * velocidad.current;
         velocidad.current += acel * dt;
         angulo.current += velocidad.current * dt;
+        // Una credencial no da la vuelta entera: llega al tope y rebota,
+        // perdiendo casi todo el impulso. Si pasara por arriba del pivote
+        // se vería el tramo de cinta que sigue fuera de la pantalla.
+        if (Math.abs(angulo.current) > TOPE) {
+          angulo.current = Math.sign(angulo.current) * TOPE;
+          velocidad.current = -velocidad.current * 0.3;
+        }
       }
       pintar();
 
@@ -138,7 +145,7 @@ export function useColgante(calma: boolean) {
     const d = arrastre.current;
     if (!d || d.id !== e.pointerId) return;
     arrastre.current = null;
-    velocidad.current = Math.max(-9, Math.min(9, velocidad.current));
+    velocidad.current = Math.max(-6, Math.min(6, velocidad.current));
     e.currentTarget.classList.remove('es-arrastrada');
     andar();
   };

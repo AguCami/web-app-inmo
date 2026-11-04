@@ -728,6 +728,12 @@ select.suelto { width: auto; border-radius: var(--r-pill); background: var(--pan
   box-shadow: var(--sombra-suave);
 }
 
+.ingreso__previa a {
+  color: var(--acento);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
 .ingreso__marca {
   display: flex;
   flex-direction: column;

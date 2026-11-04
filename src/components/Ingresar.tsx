@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Campo, Nota } from './ui';
 import { Logo } from './Logo';
 import { useApp } from '../data/store';
@@ -11,6 +12,9 @@ import fondo from '../assets/ingreso-fondo.webp';
  */
 export function Ingresar() {
   const iniciarSesion = useApp((e) => e.iniciarSesion);
+  // Sin servidor esta pantalla es una vista previa: no hay a quién
+  // preguntarle si la contraseña es correcta.
+  const modoServidor = useApp((e) => e.modoServidor);
 
   const [email, setEmail] = useState('');
   const [clave, setClave] = useState('');
@@ -63,13 +67,22 @@ export function Ingresar() {
           />
         </Campo>
 
-        <button className="btn btn--primario btn--ancho" type="submit" disabled={entrando}>
+        <button className="btn btn--primario btn--ancho" type="submit" disabled={entrando || !modoServidor}>
           {entrando ? 'Entrando…' : 'Entrar'}
         </button>
 
-        <p className="mini tenue">
-          Las cuentas las crea la administración. Si no podés entrar, pedí que te den de alta.
-        </p>
+        {modoServidor ? (
+          <p className="mini tenue">
+            Las cuentas las crea la administración. Si no podés entrar, pedí que te den de alta.
+          </p>
+        ) : (
+          // Sin esto la vista previa es un callejón sin salida: el formulario
+          // no puede entrar y no hay forma de volver sin editar la dirección.
+          <p className="mini tenue ingreso__previa">
+            Esto es una vista previa: todavía no hay servidor de cuentas, así que el formulario no
+            puede entrar. <Link to="/">Volver a la app</Link>
+          </p>
+        )}
       </form>
     </div>
   );

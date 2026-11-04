@@ -694,10 +694,6 @@ select.suelto { width: auto; border-radius: var(--r-pill); background: var(--pan
 
 .ingreso {
   position: relative;
-  /* El canvas del shader sobresale de la tarjeta para poder dibujar la
-     sombra, y en 390 px eso empujaba el ancho de la página 5 px. `clip`
-     en vez de `hidden`: recorta sin volver esto un contenedor con
-     scroll. La tarjeta está centrada, así que no se pierde sombra. */
   overflow: clip;
   min-height: 100dvh;
   display: grid;
@@ -706,24 +702,11 @@ select.suelto { width: auto; border-radius: var(--r-pill); background: var(--pan
   background: var(--fondo);
 }
 
-/* El fondo que el vidrio refracta.
+/* La espiral de la marca, detrás de la tarjeta.
  *
- * Es de TONO MEDIO a propósito, y sale de una medición: el brillo del canto
- * es lo que hace que una pieza se lea como vidrio, y sobre un fondo casi
- * blanco no tiene margen para destacarse. Contra una referencia que sí
- * funciona, su canto llega a 1,76x la luminancia del fondo; sobre nuestro
- * gris claro de siempre llegaba a 1,27x. El azul medio no es decoración:
- * es el margen que el efecto necesita.
- *
- * Y es una IMAGEN CON DETALLE, no un degradé: refractar un degradé liso da
- * otro degradé liso, o sea nada. La refracción se ve donde hay aristas y
- * frecuencia alta —acá, las ventanas—. Probado con degradé primero: el
- * panel no se distinguía.
- *
- * Va como elemento y no como fondo de .ingreso porque el shader muestrea a
- * los hijos de la raíz, y lo pintado en la raíz le resulta invisible. Y va
- * como <img> porque la librería los dibuja directo con drawImage, mientras
- * que un árbol de divs lo rasteriza con html-to-image, que es más caro. */
+ * Va como elemento y no como `background` de .ingreso porque así se puede
+ * usar object-fit: cover y recorta bien en cualquier proporción, también
+ * en vertical. */
 .ingreso__fondo {
   position: absolute;
   inset: 0;
@@ -745,54 +728,6 @@ select.suelto { width: auto; border-radius: var(--r-pill); background: var(--pan
   box-shadow: var(--sombra-suave);
 }
 
-/* Con el vidrio andando, la tarjeta deja de pintarse: el canvas del shader
- * dibuja la superficie, el canto y la sombra. Sin esto quedaría un panel
- * opaco tapando el efecto.
- *
- * El atributo lo pone el hook SOLO cuando el efecto arrancó de verdad, así
- * que sin WebGL nada de esto aplica y queda la tarjeta de arriba. */
-.ingreso[data-vidrio-liquido] .ingreso__caja {
-  /* El reparto del efecto, y por qué está partido en tres.
-   *
-   * El shader de la librería pone la REFRACCIÓN y el CANTO: eso lo hace
-   * bien y no se puede con CSS. Pero su `blurAmount` no produce ningún
-   * cambio de píxel en esta app, a ningún valor, y su `tint` solo enfría
-   * el color sin opacar. O sea: no da cuerpo ni esmerilado.
-   *
-   * Así que el cuerpo esmerilado lo pone `backdrop-filter`, y el velo que
-   * hace legible el formulario va en ::after. Tiene que ir ahí y no en el
-   * `background` de la tarjeta porque el canvas del shader es un hijo con
-   * z-index -1: se pinta POR ENCIMA del fondo de la tarjeta, así que un
-   * velo puesto ahí queda tapado. Medido: con el velo en `background` el
-   * contraste quedaba en 1,02:1. */
-  background: transparent;
-  backdrop-filter: blur(18px) saturate(150%);
-  -webkit-backdrop-filter: blur(18px) saturate(150%);
-  border-color: rgba(255, 255, 255, 0.32);
-  box-shadow: none;
-}
-.ingreso[data-vidrio-liquido] .ingreso__caja::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  border-radius: inherit;
-  background: linear-gradient(160deg, rgba(255, 255, 255, 0.72), rgba(234, 242, 252, 0.84));
-  pointer-events: none;
-}
-/* El velo es claro, así que la tinta se queda oscura. Pero los grises
- * secundarios del tema están calculados contra un panel OPACO, y acá el
- * panel deja pasar el fondo: medido, el terciario caía a 3,9:1. Se
- * oscurecen un paso solo en esta pantalla, que es más barato que subir
- * el velo hasta tapar el vidrio. */
-.ingreso[data-vidrio-liquido] .ingreso__caja {
-  --tinta-2: #3c4654;
-  --tinta-3: #44505f;
-}
-.ingreso[data-vidrio-liquido] .ingreso__caja input {
-  background: rgba(255, 255, 255, 0.55);
-  border-color: rgba(24, 48, 86, 0.22);
-}
 .ingreso__marca {
   display: flex;
   flex-direction: column;

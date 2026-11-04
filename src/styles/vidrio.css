@@ -284,3 +284,100 @@
     box-shadow: none;
   }
 }
+
+
+/* ─────────────────────── La refracción de verdad ───────────────────────
+ *
+ * Hasta acá el material desenfoca y satura, que es lo que sabe hacer
+ * `backdrop-filter`. Esto agrega lo que faltaba: deformar el fondo en los
+ * bordes, que es lo que hace que una pieza parezca una lente y no un vidrio
+ * esmerilado. El filtro está en index.html.
+ *
+ * Va en reglas aparte y después de las anteriores a propósito: el navegador
+ * que no sepa resolver un filtro SVG en backdrop-filter descarta la
+ * declaración entera y se queda con el desenfoque de arriba. Chromium la
+ * aplica; Safari y Firefox, no.
+ *
+ * Con ?vidrio=simple se apaga la lente y queda solo el desenfoque.
+ */
+:root[data-vidrio='1'] .rail,
+:root[data-vidrio='1'] .modal {
+  backdrop-filter: url(#lente) blur(10px) saturate(175%);
+  -webkit-backdrop-filter: url(#lente) blur(10px) saturate(175%);
+}
+
+:root[data-vidrio='1'] .btn,
+:root[data-vidrio='1'] .pastilla,
+:root[data-vidrio='1'] .segmentos,
+:root[data-vidrio='1'] .buscador {
+  backdrop-filter: url(#lente-chica) blur(5px) saturate(180%);
+  -webkit-backdrop-filter: url(#lente-chica) blur(5px) saturate(180%);
+}
+
+/* El relleno del botón primario es opaco: no hay fondo que refractar, pero
+   el canto sigue leyéndose como vidrio. */
+:root[data-vidrio='1'] .btn--primario {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  :root[data-vidrio] .rail,
+  :root[data-vidrio] .modal,
+  :root[data-vidrio] .btn,
+  :root[data-vidrio] .pastilla,
+  :root[data-vidrio] .segmentos,
+  :root[data-vidrio] .buscador {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+
+/* ───────────────────── ?vidrio=max — el otro extremo ─────────────────────
+ *
+ * Todo lo anterior cuida que los importes se lean: fondo pálido y paneles
+ * casi opacos. Eso deja a la lente sin nada que deformar.
+ *
+ * Esto es lo contrario: fondo saturado y superficies translúcidas, que es
+ * lo que hace que el material se parezca a la galería de Apple. Se ve
+ * mucho mejor y se lee peor. Está para poder elegir viendo, no discutiendo.
+ */
+:root[data-vidrio='max'] {
+  --vidrio-material: rgba(255, 255, 255, 0.34);
+  --vidrio-material-fuerte: rgba(255, 255, 255, 0.5);
+  --panel: rgba(255, 255, 255, 0.42);
+  --panel-2: rgba(255, 255, 255, 0.3);
+  --panel-hover: rgba(255, 255, 255, 0.58);
+  --borde: rgba(255, 255, 255, 0.4);
+}
+
+:root[data-vidrio='max'] body {
+  background:
+    radial-gradient(900px 620px at 6% -6%, #2f7bf6, transparent 58%),
+    radial-gradient(820px 640px at 98% 2%, #d946ef, transparent 56%),
+    radial-gradient(900px 760px at 44% 104%, #14b8a6, transparent 58%),
+    linear-gradient(140deg, #8ab4f8, #f0abfc 48%, #5eead4);
+  background-attachment: fixed;
+}
+
+:root[data-vidrio='max'] .rail,
+:root[data-vidrio='max'] .modal {
+  backdrop-filter: url(#lente) blur(16px) saturate(190%);
+  -webkit-backdrop-filter: url(#lente) blur(16px) saturate(190%);
+}
+
+:root[data-vidrio='max'] .panel,
+:root[data-vidrio='max'] .dato,
+:root[data-vidrio='max'] .carta {
+  backdrop-filter: url(#lente) blur(18px) saturate(170%);
+  -webkit-backdrop-filter: url(#lente) blur(18px) saturate(170%);
+}
+
+:root[data-vidrio='max'] .btn,
+:root[data-vidrio='max'] .pastilla,
+:root[data-vidrio='max'] .segmentos,
+:root[data-vidrio='max'] .buscador {
+  backdrop-filter: url(#lente-chica) blur(6px) saturate(190%);
+  -webkit-backdrop-filter: url(#lente-chica) blur(6px) saturate(190%);
+}

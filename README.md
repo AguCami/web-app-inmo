@@ -415,31 +415,39 @@ Respeta `prefers-reduced-transparency`: quien pidió menos transparencia en
 su sistema recibe superficies opacas. Y al imprimir se desactiva entero, que
 si no los recibos salen grises.
 
-### Hasta dónde llega, y por qué no es el de Apple
+### La refracción es real
 
-![El canto, al triple de tamaño](docs/vidrio-canto.png)
+![Refracción contra solo desenfoque](docs/vidrio-refraccion.png)
 
-El canto no es un `border`: es un anillo de degradé recortado con máscara,
-claro arriba a la izquierda, apagado al medio y claro otra vez abajo. Eso es
-lo que hace que se lea como una pieza con espesor. Un `border` dibuja una
-línea del mismo color en los cuatro lados y queda plano.
+La pieza de la derecha deforma el fondo: las barras de adentro no coinciden
+con las de afuera. Eso es una lente, y es lo que separa el material de Apple
+de un vidrio esmerilado.
 
-Aun así **no se ve como la galería de Apple**, por dos razones que conviene
-tener claras:
+Se hace con `feDisplacementMap`: un filtro SVG que corre cada píxel del fondo
+según un mapa, donde el canal rojo lo mueve en horizontal y el verde en
+vertical. El mapa vale 128 en el centro —no mover— y 0 o 255 en los bordes
+—empujar—. Se estira con `preserveAspectRatio="none"`, así un solo filtro
+sirve para un botón y para un diálogo.
 
-1. **CSS no refracta.** `backdrop-filter` desenfoca y satura lo que hay
-   detrás, pero no lo deforma ni lo agranda. La lente que se ve en los
-   bordes de las piezas de Apple necesita deformar el fondo, y eso en un
-   navegador pide WebGL o filtros SVG de desplazamiento: caro y con mal
-   soporte.
-2. **No hay nada que refractar.** Las imágenes de Apple son cinco formas
-   grandes sobre un fondo vacío con barras de color saturado. Esta app son
-   ciento cincuenta filas de números sobre blanco. El vidrio necesita un
-   fondo con color y contraste para parecer vidrio; un panel de cobranzas es
-   lo contrario por diseño.
+**Solo anda en Chromium.** Safari y Firefox no resuelven filtros SVG dentro
+de `backdrop-filter` y descartan la regla, con lo que queda el desenfoque de
+la regla anterior: degradación, no rotura. La ironía es que el navegador de
+Apple es el que no puede mostrar el material de Apple.
 
-Donde sí rinde es donde hay algo detrás: el diálogo sobre el listado, el
-menú sobre la página, los botones con relleno saturado.
+### Los tres modos, y lo que cuesta cada uno
+
+| | Cómo se prende | Se lee | Se ve |
+|---|---|---|---|
+| Sobrio | `?vidrio` | 5,0:1 | la lente está, pero el fondo es pálido y casi no hay qué deformar |
+| Saturado | `?vidrio=max` | **3,4:1** | se parece a la galería de Apple |
+| Sin lente | `?vidrio=simple` | 5,0:1 | solo desenfoque, anda en todos los navegadores |
+
+![Modo saturado](docs/vidrio-max.png)
+
+Ese 3,4:1 es el costo real, medido: por debajo del 4,5:1 que pide la norma
+para texto chico. **El material necesita un fondo con color para parecer
+vidrio, y los importes necesitan un fondo plano para leerse.** No hay forma
+de tener las dos cosas: es una elección, no un problema a resolver.
 
 Lo que cuesta: `backdrop-filter` en muchos elementos a la vez es trabajo para
 la placa de video. En una lista larga en un celular viejo se puede notar.

@@ -745,7 +745,10 @@ select.suelto { width: auto; border-radius: var(--r-pill); background: var(--pan
 
 .colgante__cinta {
   width: 24px;
-  height: var(--cinta);
+  /* Sigue de largo por arriba de la pantalla: al hamacarse la punta gira
+     hacia adentro, y si la cinta terminara justo en el borde se vería el corte. */
+  height: calc(var(--cinta) + 400px);
+  margin-top: -400px;
   overflow: hidden;
   display: flex;
   justify-content: center;
@@ -790,7 +793,7 @@ select.suelto { width: auto; border-radius: var(--r-pill); background: var(--pan
   touch-action: none;
   user-select: none;
   /* Vidrio esmerilado: deja pasar la espiral, borrosa, sin perder lectura. */
-  background: linear-gradient(160deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.52));
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.74), rgba(255, 255, 255, 0.64));
   -webkit-backdrop-filter: blur(28px) saturate(1.6);
   backdrop-filter: blur(28px) saturate(1.6);
   border: 1px solid rgba(255, 255, 255, 0.8);
@@ -856,12 +859,6 @@ select.suelto { width: auto; border-radius: var(--r-pill); background: var(--pan
 .ingreso__caja input:hover { border-color: rgba(11, 87, 181, 0.3); }
 .ingreso__caja input:focus { background: #fff; border-color: var(--acento); }
 
-.ingreso__previa a {
-  color: var(--acento);
-  font-weight: 600;
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
 .ingreso__marca {
   display: flex;
   flex-direction: column;

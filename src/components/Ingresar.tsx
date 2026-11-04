@@ -1,14 +1,26 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Campo, Nota } from './ui';
 import { Logo } from './Logo';
 import { useApp } from '../data/store';
+import fondo from '../assets/ingreso-fondo.webp';
+import { useVidrioLiquido } from './vidrio-liquido';
 
 /**
  * La pantalla de ingreso. Es lo único que se ve sin sesión: con servidor, la
  * app no muestra ni un dato antes de saber quién está del otro lado.
+ *
+ * Es también la única pantalla con vidrio líquido de verdad —WebGL, no
+ * CSS—. Acá paga: una sola tarjeta sobre un fondo quieto, sin listas ni
+ * importes, así que el fondo se rasteriza una vez y el shader corre
+ * sobre algo que no cambia. Ver vidrio-liquido.ts. Si no hay WebGL,
+ * queda la tarjeta de siempre.
  */
 export function Ingresar() {
   const iniciarSesion = useApp((e) => e.iniciarSesion);
+
+  const raiz = useRef<HTMLDivElement>(null);
+  const caja = useRef<HTMLFormElement>(null);
+  useVidrioLiquido(raiz, caja);
 
   const [email, setEmail] = useState('');
   const [clave, setClave] = useState('');
@@ -28,8 +40,13 @@ export function Ingresar() {
   };
 
   return (
-    <div className="ingreso">
-      <form className="ingreso__caja" onSubmit={enviar}>
+    <div className="ingreso" ref={raiz}>
+      {/* El fondo va como hijo de la raíz, no como fondo de la raíz: el
+          shader muestrea a los HIJOS, y lo pintado en la raíz le resulta
+          invisible. Es lo que el vidrio refracta. */}
+      <img className="ingreso__fondo" src={fondo} alt="" aria-hidden="true" />
+
+      <form className="ingreso__caja" ref={caja} onSubmit={enviar}>
         <div className="ingreso__marca">
           <Logo tam={52} />
           <strong>Inversiones Generales M &amp; M</strong>

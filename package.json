@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "Web app para administrar alquileres: contratos, actualizaciones por \u00edndice, cobranzas y liquidaciones.",
+  "description": "Web app para administrar alquileres: contratos, actualizaciones por índice, cobranzas y liquidaciones.",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.118.0",
+    "@ybouane/liquidglass": "^1.0.3",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.30.0",

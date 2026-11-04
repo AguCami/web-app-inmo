@@ -630,13 +630,46 @@ select.suelto { width: auto; border-radius: var(--r-pill); background: var(--pan
 /* ─────────────────────────── Ingreso ───────────────────────────── */
 
 .ingreso {
+  position: relative;
+  /* El canvas del shader sobresale de la tarjeta para poder dibujar la
+     sombra, y en 390 px eso empujaba el ancho de la página 5 px. `clip`
+     en vez de `hidden`: recorta sin volver esto un contenedor con
+     scroll. La tarjeta está centrada, así que no se pierde sombra. */
+  overflow: clip;
   min-height: 100dvh;
   display: grid;
   place-items: center;
   padding: 24px 16px;
   background: var(--fondo);
 }
+
+/* El fondo que el vidrio refracta.
+ *
+ * Es de TONO MEDIO a propósito, y sale de una medición: el brillo del canto
+ * es lo que hace que una pieza se lea como vidrio, y sobre un fondo casi
+ * blanco no tiene margen para destacarse. Contra una referencia que sí
+ * funciona, su canto llega a 1,76x la luminancia del fondo; sobre nuestro
+ * gris claro de siempre llegaba a 1,27x. El azul medio no es decoración:
+ * es el margen que el efecto necesita.
+ *
+ * Y es una IMAGEN CON DETALLE, no un degradé: refractar un degradé liso da
+ * otro degradé liso, o sea nada. La refracción se ve donde hay aristas y
+ * frecuencia alta —acá, las ventanas—. Probado con degradé primero: el
+ * panel no se distinguía.
+ *
+ * Va como elemento y no como fondo de .ingreso porque el shader muestrea a
+ * los hijos de la raíz, y lo pintado en la raíz le resulta invisible. Y va
+ * como <img> porque la librería los dibuja directo con drawImage, mientras
+ * que un árbol de divs lo rasteriza con html-to-image, que es más caro. */
+.ingreso__fondo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
 .ingreso__caja {
+  position: relative;
   width: 100%;
   max-width: 380px;
   display: flex;
@@ -647,6 +680,40 @@ select.suelto { width: auto; border-radius: var(--r-pill); background: var(--pan
   border: 1px solid var(--borde);
   border-radius: var(--r-lg);
   box-shadow: var(--sombra-suave);
+}
+
+/* Con el vidrio andando, la tarjeta deja de pintarse: el canvas del shader
+ * dibuja la superficie, el canto y la sombra. Sin esto quedaría un panel
+ * opaco tapando el efecto.
+ *
+ * El atributo lo pone el hook SOLO cuando el efecto arrancó de verdad, así
+ * que sin WebGL nada de esto aplica y queda la tarjeta de arriba. */
+.ingreso[data-vidrio-liquido] .ingreso__caja {
+  /* Un velo oscuro, no transparencia total.
+   *
+   * El shader aporta el canto, la refracción y la sombra, pero no da
+   * cuerpo: su `tint` solo enfría el color, no opaca. Sin velo el
+   * formulario queda sobre los edificios del fondo y no se lee, y acá hay
+   * que tipear credenciales. El velo va por encima del canvas del shader,
+   * así que el canto y la refracción del borde se siguen viendo. */
+  background: rgba(11, 24, 45, 0.58);
+  border-color: rgba(255, 255, 255, 0.22);
+  box-shadow: none;
+}
+/* Sobre el fondo de color la tinta se invierte. */
+.ingreso[data-vidrio-liquido] .ingreso__caja,
+.ingreso[data-vidrio-liquido] .ingreso__marca strong,
+.ingreso[data-vidrio-liquido] .campo > span {
+  color: #fff;
+}
+.ingreso[data-vidrio-liquido] .ingreso__marca span,
+.ingreso[data-vidrio-liquido] .mini.tenue {
+  color: rgba(255, 255, 255, 0.92);
+}
+.ingreso[data-vidrio-liquido] .ingreso__caja input {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.38);
+  color: #fff;
 }
 .ingreso__marca {
   display: flex;

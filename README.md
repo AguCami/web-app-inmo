@@ -394,7 +394,7 @@ inventan. Se cargan en Ajustes → Mis datos.
 ## La variante «vidrio líquido»
 
 Un experimento, **apagado por defecto**. Se prueba agregando `?vidrio` a la
-dirección: <https://agucami.github.io/web-app-inmo/?vidrio#/>
+dirección: <https://agucami.github.io/web-app-inmo/?vidrio>
 
 ![Vidrio, modo claro](docs/vidrio-claro.png)
 ![Vidrio, modo oscuro](docs/vidrio-oscuro.png)

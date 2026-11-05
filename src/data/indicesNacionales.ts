@@ -1,6 +1,6 @@
 import type { Periodo } from '../domain/types';
-import { problemaDeSerie } from '../domain/ipcCordoba';
-import { serieICL, serieIPCNacional } from '../domain/indicesNacionales';
+import { problemaDeSerie, unirSeries } from '../domain/ipcCordoba';
+import { serieICL, serieIPCIndecCSV, serieIPCNacional } from '../domain/indicesNacionales';
 import { hoy } from '../domain/util';
 
 /**
@@ -18,12 +18,17 @@ const ICL_BCRA = 40;
 /** IPC nivel general nacional, INDEC, base diciembre 2016 = 100. */
 const IPC_INDEC = '148.3_INIVELNAL_DICI_M_26';
 
-async function pedirJSON(destino: string): Promise<unknown> {
+/** El CSV del INDEC: llega al mes recién publicado antes que el API. */
+const CSV_INDEC = 'https://www.indec.gob.ar/ftp/cuadros/economia/serie_ipc_divisiones.csv';
+
+async function pedir(destino: string): Promise<Response> {
   if (!PROXY) throw new Error('Falta configurar el intermediario de Cloudflare.');
   const r = await fetch(`${PROXY}/?url=${encodeURIComponent(destino)}`, { cache: 'no-cache' });
   if (!r.ok) throw new Error(`La fuente respondió ${r.status}.`);
-  return r.json();
+  return r;
 }
+
+const pedirJSON = async (destino: string): Promise<unknown> => (await pedir(destino)).json();
 
 function controlar(serie: Map<Periodo, number>, nombre: string) {
   const problema = problemaDeSerie(serie);
@@ -49,5 +54,17 @@ export async function traerICL() {
 
 export async function traerIPCNacional() {
   const url = `https://apis.datos.gob.ar/series/api/series/?ids=${IPC_INDEC}&format=json&limit=1000&start_date=${DESDE}`;
-  return controlar(serieIPCNacional(await pedirJSON(url)), 'IPC nacional');
+  // Dos fuentes: el API (historia ordenada) y el CSV del INDEC (el mes más
+  // nuevo). Si una falla, alcanza con la otra.
+  const [api, csv] = await Promise.allSettled([
+    pedirJSON(url).then(serieIPCNacional),
+    pedir(CSV_INDEC).then(async (r) => serieIPCIndecCSV(await r.text())),
+  ]);
+  const series = [api, csv].flatMap((r) => (r.status === 'fulfilled' ? [r.value] : []));
+  if (series.length === 0) {
+    const error = api.status === 'rejected' ? api.reason : null;
+    throw error instanceof Error ? error : new Error('El INDEC no devolvió el IPC.');
+  }
+  // El API manda; el CSV solo suma meses si coincide en los que comparten.
+  return controlar(unirSeries(series).serie, 'IPC nacional');
 }

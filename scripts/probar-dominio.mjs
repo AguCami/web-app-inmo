@@ -28,6 +28,7 @@ const { contratoRenovado, mesesDeContrato, periodosDelContrato, siguienteNumeroC
   await empaquetar('src/domain/contratos.ts', 'contratos.mjs');
 const { saludDeLosDatos, DIAS_TOLERADOS } = await empaquetar('src/domain/salud.ts', 'salud.mjs');
 const ipc = await empaquetar('src/domain/ipcCordoba.ts', 'ipc.mjs');
+const nac = await empaquetar('src/domain/indicesNacionales.ts', 'nacionales.mjs');
 const { valorIndice } = await empaquetar('src/domain/contratos.ts', 'contratos-indice.mjs');
 
 let fallos = 0;
@@ -219,6 +220,33 @@ const icl = valorIndice(aplicado.indices, '2026-07', 'ICL');
 ok('un ICL en 0 se lee como no publicado y arrastra el último', icl.valor === 51 && icl.estimado);
 ok('mientras el IPC de Córdoba de ese mes sí es exacto',
   valorIndice(aplicado.indices, '2026-07', 'IPC_CBA').estimado === false);
+
+/* ── ICL (BCRA) e IPC nacional (INDEC) ── */
+const BCRA_V3 = { status: 200, results: [
+  { idVariable: 40, fecha: '2026-09-02', valor: 25.81 },
+  { idVariable: 40, fecha: '2026-09-01', valor: 25.79 },
+  { idVariable: 40, fecha: '2026-10-01', valor: 26.43 },
+  { idVariable: 40, fecha: '2026-10-15', valor: 26.7 },
+] };
+const BCRA_V4 = { status: 200, results: [{ idVariable: 40, detalle: [
+  { fecha: '2026-10-01', valor: 26.43 },
+  { fecha: '2026-09-03', valor: 25.83 },
+] }] };
+const icl3 = nac.serieICL(BCRA_V3);
+ok('el ICL toma el valor del primero de cada mes', icl3.get('2026-09') === 25.79 && icl3.get('2026-10') === 26.43);
+const icl4 = nac.serieICL(BCRA_V4);
+ok('lee también la forma nueva del API del BCRA', icl4.get('2026-10') === 26.43);
+ok('si falta el día 1, usa el primero publicado del mes', icl4.get('2026-09') === 25.83);
+ok('una respuesta rara no rompe', nac.serieICL({ error: 'x' }).size === 0 && nac.serieICL(null).size === 0);
+
+const SERIES = { data: [['2026-08-01', 9512.3456], ['2026-09-01', 9701.18], ['basura', 1]], count: 2 };
+const ipcNac = nac.serieIPCNacional(SERIES);
+ok('el IPC nacional sale de las filas fecha-valor', ipcNac.size === 2 && ipcNac.get('2026-08') === 9512.3);
+
+const conICL = ipc.aplicarSerie(previos, icl3, 'ICL');
+ok('aplicar el ICL no toca el IPC de Córdoba',
+  conICL.indices.find((i) => i.periodo === '2026-09').ICL === 25.79 &&
+  conICL.indices.find((i) => i.periodo === '2025-10').IPC_CBA === 99);
 
 console.log(fallos === 0 ? '\nTodo en orden.' : `\n${fallos} fallaron.`);
 process.exit(fallos ? 1 : 0);

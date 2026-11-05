@@ -160,9 +160,26 @@ export async function aplicarCambios(cambios: Cambios, organizacionId: string): 
     if (error) throw new Error(`Guardando índices: ${error.message}`);
   }
   if (cambios.guardar.configuracion?.length) {
-    const { error } = await sb
-      .from('configuracion')
-      .upsert(conOrg(cambios.guardar.configuracion), { onConflict: 'organizacion_id' });
-    if (error) throw new Error(`Guardando la configuración: ${error.message}`);
+    await guardarConfiguracion(sb, conOrg(cambios.guardar.configuracion));
   }
+}
+
+/**
+ * La configuración junta datos sueltos, y a veces la app suma uno antes de
+ * que el esquema del servidor lo tenga (pasó con `ultimoRespaldo`). Si el
+ * servidor no conoce una columna, se guarda el resto en vez de trabar todo:
+ * es mejor perder la fecha de la última copia que el nombre o los honorarios.
+ * Corriendo de nuevo supabase/esquema.sql se agregan las que falten.
+ */
+async function guardarConfiguracion(sb: SupabaseClient, filas: Record<string, unknown>[]): Promise<void> {
+  let pendientes = filas;
+  for (let intento = 0; intento < 5; intento += 1) {
+    const { error } = await sb.from('configuracion').upsert(pendientes, { onConflict: 'organizacion_id' });
+    if (!error) return;
+    const falta = /could not find the '([^']+)' column/i.exec(error.message)?.[1];
+    if (!falta || falta === 'organizacion_id') throw new Error(`Guardando la configuración: ${error.message}`);
+    console.warn(`El servidor no tiene la columna «${falta}» en configuracion: se guarda sin ella.`);
+    pendientes = pendientes.map(({ [falta]: _, ...resto }) => resto);
+  }
+  throw new Error('Guardando la configuración: al servidor le faltan varias columnas. Corré de nuevo supabase/esquema.sql.');
 }

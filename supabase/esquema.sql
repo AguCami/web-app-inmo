@@ -73,8 +73,11 @@ create table if not exists configuracion (
   "email"                    text    not null default '',
   "comisionAdminPctDefault"  numeric not null default 8,
   "punitorioDiarioPctDefault" numeric not null default 0.15,
-  "diasAvisoVencimiento"     integer not null default 5
+  "diasAvisoVencimiento"     integer not null default 5,
+  "ultimoRespaldo"           date
 );
+-- Para las bases creadas antes de que existiera la columna.
+alter table configuracion add column if not exists "ultimoRespaldo" date;
 
 create table if not exists persona (
   organizacion_id uuid not null references organizacion (id) on delete cascade,

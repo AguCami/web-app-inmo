@@ -12,7 +12,7 @@ import {
 import { ETIQUETA_INDICE, INDICES_CON_SERIE } from '../domain/contratos';
 import type { IndiceConSerie } from '../domain/contratos';
 import type { ValorIndice } from '../domain/types';
-import { formatearFecha, formatearPeriodo, formatearPeriodoLargo, periodoActual, plural, redondear } from '../domain/util';
+import { formatearFecha, formatearPeriodo, formatearPeriodoLargo, periodoActual, plural, redondear, sumarPeriodos } from '../domain/util';
 
 type Vista = 'datos' | 'indices' | 'respaldo';
 
@@ -49,6 +49,15 @@ export default function Ajustes() {
     guardarIndices(db.indices.map((i) => (i.periodo === periodo ? { ...i, [campo]: valor } : i)));
 
   const ultimos = [...db.indices].reverse().slice(0, 18);
+
+  // Se puede sumar el mes que sigue al último de la lista, hasta el actual.
+  const ultimoPeriodo = db.indices[db.indices.length - 1]?.periodo;
+  const mesParaAgregar = ultimoPeriodo ? sumarPeriodos(ultimoPeriodo, 1) : sumarPeriodos(periodoActual(), -1);
+  const agregarMes = () =>
+    guardarIndices([
+      ...db.indices,
+      { periodo: mesParaAgregar, ICL: 0, IPC: 0, IPC_CBA: 0, CASA_PROPIA: 0 },
+    ]);
   const contratosPorIndice = (indice: string) =>
     db.contratos.filter((x) => x.estado === 'activo' && x.indiceAjuste === indice).length;
 
@@ -130,7 +139,7 @@ export default function Ajustes() {
               tono={ipcCordoba.estado === 'ok' ? 'ok' : ipcCordoba.estado === 'error' ? 'alerta' : 'neutro'}
               titulo={
                 ipcCordoba.estado === 'ok'
-                  ? `IPC Córdoba al día: último dato, ${formatearPeriodoLargo(ipcCordoba.ultimo)}`
+                  ? `IPC Córdoba: último dato del portal, ${formatearPeriodoLargo(ipcCordoba.ultimo)}`
                   : ipcCordoba.estado === 'error'
                     ? 'No pudimos traer el IPC de Córdoba'
                     : 'Buscando el IPC de Córdoba…'
@@ -233,6 +242,15 @@ export default function Ajustes() {
                   );
                 })}
               </div>
+              {mesParaAgregar <= periodoActual() && (
+                <button
+                  className="btn btn--suave btn--chico"
+                  style={{ marginTop: 12 }}
+                  onClick={agregarMes}
+                >
+                  Agregar {formatearPeriodoLargo(mesParaAgregar)}
+                </button>
+              )}
               <p className="mini tenue" style={{ marginTop: 12 }}>
                 Es un número índice, no un porcentaje: la variación de la izquierda se calcula sola. Cambiar un valor
                 recalcula el cronograma de todos los contratos que usan ese índice.

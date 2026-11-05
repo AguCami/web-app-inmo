@@ -1155,11 +1155,12 @@ select.suelto { width: auto; border-radius: var(--r-pill); background: var(--pan
  *
  * .colgante no se mueve: su borde de arriba es el pivote. .colgante__brazo
  * —cinta, gancho y tarjeta, todo junto— gira alrededor de ese punto; el
- * ángulo lo escribe colgante.ts. El largo de la cinta acompaña el alto de la
- * pantalla para que la tarjeta quede más o menos al medio. */
+ * ángulo lo escribe colgante.ts. La cinta mide lo justo para el nombre que
+ * lleva impreso. */
 .colgante {
-  /* Nunca más corta que el nombre impreso (~200 px), para que se lea entero. */
-  --cinta: clamp(210px, calc(50dvh - 180px), 300px);
+  /* Lo justo para el nombre impreso, que se lee entero y sin cinta vacía arriba.
+     Si cambia el texto o la letra, hay que volver a medir. */
+  --cinta: 194px;
   position: relative;
   width: 100%;
   max-width: 380px;
@@ -1191,17 +1192,19 @@ select.suelto { width: auto; border-radius: var(--r-pill); background: var(--pan
     linear-gradient(90deg, rgba(0, 0, 0, 0.28), transparent 22%, rgba(255, 255, 255, 0.14) 50%, transparent 78%, rgba(0, 0, 0, 0.28)),
     var(--acento-fuerte);
   box-shadow: 0 2px 6px rgba(10, 40, 90, 0.25);
+  /* Es parte del dibujo, no texto para copiar. */
+  -webkit-user-select: none;
+  user-select: none;
 }
 .colgante__cinta span {
   writing-mode: vertical-rl;
-  /* El texto termina abajo, junto al gancho. Ingresar.tsx elige cuántas veces
-     va el nombre para que el borde de la pantalla no corte una palabra. */
+  /* El texto termina abajo, junto al gancho. */
   align-self: flex-end;
   white-space: nowrap;
   font-family: var(--fuente-titulo);
   font-size: 9px;
   font-weight: 600;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.15em;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.82);
   padding-bottom: 10px;

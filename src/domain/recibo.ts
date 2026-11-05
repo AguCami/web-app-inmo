@@ -15,7 +15,7 @@ import {
 import { montoEnLetras } from './letras';
 import { direccionCompleta } from './propiedades';
 import type { Configuracion, Contrato, Cuota, MedioPago, Pago, Persona, Propiedad } from './types';
-import { formatearFecha, formatearMoneda, formatearPeriodoLargo } from './util';
+import { documentoDe, formatearFecha, formatearMoneda, formatearPeriodoLargo } from './util';
 
 const MEDIOS: Record<MedioPago, string> = {
   transferencia: 'Transferencia bancaria',
@@ -64,7 +64,7 @@ export function construirRecibo(d: DatosRecibo): Uint8Array {
 
   /* ── A quién y por cuánto ── */
   y += 26;
-  const documento = d.inquilino ? `${d.inquilino.tipoDoc} ${d.inquilino.documento}` : '';
+  const documento = documentoDe(d.inquilino);
   campo(doc, 'Recibí de', d.inquilino?.nombre ?? '—', MARGEN, y, 320);
   if (documento) doc.texto(documento, DERECHA, y + 15, { tam: 10, color: TENUE, alinear: 'der' });
 

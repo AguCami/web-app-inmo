@@ -14,7 +14,7 @@ import {
 } from './documento';
 import { montoEnLetras } from './letras';
 import type { Configuracion, ItemLiquidacion, Liquidacion, Persona } from './types';
-import { formatearFecha, formatearMoneda, formatearPeriodoLargo, redondear, sumar } from './util';
+import { documentoDe, formatearFecha, formatearMoneda, formatearPeriodoLargo, redondear, sumar } from './util';
 
 const ESTADOS: Record<Liquidacion['estado'], string> = {
   borrador: 'Borrador — todavía no aprobada',
@@ -54,8 +54,8 @@ export function construirLiquidacion(d: DatosLiquidacion): Uint8Array {
   /* ── A quién ── */
   y += 26;
   campo(doc, 'Liquidamos a', d.propietario?.nombre ?? '—', MARGEN, y, 320);
-  if (d.propietario) {
-    doc.texto(`${d.propietario.tipoDoc} ${d.propietario.documento}`, DERECHA, y + 15, {
+  if (documentoDe(d.propietario)) {
+    doc.texto(documentoDe(d.propietario), DERECHA, y + 15, {
       tam: 10, color: TENUE, alinear: 'der',
     });
   }

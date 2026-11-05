@@ -39,6 +39,7 @@ import { cronogramaAjustes, ETIQUETA_INDICE, montoVigente, vigenciaContrato } fr
 import { direccionDe } from '../domain/propiedades';
 import type { Cuota, Novedad } from '../domain/types';
 import {
+  documentoDe,
   formatearFecha,
   formatearMoneda,
   formatearPeriodo,
@@ -365,14 +366,14 @@ export default function ContratoDetalle() {
               <Item
                 avatar={<Avatar nombre={inquilino?.nombre ?? '—'} />}
                 titulo={inquilino?.nombre ?? '—'}
-                sub={`Inquilino · ${inquilino?.tipoDoc ?? ''} ${inquilino?.documento ?? ''}`}
-                fin={<span className="mini tenue">{inquilino?.telefono ? `Tel. ${inquilino.telefono}` : inquilino?.email ?? ''}</span>}
+                sub={['Inquilino', documentoDe(inquilino)].filter(Boolean).join(' · ')}
+                fin={<span className="mini tenue">{inquilino?.telefono?.trim() ? `Tel. ${inquilino.telefono.trim()}` : inquilino?.email ?? ''}</span>}
               />
               <Item
                 avatar={<Avatar nombre={propietario?.nombre ?? '—'} />}
                 titulo={propietario?.nombre ?? '—'}
                 sub={`Propietario · ${propietario?.cbu ? `CBU ${propietario.cbu}` : 'sin CBU cargado'}`}
-                fin={<span className="mini tenue">{propietario?.telefono ? `Tel. ${propietario.telefono}` : ''}</span>}
+                fin={<span className="mini tenue">{propietario?.telefono?.trim() ? `Tel. ${propietario.telefono.trim()}` : ''}</span>}
               />
               {propiedad && (
                 <Item

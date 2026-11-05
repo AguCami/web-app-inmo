@@ -1,4 +1,4 @@
-import type { ISODate, Moneda, Periodo } from './types';
+import type { ISODate, Moneda, Periodo, Persona } from './types';
 
 /* ───────────────────────────── IDs ───────────────────────────── */
 
@@ -188,4 +188,12 @@ export function incluyeTexto(campos: (string | undefined)[], busqueda: string): 
   if (!busqueda.trim()) return true;
   const b = normalizar(busqueda);
   return campos.some((c) => c && normalizar(c).includes(b));
+}
+
+/* ─────────────────────────── Personas ─────────────────────────── */
+
+/** «DNI 29551390», o nada si no se cargó el número. */
+export function documentoDe(p?: Pick<Persona, 'tipoDoc' | 'documento'> | null): string {
+  const numero = p?.documento?.trim();
+  return numero ? `${p!.tipoDoc} ${numero}` : '';
 }

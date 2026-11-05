@@ -5,7 +5,7 @@ import { IconoBuscar, IconoMas, IconoPersonas } from '../components/iconos';
 import { ConfirmarBorrado } from '../components/Confirmar';
 import { useApp, useDb } from '../data/store';
 import type { CondicionIVA, Persona, RolPersona } from '../domain/types';
-import { incluyeTexto, nuevoId, plural } from '../domain/util';
+import { documentoDe, incluyeTexto, nuevoId, plural } from '../domain/util';
 
 const ROLES: RolPersona[] = ['propietario', 'inquilino', 'garante'];
 
@@ -125,11 +125,10 @@ export default function Personas() {
                     </>
                   }
                   sub={
-                    <>
-                      {p.tipoDoc} {p.documento}
-                      {p.telefono && ` · Tel. ${p.telefono}`}
-                      {p.email && ` · ${p.email}`}
-                    </>
+                    // Solo lo que está cargado: sin número no va «DNI» solo.
+                    [documentoDe(p), p.telefono?.trim() && `Tel. ${p.telefono.trim()}`, p.email?.trim()]
+                      .filter(Boolean)
+                      .join(' · ') || undefined
                   }
                   fin={<span className="mini tenue">{vinculos(p)}</span>}
                 />

@@ -1158,7 +1158,8 @@ select.suelto { width: auto; border-radius: var(--r-pill); background: var(--pan
  * ángulo lo escribe colgante.ts. El largo de la cinta acompaña el alto de la
  * pantalla para que la tarjeta quede más o menos al medio. */
 .colgante {
-  --cinta: clamp(44px, calc(50dvh - 300px), 260px);
+  /* Nunca más corta que el nombre impreso (~200 px), para que se lea entero. */
+  --cinta: clamp(210px, calc(50dvh - 180px), 300px);
   position: relative;
   width: 100%;
   max-width: 380px;
@@ -1193,7 +1194,8 @@ select.suelto { width: auto; border-radius: var(--r-pill); background: var(--pan
 }
 .colgante__cinta span {
   writing-mode: vertical-rl;
-  /* El texto termina abajo, junto al gancho, y se pierde hacia arriba. */
+  /* El texto termina abajo, junto al gancho. Ingresar.tsx elige cuántas veces
+     va el nombre para que el borde de la pantalla no corte una palabra. */
   align-self: flex-end;
   white-space: nowrap;
   font-family: var(--fuente-titulo);

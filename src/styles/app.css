@@ -1305,7 +1305,19 @@ select.suelto { width: auto; border-radius: var(--r-pill); background: var(--pan
   gap: 4px;
   margin-bottom: 6px;
 }
-.ingreso__marca > span { font-size: 12px; color: var(--tinta-3); }
+/* El subtítulo y las etiquetas de los campos van con la misma letra que
+   «Inversiones Generales»; las etiquetas, centradas sobre su campo. */
+.ingreso__marca > span,
+.ingreso__form .campo__et {
+  font-family: var(--fuente-titulo);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--tinta);
+}
+.ingreso__marca > span { margin-top: 4px; }
+.ingreso__form .campo__et { text-align: center; text-indent: 0.2em; }
 
 /* El nombre en tres renglones, con «M & M» al medio y bien grande. */
 .ingreso__nombre {

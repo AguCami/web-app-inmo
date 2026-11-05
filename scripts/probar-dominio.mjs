@@ -27,6 +27,8 @@ const { nombreArchivoLiquidacion } = await empaquetar('src/domain/liquidacion-pd
 const { contratoRenovado, mesesDeContrato, periodosDelContrato, siguienteNumeroContrato } =
   await empaquetar('src/domain/contratos.ts', 'contratos.mjs');
 const { saludDeLosDatos, DIAS_TOLERADOS } = await empaquetar('src/domain/salud.ts', 'salud.mjs');
+const ipc = await empaquetar('src/domain/ipcCordoba.ts', 'ipc.mjs');
+const { valorIndice } = await empaquetar('src/domain/contratos.ts', 'contratos-indice.mjs');
 
 let fallos = 0;
 const ok = (n, c, d = '') => { if (!c) fallos += 1; console.log(`${c ? '✓' : '✗'} ${n}${d ? ` — ${d}` : ''}`); };
@@ -154,6 +156,62 @@ ok('una de hace 20 días ya no',
 ok('y cuenta bien los días',
   saludDeLosDatos(base({ propiedades: [{}], configuracion: { ultimoRespaldo: '2026-10-14' } }), HOY)
     .diasSinRespaldo === 20);
+
+/* ── El IPC de Córdoba, como lo publica Estadística y Censos ── */
+// Filas recortadas de lo que devolvió el portal el 5/11/2026.
+const EMPALME = [
+  { _id: 1, COICOP: null, Descripcion: 'NIVEL GENERAL', 'sep-25': '100,7', 'oct-25': '103', 'nov-25': '105,7' },
+  { _id: 2, COICOP: 'A01', Descripcion: 'ALIMENTOS Y BEBIDAS NO ALCOHÓLICAS', 'sep-25': '99,4', 'oct-25': '102,2', 'nov-25': '105,9' },
+];
+const MENSUAL = [
+  { _id: 1, Codigo: 'Código', Descripcion: 'Descripción', 'nov-25': 'nov-25', 'dic-25': 'dic-25', 'jul-26': 'jul-26' },
+  { _id: 2, Codigo: null, Descripcion: 'NIVEL GENERAL', 'nov-25': '105,7', 'dic-25': '108,8', 'jul-26': '128,4' },
+];
+const BASE_2014 = [{ Descripcion: 'NIVEL GENERAL', 'nov-25': '6543,2', 'dic-25': '6730,1' }];
+
+ok('las columnas de mes se leen como período', ipc.periodoDeColumna('abr-22') === '2022-04');
+ok('y también con el año entero', ipc.periodoDeColumna('Sep-2026') === '2026-09');
+ok('una columna que no es mes no es período', ipc.periodoDeColumna('Descripcion') === null);
+ok('la coma es el decimal', ipc.numeroDeCelda('105,7') === 105.7);
+ok('el punto separa miles', ipc.numeroDeCelda('6.543,2') === 6543.2);
+ok('un encabezado repetido no es un número', ipc.numeroDeCelda('nov-25') === null);
+
+const empalme = ipc.serieDeFilas(EMPALME);
+ok('toma el nivel general y no el de alimentos', empalme.get('2025-11') === 105.7);
+const mensual = ipc.serieDeFilas(MENSUAL);
+ok('la fila de encabezados repetidos no estorba', mensual.size === 3 && mensual.get('2026-07') === 128.4);
+
+const unida = ipc.unirSeries([empalme, mensual]);
+ok('el empalme y la mensual se unen por el mes que comparten',
+  unida.serie.size === 5 && unida.serie.get('2025-09') === 100.7 && unida.serie.get('2026-07') === 128.4);
+const conVieja = ipc.unirSeries([empalme, mensual, ipc.serieDeFilas(BASE_2014)]);
+ok('una planilla en base 2014 se descarta entera', conVieja.descartadas === 1 && conVieja.serie.get('2025-12') === 108.8);
+
+ok('una serie de verdad pasa el control', ipc.problemaDeSerie(unida.serie) === null);
+ok('un salto imposible no pasa',
+  ipc.problemaDeSerie(new Map([['2025-11', 105.7], ['2025-12', 6730.1]])) !== null);
+
+const csv = 'Código;Descripción;oct-26;nov-26\n;NIVEL GENERAL;133,1;135,9\nA01;ALIMENTOS;140;142\n';
+ok('el CSV con punto y coma se lee', ipc.serieDeCSV(csv).get('2026-11') === 135.9);
+const csvComas = 'Codigo,Descripcion,oct-26,nov-26\n,NIVEL GENERAL,"133,1","135,9"\n';
+ok('y el separado por comas, con los decimales entre comillas', ipc.serieDeCSV(csvComas).get('2026-10') === 133.1);
+
+const previos = [
+  { periodo: '2025-10', ICL: 50, IPC: 60, IPC_CBA: 99, CASA_PROPIA: 70 },
+  { periodo: '2025-11', ICL: 51, IPC: 61, IPC_CBA: 105.7, CASA_PROPIA: 71 },
+];
+const aplicado = ipc.aplicarIpcCordoba(previos, unida.serie);
+ok('el dato oficial pisa lo cargado a mano', aplicado.indices.find((i) => i.periodo === '2025-10').IPC_CBA === 103);
+ok('y no toca los demás índices', aplicado.indices.find((i) => i.periodo === '2025-10').ICL === 50);
+ok('un mes que ya coincidía no cuenta como cambio', aplicado.cambios === 4);
+const mesNuevo = aplicado.indices.find((i) => i.periodo === '2026-07');
+ok('un mes nuevo llega con los demás índices sin publicar', mesNuevo.ICL === 0 && mesNuevo.IPC_CBA === 128.4);
+
+// Lo que más importa: que ese 0 no rompa los contratos por ICL.
+const icl = valorIndice(aplicado.indices, '2026-07', 'ICL');
+ok('un ICL en 0 se lee como no publicado y arrastra el último', icl.valor === 51 && icl.estimado);
+ok('mientras el IPC de Córdoba de ese mes sí es exacto',
+  valorIndice(aplicado.indices, '2026-07', 'IPC_CBA').estimado === false);
 
 console.log(fallos === 0 ? '\nTodo en orden.' : `\n${fallos} fallaron.`);
 process.exit(fallos ? 1 : 0);

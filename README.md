@@ -392,7 +392,7 @@ También se traen solos, por el mismo intermediario de Cloudflare
 | Índice | Fuente | Qué se toma |
 |---|---|---|
 | ICL | API de estadísticas del BCRA, variable 40 (prueba la v4 y si no, la v3) | El valor del día 1 de cada mes, o el primero publicado de ese mes. El ICL es diario; la app trabaja por mes |
-| IPC nacional | API de series de tiempo de datos.gob.ar, serie `148.3_INIVELNAL_DICI_M_26` (INDEC, base dic 2016 = 100) | El índice mensual, redondeado a un decimal |
+| IPC nacional | El CSV del INDEC (`serie_ipc_divisiones.csv`, nivel general, región Nacional) y el API de datos.gob.ar, serie `148.3_INIVELNAL_DICI_M_26` (base dic 2016 = 100). El API manda; el CSV suma el mes más nuevo, que el API publica un mes tarde | El índice mensual, redondeado a un decimal |
 
 Pasan por el mismo control de variaciones que el IPC de Córdoba, y si una
 fuente falla las otras se aplican igual.

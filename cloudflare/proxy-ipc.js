@@ -5,8 +5,8 @@
  * permisos CORS a la app, así que el navegador no la deja leerlos. Este
  * Worker los baja y se los pasa con el permiso puesto.
  *
- * Solo acepta tres fuentes —la planilla del IPC de Córdoba, el ICL del BCRA y
- * el IPC nacional del INDEC— y solo responde a la app: no es un proxy abierto
+ * Solo acepta estas fuentes —la planilla del IPC de Córdoba, el ICL del BCRA y
+ * el IPC nacional del INDEC (API y CSV)— y solo responde a la app: no es un proxy abierto
  * que cualquiera pueda usar para otra cosa.
  *
  * Se instala pegándolo en Cloudflare → Workers (ver README, «El IPC de
@@ -23,6 +23,8 @@ const PERMITIDOS = [
   /^https:\/\/api\.bcra\.gob\.ar\/estadisticas\/v[34]\.0\/monetarias\/40\?[\w=&.-]*$/,
   // IPC nacional del INDEC, en el API de series de tiempo.
   /^https:\/\/apis\.datos\.gob\.ar\/series\/api\/series\/\?ids=148\.3_INIVELNAL_DICI_M_26(&[\w=.-]*)*$/,
+  // IPC nacional en el CSV del propio INDEC, que llega antes que el API.
+  /^https:\/\/www\.indec\.gob\.ar\/ftp\/cuadros\/economia\/serie_ipc_divisiones\.csv$/,
 ];
 const ORIGENES = [
   'https://gestion.inversionesgeneralesmym.com.ar',

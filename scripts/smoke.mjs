@@ -71,7 +71,12 @@ const navegadorContexto = pagina.context();
 const ICL_BCRA = { status: 200, results: [{ idVariable: 40, detalle: [
   { fecha: '2026-08-01', valor: 25.2 }, { fecha: '2026-09-01', valor: 25.79 }, { fecha: '2026-10-01', valor: 26.43 },
 ] }] };
-const IPC_INDEC = { data: [['2026-08-01', 9512.3], ['2026-09-01', 9701.2]] };
+// El API llega a agosto; septiembre sale solo del CSV del INDEC.
+const IPC_INDEC = { data: [['2026-07-01', 9350.1], ['2026-08-01', 9512.3]] };
+const CSV_INDEC = 'Codigo;Descripcion;Clasificador;Periodo;Indice_IPC;v_m_IPC;v_i_a_IPC;Region\n' +
+  '0;NIVEL GENERAL;Nivel general;202608;9512,3;1,7;33;Nacional\n' +
+  '0;NIVEL GENERAL;Nivel general;202609;9701,2;2;33;GBA\n' +
+  '0;NIVEL GENERAL;Nivel general;202609;9701,2;2;33;Nacional\n';
 await navegadorContexto.route('https://proxy-ipc.prueba/**', async (ruta) => {
   const destino = new URL(ruta.request().url()).searchParams.get('url') ?? '';
   const cabeceras = { 'access-control-allow-origin': '*' };
@@ -81,7 +86,8 @@ await navegadorContexto.route('https://proxy-ipc.prueba/**', async (ruta) => {
   if (destino.startsWith('https://apis.datos.gob.ar/')) {
     return ruta.fulfill({ status: 200, json: IPC_INDEC, headers: cabeceras });
   }
-  const cuerpo = destino.includes('mensual-csv') ? CSV_MENSUAL : '';
+  const cuerpo = destino.startsWith('https://www.indec.gob.ar/') ? CSV_INDEC
+    : destino.includes('mensual-csv') ? CSV_MENSUAL : '';
   return ruta.fulfill({ status: 200, body: cuerpo, headers: { ...cabeceras, 'content-type': 'text/csv' } });
 });
 await navegadorContexto.route(`${PORTAL_IPC}/**`, async (ruta) => {

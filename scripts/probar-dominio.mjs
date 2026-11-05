@@ -243,6 +243,23 @@ const SERIES = { data: [['2026-08-01', 9512.3456], ['2026-09-01', 9701.18], ['ba
 const ipcNac = nac.serieIPCNacional(SERIES);
 ok('el IPC nacional sale de las filas fecha-valor', ipcNac.size === 2 && ipcNac.get('2026-08') === 9512.3);
 
+const CSV_INDEC = [
+  'Codigo;Descripcion;Clasificador;Periodo;Indice_IPC;v_m_IPC;v_i_a_IPC;Region',
+  '0;NIVEL GENERAL;Nivel general y divisiones COICOP;202608;12276,766;1,7;33,5;Nacional',
+  '0;NIVEL GENERAL;Nivel general y divisiones COICOP;202608;12276,812;1,6;33,7;GBA',
+  '1;Alimentos y bebidas no alcohólicas;Nivel general y divisiones COICOP;202609;13384,1945;2;35,1;Nacional',
+  'Estacional;;Categorias;202609;10389,768;2,9;24,9;Nacional',
+  '0;NIVEL GENERAL;Nivel general y divisiones COICOP;202609;12514,1508;1,9;33,4;Nacional',
+].join('\r\n');
+const indec = nac.serieIPCIndecCSV(CSV_INDEC);
+ok('del CSV del INDEC sale solo el nivel general nacional',
+  indec.size === 2 && indec.get('2026-08') === 12276.8 && indec.get('2026-09') === 12514.2);
+const indecTab = nac.serieIPCIndecCSV(CSV_INDEC.replaceAll(';', '\t'));
+ok('también lee el CSV separado por tabulaciones', indecTab.get('2026-09') === 12514.2);
+ok('un archivo sin las columnas esperadas no rompe', nac.serieIPCIndecCSV('hola;chau\n1;2').size === 0);
+const unidaNac = ipc.unirSeries([new Map([['2026-07', 12073], ['2026-08', 12276.8]]), indec]).serie;
+ok('el CSV suma septiembre a lo que trae el API', unidaNac.get('2026-09') === 12514.2 && unidaNac.size === 3);
+
 const conICL = ipc.aplicarSerie(previos, icl3, 'ICL');
 ok('aplicar el ICL no toca el IPC de Córdoba',
   conICL.indices.find((i) => i.periodo === '2026-09').ICL === 25.79 &&

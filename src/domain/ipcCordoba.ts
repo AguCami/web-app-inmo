@@ -73,6 +73,30 @@ export function serieDeFilas(filas: Record<string, unknown>[]): Map<Periodo, num
 }
 
 /**
+ * Parte una línea de CSV respetando las comillas: con `,` como separador, los
+ * decimales con coma vienen entre comillas.
+ */
+export function partirLinea(linea: string, separador: string): string[] {
+  const celdas: string[] = [];
+  let actual = '';
+  let entreComillas = false;
+  for (let i = 0; i < linea.length; i++) {
+    const ch = linea[i];
+    if (ch === '"') {
+      if (entreComillas && linea[i + 1] === '"') {
+        actual += '"';
+        i++;
+      } else entreComillas = !entreComillas;
+    } else if (ch === separador && !entreComillas) {
+      celdas.push(actual);
+      actual = '';
+    } else actual += ch;
+  }
+  celdas.push(actual);
+  return celdas;
+}
+
+/**
  * Lee el CSV de la planilla. Puede venir separado por `;` o por `,` (y en
  * ese caso los decimales van entre comillas), así que se parsea en serio.
  */
@@ -80,25 +104,7 @@ export function serieDeCSV(texto: string): Map<Periodo, number> {
   const lineas = texto.replace(/^﻿/, '').split(/\r?\n/).filter((l) => l.trim());
   if (lineas.length < 2) return new Map();
   const separador = (lineas[0].match(/;/g)?.length ?? 0) > (lineas[0].match(/,/g)?.length ?? 0) ? ';' : ',';
-  const partir = (linea: string) => {
-    const celdas: string[] = [];
-    let actual = '';
-    let entreComillas = false;
-    for (let i = 0; i < linea.length; i++) {
-      const ch = linea[i];
-      if (ch === '"') {
-        if (entreComillas && linea[i + 1] === '"') {
-          actual += '"';
-          i++;
-        } else entreComillas = !entreComillas;
-      } else if (ch === separador && !entreComillas) {
-        celdas.push(actual);
-        actual = '';
-      } else actual += ch;
-    }
-    celdas.push(actual);
-    return celdas;
-  };
+  const partir = (linea: string) => partirLinea(linea, separador);
   // El encabezado es la primera fila con columnas de mes: algunas planillas
   // traen un título arriba.
   const filas = lineas.map(partir);

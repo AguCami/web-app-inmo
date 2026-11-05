@@ -23,7 +23,7 @@ if ! psql -h /tmp -p "$PUERTO" -U postgres -c 'select 1' >/dev/null 2>&1; then
 fi
 
 # Siempre desde cero: una prueba que depende de lo que quedó no prueba nada.
-psql_ -q -c 'drop schema public cascade; create schema public; drop schema if exists auth cascade;' >/dev/null
+psql_ -q -c 'drop schema public cascade; create schema public; drop schema if exists auth cascade; drop schema if exists storage cascade;' >/dev/null
 psql_ -q -f "$RAIZ/supabase/entorno-de-prueba.sql"   >/dev/null 2>&1
 psql_ -q -f "$RAIZ/supabase/esquema.sql"             >/dev/null 2>&1
 psql_ -q -f "$RAIZ/supabase/permisos-de-prueba.sql"  >/dev/null 2>&1

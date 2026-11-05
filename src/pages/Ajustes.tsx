@@ -26,6 +26,8 @@ export default function Ajustes() {
   const cargarDemo = useApp((e) => e.cargarDemo);
   const vaciar = useApp((e) => e.vaciar);
   const registrarRespaldo = useApp((e) => e.registrarRespaldo);
+  const modoServidor = useApp((e) => e.modoServidor);
+  const organizacion = useApp((e) => e.sesion?.organizacion);
   const [almacenamiento, setAlmacenamiento] = useState<EstadoAlmacenamiento | null>(null);
   const [negado, setNegado] = useState(false);
 
@@ -226,7 +228,14 @@ export default function Ajustes() {
 
         {vista === 'respaldo' && (
           <div className="grid grid--2">
-            <Panel titulo="Copia de seguridad" subtitulo="Los datos viven en este navegador: bajá una copia seguido">
+            <Panel
+              titulo="Copia de seguridad"
+              subtitulo={
+                modoServidor
+                  ? 'Los datos están en el servidor; la copia es una red extra'
+                  : 'Los datos viven en este navegador: bajá una copia seguido'
+              }
+            >
               <p className="mini tenue" style={{ marginBottom: 14 }}>
                 El respaldo es un archivo con todo: personas, propiedades, contratos, cuotas, pagos, liquidaciones,
                 gastos, índices y los contratos escaneados.
@@ -262,8 +271,14 @@ export default function Ajustes() {
                     try {
                       reemplazar(await importarJSON(archivo));
                       setAviso({ tono: 'ok', texto: 'Listo, se restauró la copia.' });
-                    } catch {
-                      setAviso({ tono: 'critico', texto: 'No pudimos leer el archivo. Fijate que sea un respaldo de esta app.' });
+                    } catch (error) {
+                      // Con servidor, el archivo puede estar bien y fallar la subida de un
+                      // adjunto: eso no es «no pudimos leerlo», y decirlo confundiría.
+                      const texto =
+                        error instanceof Error && error.message.startsWith('No se pudo subir')
+                          ? `${error.message}. No se restauró nada; volvé a probar.`
+                          : 'No pudimos leer el archivo. Fijate que sea un respaldo de esta app.';
+                      setAviso({ tono: 'critico', texto });
                     }
                     e.target.value = '';
                   }}
@@ -271,60 +286,71 @@ export default function Ajustes() {
               </div>
             </Panel>
 
-            <Panel
-              titulo="Dónde viven los datos"
-              subtitulo="En este navegador, en esta computadora"
-            >
-              {almacenamiento?.persistente ? (
-                <Nota tono="ok" titulo="Protegidos contra el borrado automático">
+            {modoServidor ? (
+              <Panel titulo="Dónde viven los datos" subtitulo="En el servidor, no en esta computadora">
+                <Nota tono="ok" titulo={`Guardados en la cuenta de ${organizacion ?? 'la inmobiliaria'}`}>
                   <span>
-                    El navegador se comprometió a no descartarlos por falta de espacio. Igual se
-                    pierden si alguien limpia los datos del sitio, así que la copia sigue siendo
-                    la única red.
+                    Los datos y los archivos están en Supabase y los ve cualquiera de la oficina que
+                    entre con su usuario. En este navegador no queda nada al cerrar sesión.
                   </span>
                 </Nota>
-              ) : (
-                <Nota tono="alerta" titulo="El navegador los puede descartar">
-                  <span>
-                    Si le falta espacio, puede borrarlos sin avisar. Se le puede pedir que no lo
-                    haga; en Chrome lo concede solo, en Firefox pregunta.
-                  </span>
-                  <div className="fila" style={{ marginTop: 10 }}>
-                    <button
-                      className="btn btn--chico"
-                      disabled={!almacenamiento?.soportado}
-                      onClick={async () => {
-                        const concedido = await pedirPersistencia();
-                        setNegado(!concedido);
-                        setAlmacenamiento(await estadoDeAlmacenamiento());
-                      }}
-                    >
-                      {almacenamiento?.soportado
-                        ? 'Pedir que no los borre'
-                        : 'Este navegador no lo permite'}
-                    </button>
-                  </div>
-                </Nota>
-              )}
+              </Panel>
+            ) : (
+              <Panel
+                titulo="Dónde viven los datos"
+                subtitulo="En este navegador, en esta computadora"
+              >
+                {almacenamiento?.persistente ? (
+                  <Nota tono="ok" titulo="Protegidos contra el borrado automático">
+                    <span>
+                      El navegador se comprometió a no descartarlos por falta de espacio. Igual se
+                      pierden si alguien limpia los datos del sitio, así que la copia sigue siendo
+                      la única red.
+                    </span>
+                  </Nota>
+                ) : (
+                  <Nota tono="alerta" titulo="El navegador los puede descartar">
+                    <span>
+                      Si le falta espacio, puede borrarlos sin avisar. Se le puede pedir que no lo
+                      haga; en Chrome lo concede solo, en Firefox pregunta.
+                    </span>
+                    <div className="fila" style={{ marginTop: 10 }}>
+                      <button
+                        className="btn btn--chico"
+                        disabled={!almacenamiento?.soportado}
+                        onClick={async () => {
+                          const concedido = await pedirPersistencia();
+                          setNegado(!concedido);
+                          setAlmacenamiento(await estadoDeAlmacenamiento());
+                        }}
+                      >
+                        {almacenamiento?.soportado
+                          ? 'Pedir que no los borre'
+                          : 'Este navegador no lo permite'}
+                      </button>
+                    </div>
+                  </Nota>
+                )}
 
-              {negado && !almacenamiento?.persistente && (
-                <p className="mini tenue" style={{ marginTop: 10 }}>
-                  El navegador no lo concedió todavía. Chrome lo decide según cuánto se use el
-                  sitio: si lo agregás a Favoritos o lo instalás como aplicación y volvés a
-                  probar, suele concederlo.
-                </p>
-              )}
+                {negado && !almacenamiento?.persistente && (
+                  <p className="mini tenue" style={{ marginTop: 10 }}>
+                    El navegador no lo concedió todavía. Chrome lo decide según cuánto se use el
+                    sitio: si lo agregás a Favoritos o lo instalás como aplicación y volvés a
+                    probar, suele concederlo.
+                  </p>
+                )}
 
-              {almacenamiento?.usadoMB !== undefined && (
-                <p className="mini tenue" style={{ marginTop: 12 }}>
-                  Ocupado:{' '}
-                  {almacenamiento.usadoMB < 1 ? 'menos de 1 MB' : `${almacenamiento.usadoMB} MB`}
-                  {almacenamiento.disponibleMB !== undefined &&
-                    ` de ${Math.round(almacenamiento.disponibleMB)} MB disponibles`}
-                  . Los contratos escaneados son lo que más pesa.
-                </p>
-              )}
-            </Panel>
+                {almacenamiento?.usadoMB !== undefined && (
+                  <p className="mini tenue" style={{ marginTop: 12 }}>
+                    Ocupado:{' '}
+                    {almacenamiento.usadoMB < 1 ? 'menos de 1 MB' : `${almacenamiento.usadoMB} MB`}
+                    {almacenamiento.disponibleMB !== undefined &&
+                      ` de ${Math.round(almacenamiento.disponibleMB)} MB disponibles`}
+                    . Los contratos escaneados son lo que más pesa.
+                  </p>
+                )}
+              </Panel>
+            )}
 
             <Panel titulo="Qué hay cargado">
               <div className="pila" style={{ gap: 8 }}>

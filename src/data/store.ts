@@ -18,7 +18,7 @@ import { generarCuotasFaltantes, siguienteNumeroRecibo } from '../domain/cobranz
 import { armarLiquidacion } from '../domain/liquidaciones';
 import { sanear, type ColeccionBorrable } from '../domain/integridad';
 import { hoy, nuevoId, periodoActual } from '../domain/util';
-import { borrarArchivos, guardarArchivo, MAXIMO_POR_ARCHIVO } from './archivos';
+import { borrarArchivos, guardarArchivo, MAXIMO_POR_ARCHIVO, usarServidorParaArchivos } from './archivos';
 import { cargarBase, conRecibos, guardarBase } from './db';
 import { aplicarCambios, calcularCambios, cargarDesdeServidor } from './remoto';
 import { HAY_SERVIDOR, ingresar, salir, sesionActual, type Sesion } from './servidor';
@@ -112,6 +112,7 @@ export const useApp = create<EstadoApp>((set, get) => {
   /** Trae la base del servidor y deja el sincronizador listo para esa sesión. */
   const abrirSesion = async (sesion: Sesion) => {
     set({ verificandoSesion: false, sesion, sincronizacion: 'guardando' });
+    usarServidorParaArchivos(sesion.organizacionId);
     try {
       const db = conRecibos(await cargarDesdeServidor());
       sincronizador = new Sincronizador(sesion.organizacionId, db, anotarEstado);
@@ -152,6 +153,7 @@ export const useApp = create<EstadoApp>((set, get) => {
       // Lo pendiente se manda antes de soltar la sesión, o se pierde.
       await sincronizador?.vaciarCola();
       sincronizador = null;
+      usarServidorParaArchivos(null);
       await salir();
       set({ sesion: null, db: baseVacia(), sincronizacion: 'al_dia' });
     },
@@ -226,7 +228,7 @@ export const useApp = create<EstadoApp>((set, get) => {
       }
 
       const id = nuevoId('adj');
-      // Primero el binario: si IndexedDB falla, no queda una ficha sin archivo.
+      // Primero el binario: si la subida falla, no queda una ficha sin archivo.
       await guardarArchivo(id, archivo);
 
       const adjunto: Adjunto = {

@@ -290,3 +290,76 @@ begin
          with check (organizacion_id in (select mis_organizaciones()))', t);
   end loop;
 end $$;
+
+/* ───────────────────────── Archivos adjuntos (Storage) ────────────────── */
+
+-- Los PDF y las fotos del legajo no van en una tabla: van al bucket
+-- "adjuntos", privado. La fila de `adjunto` es la ficha; el binario vive en
+-- Storage bajo la ruta  <organizacion_id>/<id del adjunto>.
+--
+-- La primera carpeta de la ruta es la organización, y eso es lo que miran
+-- las políticas: se lee, sube y borra solo debajo de la carpeta de una
+-- inmobiliaria a la que se pertenece. Es la misma regla que las tablas.
+--
+-- Va dentro de un bloque que primero pregunta si existe Storage: en Supabase
+-- siempre está, pero así el esquema también corre en un Postgres pelado.
+do $$
+begin
+  if to_regclass('storage.buckets') is null then
+    raise notice 'Sin Storage: se saltea el bucket de adjuntos';
+    return;
+  end if;
+
+  -- 20 MB por archivo, el mismo tope que pone la app (MAXIMO_POR_ARCHIVO).
+  insert into storage.buckets (id, name, public, file_size_limit)
+  values ('adjuntos', 'adjuntos', false, 20 * 1024 * 1024)
+  on conflict (id) do update
+    set public = false, file_size_limit = excluded.file_size_limit;
+
+  drop policy if exists "adjuntos: ver los de mi organizacion"    on storage.objects;
+  drop policy if exists "adjuntos: subir a mi organizacion"       on storage.objects;
+  drop policy if exists "adjuntos: reemplazar en mi organizacion" on storage.objects;
+  drop policy if exists "adjuntos: borrar los de mi organizacion" on storage.objects;
+
+  -- Se compara como texto: castear la carpeta a uuid revienta con una ruta
+  -- cualquiera, y una política que tira error es peor que una que dice no.
+  create policy "adjuntos: ver los de mi organizacion" on storage.objects
+    for select to authenticated
+    using (bucket_id = 'adjuntos'
+           and (storage.foldername(name))[1] in (select o::text from public.mis_organizaciones() o));
+
+  create policy "adjuntos: subir a mi organizacion" on storage.objects
+    for insert to authenticated
+    with check (bucket_id = 'adjuntos'
+                and (storage.foldername(name))[1] in (select o::text from public.mis_organizaciones() o));
+
+  create policy "adjuntos: reemplazar en mi organizacion" on storage.objects
+    for update to authenticated
+    using (bucket_id = 'adjuntos'
+           and (storage.foldername(name))[1] in (select o::text from public.mis_organizaciones() o))
+    with check (bucket_id = 'adjuntos'
+                and (storage.foldername(name))[1] in (select o::text from public.mis_organizaciones() o));
+
+  create policy "adjuntos: borrar los de mi organizacion" on storage.objects
+    for delete to authenticated
+    using (bucket_id = 'adjuntos'
+           and (storage.foldername(name))[1] in (select o::text from public.mis_organizaciones() o));
+end $$;
+
+/* ─────────────────────────────── Permisos ──────────────────────────────── */
+
+-- Se dan acá, a mano, y no se depende de que el proyecto tenga tildado
+-- "Automatically expose new tables" (Supabase recomienda destildarlo).
+-- Solo el usuario con sesión (authenticated) toca tablas; las políticas de
+-- arriba deciden qué filas. El visitante sin sesión (anon) no toca ninguna.
+grant usage on schema public to authenticated;
+grant select, insert, update, delete on
+  configuracion, persona, propiedad, contrato, liquidacion,
+  cuota, pago, gasto, novedad, adjunto, indice
+  to authenticated;
+-- organizacion y miembro se leen, pero se escriben solo desde el SQL Editor.
+grant select on organizacion, miembro to authenticated;
+grant execute on function mis_organizaciones() to authenticated;
+
+revoke all on all tables in schema public from anon;
+revoke execute on function mis_organizaciones() from anon, public;

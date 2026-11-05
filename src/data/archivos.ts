@@ -8,7 +8,14 @@
  *
  * Todo lo de acá es asíncrono y tolera fallar: en ventana privada o con el
  * almacenamiento bloqueado la app tiene que seguir andando, aunque sin adjuntos.
+ *
+ * Con servidor, en cambio, los binarios van al bucket privado "adjuntos" de
+ * Supabase Storage, bajo <organizacion_id>/<id>. No se guarda copia en el
+ * navegador: es la misma regla que para la base, así cerrar sesión en una
+ * máquina compartida no deja contratos escaneados en el disco. El resto de
+ * la app no se entera: llama a las mismas funciones de acá.
  */
+import { obtenerCliente } from './servidor';
 
 const BASE = 'gestion-alquileres';
 const ALMACEN = 'archivos';
@@ -16,6 +23,18 @@ const VERSION = 1;
 
 /** Tamaño máximo por archivo. Un escaneo de contrato ronda 1 a 5 MB. */
 export const MAXIMO_POR_ARCHIVO = 20 * 1024 * 1024;
+
+const BUCKET = 'adjuntos';
+
+/** La organización de la sesión abierta. Mientras sea null, todo va a IndexedDB. */
+let organizacionRemota: string | null = null;
+
+/** La llama el store al abrir y al cerrar sesión. */
+export function usarServidorParaArchivos(organizacionId: string | null): void {
+  organizacionRemota = organizacionId;
+}
+
+const ruta = (org: string, id: string) => `${org}/${id}`;
 
 let conexion: Promise<IDBDatabase> | null = null;
 
@@ -47,11 +66,26 @@ async function conAlmacen<T>(
 }
 
 export async function guardarArchivo(id: string, contenido: Blob): Promise<void> {
+  if (organizacionRemota) {
+    const sb = await obtenerCliente();
+    const { error } = await sb.storage.from(BUCKET).upload(ruta(organizacionRemota, id), contenido, {
+      contentType: contenido.type || 'application/octet-stream',
+      // Reponer un respaldo vuelve a subir los mismos ids: se pisan, no fallan.
+      upsert: true,
+    });
+    if (error) throw new Error(`No se pudo subir el archivo: ${error.message}`);
+    return;
+  }
   await conAlmacen('readwrite', (a) => a.put(contenido, id) as IDBRequest<IDBValidKey>);
 }
 
 export async function leerArchivo(id: string): Promise<Blob | null> {
   try {
+    if (organizacionRemota) {
+      const sb = await obtenerCliente();
+      const { data, error } = await sb.storage.from(BUCKET).download(ruta(organizacionRemota, id));
+      return error ? null : data;
+    }
     return (await conAlmacen<Blob | undefined>('readonly', (a) => a.get(id))) ?? null;
   } catch {
     return null;
@@ -61,6 +95,12 @@ export async function leerArchivo(id: string): Promise<Blob | null> {
 export async function borrarArchivos(ids: string[]): Promise<void> {
   if (ids.length === 0) return;
   try {
+    if (organizacionRemota) {
+      const org = organizacionRemota;
+      const sb = await obtenerCliente();
+      await sb.storage.from(BUCKET).remove(ids.map((id) => ruta(org, id)));
+      return;
+    }
     const db = await abrir();
     await new Promise<void>((resolver, rechazar) => {
       const tx = db.transaction(ALMACEN, 'readwrite');

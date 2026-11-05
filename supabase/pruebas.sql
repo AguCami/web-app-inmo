@@ -132,8 +132,50 @@ select afirmar(
                            where attrelid = 'propiedad'::regclass
                              and attname = 'propietarioId')]) = 0);
 
+/* ── Archivos: el bucket de adjuntos sigue la misma regla ── */
+select afirmar('el bucket de adjuntos es privado',
+  (select not public from storage.buckets where id = 'adjuntos'));
+
+set request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111"}';
+insert into storage.objects (bucket_id, name)
+  values ('adjuntos', 'aaaaaaaa-0000-0000-0000-000000000001/adj_2');
+select afirmar('Ana ve sus archivos', (select count(*) from storage.objects) = 1);
+
+do $$ begin
+  begin
+    insert into storage.objects (bucket_id, name)
+      values ('adjuntos', 'bbbbbbbb-0000-0000-0000-000000000002/adj_metido');
+    raise exception '✗ Ana pudo subir un archivo a la carpeta de La Otra';
+  exception when insufficient_privilege then
+    raise notice '✓ no se puede subir a la carpeta de otra inmobiliaria';
+  end;
+end $$;
+
+do $$ begin
+  begin
+    insert into storage.objects (bucket_id, name) values ('adjuntos', 'suelto.pdf');
+    raise exception '✗ se pudo subir un archivo fuera de toda carpeta';
+  exception when insufficient_privilege then
+    raise notice '✓ no se puede subir un archivo fuera de la carpeta de la organización';
+  end;
+end $$;
+
+set request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222"}';
+select afirmar('Beto no ve los archivos de Ana', (select count(*) from storage.objects) = 0);
+delete from storage.objects;
+set request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111"}';
+select afirmar('ni los puede borrar', (select count(*) from storage.objects) = 1);
+
+/* ── El visitante anónimo no tiene permiso sobre ninguna tabla ── */
+reset role;
+select afirmar('anon no puede leer ninguna tabla de la app',
+  not exists (select 1 from information_schema.role_table_grants
+              where grantee = 'anon' and table_schema = 'public'));
+set role authenticated;
+
 /* ── Sin sesión no se ve nada ── */
 set request.jwt.claims = '';
 select afirmar('sin sesión no se ve ninguna persona', (select count(*) from persona) = 0);
+select afirmar('ni ningún archivo', (select count(*) from storage.objects) = 0);
 
 reset role;

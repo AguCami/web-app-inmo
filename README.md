@@ -104,10 +104,25 @@ que la demo no descarga.
 1. Crear un proyecto en [supabase.com](https://supabase.com), región South
    America (São Paulo).
 2. **SQL Editor → New query**, pegar `supabase/esquema.sql` entero y *Run*.
-3. **Project Settings → API**: copiar la *Project URL* y la clave *anon
-   public* a `.env.local` (ver `.env.ejemplo`).
-4. Crear los usuarios en **Authentication → Users**, y por cada uno una fila
-   en `miembro` con la organización y el rol.
+   Crea las tablas, las políticas y también el bucket privado `adjuntos` de
+   Storage, donde van los PDF y las fotos. Se puede volver a correr.
+3. **Authentication → Users → Add user**, uno por persona, con *Auto Confirm
+   User* tildado. Cada uno con su contraseña.
+4. **SQL Editor:** pegar `supabase/usuarios.sql`, poner los emails reales
+   donde dice `reemplazar-…` y *Run*. La consulta del final tiene que
+   devolver una fila por persona.
+5. **Project Settings → API**: copiar la *Project URL* y la clave *anon
+   public*.
+   - Para probar en la compu: a `.env.local` (ver `.env.ejemplo`) y
+     `npm run dev`.
+   - Para lo publicado: en GitHub, **Settings → Secrets and variables →
+     Actions → Variables**, crear `VITE_SUPABASE_URL` y
+     `VITE_SUPABASE_ANON_KEY`, y volver a correr el workflow de deploy.
+     Ojo: desde ese momento la dirección de GitHub Pages pide login y deja
+     de mostrar la demo. Borrando las variables vuelve a ser la demo.
+6. Si ya había datos cargados en un navegador: bajar el respaldo ahí
+   (**Ajustes → Respaldo**), entrar con cuenta y subirlo desde el mismo
+   lugar. Las filas van a la base y los archivos que trae adentro, a Storage.
 
 La clave `anon` es pública por diseño: viaja en el navegador y lo que protege
 los datos son las políticas por fila del esquema. La `service_role` no va
@@ -122,7 +137,10 @@ la cartera en el disco.
 
 Del otro lado, cada tabla tiene una política que filtra por organización, y
 las claves foráneas son compuestas: una inmobiliaria no puede leer, escribir
-ni referenciar una fila de otra. Está probado en `npm run esquema`.
+ni referenciar una fila de otra. Los archivos siguen la misma regla: van a
+`adjuntos/<organización>/<id>` y las políticas de Storage solo dejan tocar
+la carpeta de la inmobiliaria propia. El bucket es privado: no hay enlace
+público a un contrato escaneado. Está todo probado en `npm run esquema`.
 
 ### Cuándo se guarda
 
@@ -171,8 +189,8 @@ En **Ajustes → Respaldo → Dónde viven los datos** se ve si el navegador se
 comprometió a no descartarlos. Chrome lo concede según cuánto se use el
 sitio; tenerlo en Favoritos o instalado como aplicación ayuda.
 
-Todo esto deja de hacer falta el día que la app pase a Supabase, que está
-escrito y probado esperando las claves.
+Todo esto deja de hacer falta en modo cuentas: los datos y los archivos
+quedan en Supabase. Ver «Cómo se prende el modo cuentas».
 
 ## Las decisiones que explican el resto
 

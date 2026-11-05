@@ -231,6 +231,9 @@ export function FormularioContrato({
     (p) => p.roles.includes('inquilino') && (p.activo || p.id === contrato.inquilinoId),
   );
   const valido = f.numero.trim() && f.propiedadId && f.inquilinoId && f.montoInicial > 0;
+  // Un contrato que todavía no está guardado (nuevo o renovación) arranca
+  // activo: el estado solo se elige al editar uno existente.
+  const esNuevo = !db.contratos.some((c) => c.id === contrato.id);
 
   return (
     <Modal
@@ -271,13 +274,15 @@ export function FormularioContrato({
             ))}
           </select>
         </Campo>
-        <Campo etiqueta="Estado">
-          <select value={f.estado} onChange={(e) => set('estado', e.target.value as Contrato['estado'])}>
-            <option value="activo">Activo</option>
-            <option value="finalizado">Finalizado</option>
-            <option value="rescindido">Rescindido</option>
-          </select>
-        </Campo>
+        {!esNuevo && (
+          <Campo etiqueta="Estado">
+            <select value={f.estado} onChange={(e) => set('estado', e.target.value as Contrato['estado'])}>
+              <option value="activo">Activo</option>
+              <option value="finalizado">Finalizado</option>
+              <option value="rescindido">Rescindido</option>
+            </select>
+          </Campo>
+        )}
       </div>
 
       <div className="grid grid--form">

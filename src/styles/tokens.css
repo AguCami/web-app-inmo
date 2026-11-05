@@ -77,6 +77,21 @@
 
   --rail-ancho: 236px;
 
+  /* Vidrio esmerilado: el de la credencial del ingreso, para el menú y las
+     tarjetas del panel, que van encima de la misma espiral. */
+  --vidrio: linear-gradient(160deg, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.7));
+  --vidrio-borde: rgba(255, 255, 255, 0.85);
+  --vidrio-canto: inset 0 1px 0 rgba(255, 255, 255, 0.95), inset 0 -1px 0 rgba(11, 87, 181, 0.06);
+  --vidrio-sombra: 0 8px 20px -10px rgba(10, 40, 90, 0.22), 0 30px 60px -32px rgba(10, 40, 90, 0.32);
+  --vidrio-sombra-alta: 0 12px 26px -10px rgba(10, 40, 90, 0.28), 0 40px 70px -30px rgba(10, 40, 90, 0.4);
+  /* Lo que adentro del vidrio era gris sólido pasa a ser un velo. */
+  --velo: rgba(20, 50, 90, 0.05);
+  --velo-hover: rgba(20, 50, 90, 0.08);
+  /* Encima de la espiral: un poco de blanco para que no tiña de más. */
+  --fondo-velo: rgba(241, 244, 247, 0.12);
+  /* El título y la bajada van directo sobre la espiral: un halo los despega. */
+  --halo: 0 0 2px rgba(255, 255, 255, 0.9), 0 0 16px rgba(255, 255, 255, 0.95), 0 0 30px rgba(255, 255, 255, 0.8);
+
   --fuente: 'Figtree', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --fuente-titulo: 'Outfit', var(--fuente);
 }
@@ -126,6 +141,17 @@
     --sombra-suave: 0 1px 2px rgba(0, 0, 0, 0.5);
     --sombra-media: 0 2px 6px rgba(0, 0, 0, 0.45), 0 12px 32px rgba(0, 0, 0, 0.5);
     --sombra-alta: 0 8px 40px rgba(0, 0, 0, 0.65);
+
+    --vidrio: linear-gradient(160deg, rgba(26, 33, 42, 0.78), rgba(20, 26, 34, 0.7));
+    --vidrio-borde: rgba(255, 255, 255, 0.09);
+    --vidrio-canto: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+    --vidrio-sombra: 0 10px 24px -10px rgba(0, 0, 0, 0.55), 0 30px 60px -30px rgba(0, 0, 0, 0.6);
+    --vidrio-sombra-alta: 0 14px 30px -10px rgba(0, 0, 0, 0.6), 0 40px 70px -30px rgba(0, 0, 0, 0.7);
+    --velo: rgba(255, 255, 255, 0.045);
+    --velo-hover: rgba(255, 255, 255, 0.075);
+    /* De noche la espiral queda detrás de un velo oscuro: se ve, no encandila. */
+    --fondo-velo: rgba(9, 13, 19, 0.8);
+    --halo: 0 0 2px rgba(9, 13, 19, 0.9), 0 0 16px rgba(9, 13, 19, 0.9);
   }
 }
 
@@ -173,4 +199,15 @@
   --sombra-suave: 0 1px 2px rgba(0, 0, 0, 0.5);
   --sombra-media: 0 2px 6px rgba(0, 0, 0, 0.45), 0 12px 32px rgba(0, 0, 0, 0.5);
   --sombra-alta: 0 8px 40px rgba(0, 0, 0, 0.65);
+
+  --vidrio: linear-gradient(160deg, rgba(26, 33, 42, 0.78), rgba(20, 26, 34, 0.7));
+  --vidrio-borde: rgba(255, 255, 255, 0.09);
+  --vidrio-canto: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  --vidrio-sombra: 0 10px 24px -10px rgba(0, 0, 0, 0.55), 0 30px 60px -30px rgba(0, 0, 0, 0.6);
+  --vidrio-sombra-alta: 0 14px 30px -10px rgba(0, 0, 0, 0.6), 0 40px 70px -30px rgba(0, 0, 0, 0.7);
+  --velo: rgba(255, 255, 255, 0.045);
+  --velo-hover: rgba(255, 255, 255, 0.075);
+  /* De noche la espiral queda detrás de un velo oscuro: se ve, no encandila. */
+  --fondo-velo: rgba(9, 13, 19, 0.8);
+  --halo: 0 0 2px rgba(9, 13, 19, 0.9), 0 0 16px rgba(9, 13, 19, 0.9);
 }

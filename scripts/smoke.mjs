@@ -52,17 +52,13 @@ for (const [titulo, ruta] of RUTAS) {
   comprobar(`carga ${titulo}`, h1?.includes(titulo) && alto < 6000, `${alto} px`);
 }
 
-/* ── 1 bis. El aviso de que los datos están en riesgo ────────────── */
+/* ── 1 bis. No hay barras de aviso arriba ────────────────────────── */
+// Se sacaron a pedido —la de datos de ejemplo y la de copia de seguridad—:
+// ocupaban la parte de arriba de todas las pantallas. Vaciar el ejemplo y
+// bajar la copia siguen en Ajustes → Respaldo.
 comprobar(
-  'con la demo cargada avisa que no son datos reales',
-  (await pagina.locator('.aviso-datos--demo').count()) === 1,
-);
-// Va en el marco de la app, no en una pantalla: si alguien trabaja todo el
-// día en Cobranzas tiene que verlo igual.
-await pagina.goto(`${BASE}/#/cobranzas`, { waitUntil: 'networkidle' });
-comprobar(
-  'y el aviso está en todas las pantallas, no solo en Inicio',
-  (await pagina.locator('.aviso-datos--demo').count()) === 1,
+  'no aparecen las barras de aviso de datos',
+  (await pagina.locator('.aviso-datos').count()) === 0,
 );
 
 /* ── 2. Cobrar baja la deuda y persiste ──────────────────────────── */

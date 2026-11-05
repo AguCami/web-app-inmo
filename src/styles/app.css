@@ -42,15 +42,65 @@ a { color: var(--acento); text-decoration-thickness: 1px; text-underline-offset:
 
 /* ─────────────────────────── Estructura ─────────────────────────── */
 
-.app { display: flex; min-height: 100%; gap: 14px; padding: 14px; }
+.app { display: flex; min-height: 100%; gap: 14px; padding: 14px; position: relative; }
+
+/* ── El fondo y el vidrio ──
+ *
+ * El panel va sobre la misma espiral que el ingreso, y sus superficies —el
+ * menú, las tarjetas— son del mismo vidrio esmerilado que la credencial.
+ * Bastante blanco (70-80 %) para que los importes se lean de una ojeada:
+ * lo que se filtra es el azul, borroso, no la forma. */
+.fondo-app {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: var(--fondo);
+}
+.fondo-app img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.fondo-app::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--fondo-velo);
+}
+
+.rail,
+.panel,
+.dato,
+.carta {
+  background: var(--vidrio);
+  -webkit-backdrop-filter: blur(28px) saturate(1.6);
+  backdrop-filter: blur(28px) saturate(1.6);
+  border: 1px solid var(--vidrio-borde);
+  box-shadow: var(--vidrio-canto), var(--vidrio-sombra);
+  /* Adentro del vidrio, los grises sólidos serían parches: pasan a velo. */
+  --panel-2: var(--velo);
+  --panel-hover: var(--velo-hover);
+}
+/* Las filas de las listas no llevan fondo propio: son parte del vidrio. */
+.panel .item { background: transparent; }
+
+/* Quien pidió menos transparencia recibe superficies sólidas. */
+@media (prefers-reduced-transparency: reduce) {
+  .fondo-app img, .fondo-app::after { display: none; }
+  .rail, .panel, .dato, .carta {
+    background: var(--panel);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    border-color: var(--borde);
+  }
+}
 
 .rail {
   width: var(--rail-ancho);
   flex: 0 0 var(--rail-ancho);
-  background: var(--rail);
-  border: 1px solid var(--borde);
   border-radius: var(--r-lg);
-  box-shadow: var(--sombra-suave);
   padding: 16px 12px;
   display: flex;
   flex-direction: column;
@@ -141,16 +191,14 @@ a { color: var(--acento); text-decoration-thickness: 1px; text-underline-offset:
 .cabecera { display: flex; align-items: flex-start; gap: 12px; flex-wrap: wrap; padding: 6px 4px 0; }
 .cabecera__texto { flex: 1; min-width: 200px; }
 .cabecera__texto p { color: var(--tinta-2); font-size: 13.5px; margin-top: 2px; }
+.cabecera__texto { text-shadow: var(--halo); }
 
 .contenido { display: flex; flex-direction: column; gap: 16px; padding-bottom: 40px; }
 
 /* ──────────────────────────── Paneles ───────────────────────────── */
 
 .panel {
-  background: var(--panel);
-  border: 1px solid var(--borde);
   border-radius: var(--r-lg);
-  box-shadow: var(--sombra-suave);
   container-type: inline-size;
 }
 .panel__cab {
@@ -179,10 +227,7 @@ a { color: var(--acento); text-decoration-thickness: 1px; text-underline-offset:
 /* ───────────────────────── Tarjeta de dato ──────────────────────── */
 
 .dato {
-  background: var(--panel);
-  border: 1px solid var(--borde);
   border-radius: var(--r-lg);
-  box-shadow: var(--sombra-suave);
   padding: 16px 18px;
   display: flex;
   flex-direction: column;
@@ -228,7 +273,7 @@ a { color: var(--acento); text-decoration-thickness: 1px; text-underline-offset:
 }
 .dato:hover {
   transform: translateY(-2px);
-  box-shadow: var(--sombra-media);
+  box-shadow: var(--vidrio-canto), var(--vidrio-sombra-alta);
 }
 
 /* El mini-gráfico, al pie de la tarjeta. */
@@ -369,7 +414,7 @@ button.item { cursor: pointer; }
   cursor: pointer;
   transition: box-shadow 160ms ease, transform 160ms ease;
 }
-.carta:hover { box-shadow: var(--sombra-media); transform: translateY(-1px); }
+.carta:hover { box-shadow: var(--vidrio-canto), var(--vidrio-sombra-alta); transform: translateY(-1px); }
 .carta__cab { display: flex; align-items: flex-start; gap: 12px; }
 .carta__titulo { font-family: var(--fuente-titulo); font-weight: 600; font-size: 15.5px; line-height: 1.3; }
 .carta__sub { font-size: 12.5px; color: var(--tinta-3); margin-top: 2px; }
@@ -931,38 +976,6 @@ select.suelto { width: auto; border-radius: var(--r-pill); background: var(--pan
 .sincro--guardando .sincro__punto { background: var(--alerta); }
 .sincro--error { color: var(--critico); }
 .sincro--error .sincro__punto { background: var(--critico); }
-
-/* Barra de aviso sobre el estado de los datos. No se puede cerrar, así que
-   tiene que ser legible sin gritar: color de fondo, no un bloque entero. */
-.aviso-datos {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 11px 16px;
-  border-radius: var(--r);
-  border: 1px solid;
-  font-size: 13.5px;
-  line-height: 1.45;
-  margin-bottom: 16px;
-}
-.aviso-datos span { flex: 1; min-width: 0; }
-.aviso-datos .btn { flex: none; }
-.aviso-datos--demo {
-  background: var(--alerta-fondo);
-  border-color: color-mix(in oklab, var(--alerta) 35%, transparent);
-  color: var(--alerta);
-}
-.aviso-datos--riesgo {
-  background: var(--critico-fondo);
-  border-color: color-mix(in oklab, var(--critico) 35%, transparent);
-  color: var(--critico);
-}
-.aviso-datos svg { flex: none; }
-
-@media (max-width: 620px) {
-  .aviso-datos { flex-wrap: wrap; }
-  .aviso-datos span { flex: 1 1 100%; }
-}
 
 /* ────────────────────────── Responsivo ──────────────────────────── */
 

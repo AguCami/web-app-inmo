@@ -137,9 +137,10 @@ sola vez:
    propiedades → contratos. Cada paso necesita el anterior.
 5. **Cobranzas → Emitir cuotas** genera las del mes.
 
-Mientras haya datos de ejemplo, una barra lo avisa en todas las pantallas:
-es fácil empezar a cargar propiedades de verdad encima de la demo y después
-no poder distinguirlas.
+Ojo: no hay barra que avise que los datos son de ejemplo —se sacó para
+despejar la pantalla—. Es fácil empezar a cargar propiedades de verdad
+encima de la demo y después no poder distinguirlas, así que conviene vaciar
+antes de empezar.
 
 ### El respaldo no es opcional
 
@@ -148,9 +149,9 @@ reinstala la máquina, **no hay de dónde recuperarlos**: no están en ningún
 servidor. La única red es el archivo que se baja desde Ajustes → Respaldo,
 que incluye también los contratos escaneados.
 
-La app no confía en que alguien se acuerde: si pasan más de 7 días sin bajar
-una copia, aparece una barra en todas las pantallas con el botón para bajarla
-ahí mismo. No se puede cerrar, pero se va sola apenas se baja la copia.
+La app ya no lo recuerda con una barra arriba —se sacó para despejar la
+pantalla—, así que depende de que alguien se acuerde de bajarla: al menos
+una vez por semana.
 
 En **Ajustes → Respaldo → Dónde viven los datos** se ve si el navegador se
 comprometió a no descartarlos. Chrome lo concede según cuánto se use el

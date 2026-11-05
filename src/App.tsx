@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 import { NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
-import { AvisoDatos } from './components/AvisoDatos';
 import { EstadoSincronizacion } from './components/EstadoSincronizacion';
 import { Ingresar } from './components/Ingresar';
 import {
@@ -18,6 +17,7 @@ import { saldoDeCuota } from './domain/cobranzas';
 import { hoy, periodoActual } from './domain/util';
 
 import { Logo } from './components/Logo';
+import fondo from './assets/ingreso-fondo.webp';
 
 import Inicio from './pages/Inicio';
 import Propiedades from './pages/Propiedades';
@@ -124,6 +124,15 @@ export default function App() {
 
   return (
     <>
+      {/* La espiral del ingreso, fija detrás del panel. Va afuera de .app
+          porque .app entra con un transform, y un position: fixed adentro de
+          un transform deja de estar fijo a la pantalla. Al entrar, el fondo
+          del ingreso se desvanece y debajo ya está la misma imagen. */}
+      {!panelListo ? null : (
+        <div className="fondo-app no-imprimir" aria-hidden="true">
+          <img src={fondo} alt="" decoding="async" />
+        </div>
+      )}
       {!panelListo ? null : (
         <div className={saliendo ? 'app app--llega' : 'app'}>
           <nav className="rail no-imprimir" aria-label="Navegación principal">
@@ -167,7 +176,6 @@ export default function App() {
 
           <main className="principal">
             <EstadoSincronizacion />
-            <AvisoDatos />
             <Routes>
               <Route path="/" element={<Inicio />} />
               <Route path="/cobranzas" element={<Cobranzas />} />

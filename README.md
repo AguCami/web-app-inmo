@@ -64,10 +64,25 @@ el propietario—. Se cargan una vez en **Ajustes → Mis datos**.
 
 ### Publicada
 
-<https://agucami.github.io/web-app-inmo/> — cada push a la rama la vuelve a
-desplegar con el workflow de GitHub Pages. El único paso manual, ya hecho, es
-**Settings → Pages → Source: «GitHub Actions»**: con «Deploy from a branch» el
-pipeline viejo pisa el deploy y sirve la página en blanco.
+<https://gestion.inversionesgeneralesmym.com.ar/> — cada push a la rama la
+vuelve a desplegar con el workflow de GitHub Pages. El único paso manual, ya
+hecho, es **Settings → Pages → Source: «GitHub Actions»**: con «Deploy from a
+branch» el pipeline viejo pisa el deploy y sirve la página en blanco.
+
+El dominio principal queda para la web pública de la inmobiliaria; la app vive
+en un subdominio aparte y pide a los buscadores no indexarla (`robots.txt` y
+`<meta name="robots">`). Cómo está armado:
+
+- El dominio se registra en NIC.ar y está **delegado a Cloudflare**, que es
+  donde se cargan los registros DNS.
+- En Cloudflare: `CNAME gestion → agucami.github.io`, en **DNS only** (nube
+  gris), para que GitHub pueda emitir el certificado HTTPS.
+- En GitHub: **Settings → Pages → Custom domain** con el subdominio y
+  **Enforce HTTPS** tildado. Con deploy por Actions no hace falta archivo
+  `CNAME` en el repositorio.
+- La dirección vieja, `agucami.github.io/web-app-inmo/`, redirige sola a la
+  nueva. Cada navegador pide iniciar sesión otra vez, porque para él es otro
+  sitio; los datos siguen en Supabase.
 
 ## Las pantallas
 
@@ -426,7 +441,7 @@ inventan. Se cargan en Ajustes → Mis datos.
 ## La variante «vidrio líquido»
 
 Un experimento, **apagado por defecto**. Se prueba agregando `?vidrio` a la
-dirección: <https://agucami.github.io/web-app-inmo/?vidrio>
+dirección: <https://gestion.inversionesgeneralesmym.com.ar/?vidrio>
 
 ![Vidrio, modo claro](docs/vidrio-claro.png)
 ![Vidrio, modo oscuro](docs/vidrio-oscuro.png)

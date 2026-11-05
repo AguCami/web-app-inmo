@@ -49,10 +49,27 @@ export default function App() {
     }
   }
 
-  // Al abrir, se busca la serie de índices que publica la tarea programada.
-  // Si no está, la app sigue con la que tiene guardada.
+  // Al abrir se buscan los índices publicados (con cuentas, el store lo
+  // repite apenas hay sesión). Y como la sesión no vence, la pestaña puede
+  // quedar abierta días: se vuelve a buscar cada 6 horas, y al volver a la
+  // pestaña si pasó ese tiempo desde la última vez.
   useEffect(() => {
-    void sincronizarIndices();
+    const CADA = 6 * 60 * 60 * 1000;
+    let ultima = Date.now();
+    const buscar = () => {
+      ultima = Date.now();
+      void sincronizarIndices();
+    };
+    buscar();
+    const reloj = setInterval(buscar, CADA);
+    const alVolver = () => {
+      if (document.visibilityState === 'visible' && Date.now() - ultima >= CADA) buscar();
+    };
+    document.addEventListener('visibilitychange', alVolver);
+    return () => {
+      clearInterval(reloj);
+      document.removeEventListener('visibilitychange', alVolver);
+    };
   }, [sincronizarIndices]);
 
   const pendientes = useMemo(() => {

@@ -19,6 +19,8 @@ permissions:
   contents: read
   pages: write
   id-token: write
+  # Para ver si quedó algún despliegue colgado y cancelarlo.
+  deployments: read
 
 # Un despliegue por vez; si llega uno nuevo, se deja terminar el que está en curso.
 concurrency:
@@ -61,5 +63,18 @@ jobs:
       name: github-pages
       url: ${{ steps.despliegue.outputs.page_url }}
     steps:
+      # A veces un despliegue anterior queda colgado «en curso» del lado de
+      # GitHub Pages y rechaza todos los que vienen después. Se cancela lo que
+      # haya quedado pendiente antes de publicar; si no hay nada, no hace nada.
+      - name: Destrabar despliegues anteriores colgados
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for sha in $(gh api "repos/${{ github.repository }}/deployments?environment=github-pages&per_page=20" --jq '.[].sha' | sort -u); do
+            [ "$sha" = "${{ github.sha }}" ] && continue
+            gh api -X POST "repos/${{ github.repository }}/pages/deployments/$sha/cancel" >/dev/null 2>&1 \
+              && echo "Cancelado el despliegue colgado de $sha" || true
+          done
+
       - id: despliegue
         uses: actions/deploy-pages@v4

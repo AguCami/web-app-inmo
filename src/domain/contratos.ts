@@ -27,10 +27,16 @@ export function valorIndice(
   periodo: Periodo,
   tipo: Exclude<IndiceAjuste, 'PORCENTAJE_FIJO' | 'SIN_AJUSTE'>,
 ): { valor: number; estimado: boolean } {
-  const exacto = indices.find((i) => i.periodo === periodo);
+  // Un 0 (o un vacío) es «todavía no publicado»: pasa cuando un mes llegó
+  // con el IPC de Córdoba y los demás índices aún no se cargaron.
+  const conDato = indices.filter((i) => publicado(i[tipo]));
+  const exacto = conDato.find((i) => i.periodo === periodo);
   if (exacto) return { valor: exacto[tipo], estimado: false };
-  return { valor: valorMasCercano(indices, periodo, (i) => i[tipo]), estimado: true };
+  return { valor: valorMasCercano(conDato, periodo, (i) => i[tipo]), estimado: true };
 }
+
+const publicado = (v: number | null | undefined): v is number =>
+  typeof v === 'number' && Number.isFinite(v) && v > 0;
 
 /**
  * Para un período sin dato se arrastra el último publicado; si el período es

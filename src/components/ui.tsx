@@ -167,14 +167,17 @@ export function Item({
 export function Campo({
   etiqueta,
   ayuda,
+  entero,
   children,
 }: {
   etiqueta: string;
   ayuda?: ReactNode;
+  /** En una grilla de campos, ocupa el renglón entero. */
+  entero?: boolean;
   children: ReactNode;
 }) {
   return (
-    <label className="campo">
+    <label className={entero ? 'campo campo--entero' : 'campo'}>
       <span className="campo__et">{etiqueta}</span>
       {children}
       {ayuda && <span className="campo__ayuda">{ayuda}</span>}

@@ -87,9 +87,9 @@ export default function Ajustes() {
 
         {vista === 'datos' && (
           <div className="grid grid--2">
-            <Panel titulo="Quién administra">
+            <Panel titulo="Quién administra" subtitulo="Sale impreso en las liquidaciones">
               <div className="grid grid--form">
-                <Campo etiqueta="Nombre">
+                <Campo etiqueta="Nombre" entero>
                   <input value={c.nombre} onChange={(e) => actualizar({ nombre: e.target.value })} />
                 </Campo>
                 <Campo etiqueta="CUIT">

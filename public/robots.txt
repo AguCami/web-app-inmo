@@ -1,0 +1,3 @@
+# Herramienta interna de administración: no se indexa.
+User-agent: *
+Disallow: /

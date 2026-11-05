@@ -99,7 +99,11 @@ export function Ingresar({
             <form className="ingreso__form" onSubmit={enviar}>
               <div className="ingreso__marca">
                 <Logo tam={52} />
-                <strong>Inversiones Generales M&nbsp;&amp;&nbsp;M Inmobiliaria</strong>
+                <strong className="ingreso__nombre">
+                  <span>Inversiones Generales</span>
+                  <span className="ingreso__mym">M&nbsp;&amp;&nbsp;M</span>
+                  <span>Inmobiliaria</span>
+                </strong>
                 <span>Administración de alquileres</span>
               </div>
 

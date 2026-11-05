@@ -1305,13 +1305,34 @@ select.suelto { width: auto; border-radius: var(--r-pill); background: var(--pan
   gap: 4px;
   margin-bottom: 6px;
 }
-.ingreso__marca strong {
+.ingreso__marca > span { font-size: 12px; color: var(--tinta-3); }
+
+/* El nombre en tres renglones, con «M & M» al medio y bien grande. */
+.ingreso__nombre {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 10px;
   font-family: var(--fuente-titulo);
-  font-size: 15px;
-  line-height: 1.25;
-  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--tinta);
 }
-.ingreso__marca span { font-size: 12px; color: var(--tinta-3); }
+/* El espaciado suma también después de la última letra: se compensa para
+   que el renglón quede centrado de verdad. */
+.ingreso__nombre span { margin-right: -0.2em; }
+.ingreso__mym {
+  margin: 2px 0;
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: 0.06em;
+  color: var(--acento-fuerte);
+}
+.ingreso__nombre .ingreso__mym { margin-right: -0.06em; }
 
 /* ── La salida ──
  * Un tirón de la cinta: la tarjeta baja un poco, como cuando alguien la

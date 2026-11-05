@@ -79,7 +79,9 @@
 
   /* Vidrio esmerilado: el de la credencial del ingreso, para el menú y las
      tarjetas del panel, que van encima de la misma espiral. */
-  --vidrio: linear-gradient(160deg, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.7));
+  /* Un pelo de gris azulado, no blanco puro: así el vidrio se despega del
+     fondo claro sin dejar de ser claro. */
+  --vidrio: linear-gradient(160deg, rgba(238, 242, 248, 0.8), rgba(226, 233, 242, 0.72));
   --vidrio-borde: rgba(255, 255, 255, 0.85);
   --vidrio-canto: inset 0 1px 0 rgba(255, 255, 255, 0.95), inset 0 -1px 0 rgba(11, 87, 181, 0.06);
   --vidrio-sombra: 0 8px 20px -10px rgba(10, 40, 90, 0.22), 0 30px 60px -32px rgba(10, 40, 90, 0.32);

@@ -1226,7 +1226,7 @@ select.suelto { width: auto; border-radius: var(--r-pill); background: var(--pan
   touch-action: none;
   user-select: none;
   /* Vidrio esmerilado: deja pasar la espiral, borrosa, sin perder lectura. */
-  background: linear-gradient(160deg, rgba(255, 255, 255, 0.74), rgba(255, 255, 255, 0.64));
+  background: linear-gradient(160deg, rgba(238, 242, 248, 0.76), rgba(224, 231, 241, 0.66));
   -webkit-backdrop-filter: blur(28px) saturate(1.6);
   backdrop-filter: blur(28px) saturate(1.6);
   border: 1px solid rgba(255, 255, 255, 0.8);

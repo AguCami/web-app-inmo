@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ComponentType, type CSSProperties } from 'react';
-import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { createPortal } from 'react-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import {
   IconoAjustes,
   IconoCobranzas,
@@ -12,6 +13,8 @@ import {
   IconoPropiedades,
 } from './iconos';
 import { Logo } from './Logo';
+import { PerfilModal } from './PerfilModal';
+import { useFotoPerfil } from '../data/perfil';
 import { useTema } from './Tema';
 import { useApp, useDb } from '../data/store';
 import { periodoActual } from '../domain/util';
@@ -67,10 +70,11 @@ export function Menu({ pendientes }: { pendientes: { vencidas: number; sinPagar:
   const cerrarSesion = useApp((e) => e.cerrarSesion);
   const { oscuro, fijar } = useTema();
   const { pathname } = useLocation();
-  const navegar = useNavigate();
 
   const [colapsado, setColapsado] = useState(leerColapsado);
   const [perfilAbierto, setPerfilAbierto] = useState(false);
+  const [editandoPerfil, setEditandoPerfil] = useState(false);
+  const cerrarPerfil = useCallback(() => setEditandoPerfil(false), []);
 
   useEffect(() => {
     try {
@@ -173,6 +177,8 @@ export function Menu({ pendientes }: { pendientes: { vencidas: number; sinPagar:
   const nombreUsuario = sesion ? nombreDesdeEmail(sesion.email) : 'Sin cuenta';
   const detalleUsuario = sesion ? sesion.email : 'Datos en este navegador';
   const rol = sesion ? ROLES[sesion.rol] ?? sesion.rol : 'Modo local';
+  const inicialesUsuario = sesion ? iniciales(sesion.email.split('@')[0]) : '';
+  const foto = useFotoPerfil(sesion?.usuarioId ?? null);
 
   let indice = 0;
 
@@ -270,16 +276,18 @@ export function Menu({ pendientes }: { pendientes: { vencidas: number; sinPagar:
             <div className="rail__perfil-menu" role="menu">
               <div className="rail__perfil-cab">
                 <strong>{nombreUsuario}</strong>
-                <span>{rol}{sesion ? ` · ${sesion.organizacion}` : ''}</span>
+                <span>{rol}</span>
+                {/* «M & M» no se parte en dos renglones. */}
+                {sesion && <span>{sesion.organizacion.replace(/ & /g, '\u00a0&\u00a0')}</span>}
               </div>
               <button
                 role="menuitem"
                 onClick={() => {
                   setPerfilAbierto(false);
-                  navegar('/ajustes');
+                  setEditandoPerfil(true);
                 }}
               >
-                <IconoAjustes tam={16} /> Ajustes
+                <IconoPersonas tam={16} /> Mi perfil
               </button>
               {modoServidor ? (
                 <button role="menuitem" className="peligro" onClick={() => void cerrarSesion()}>
@@ -301,7 +309,7 @@ export function Menu({ pendientes }: { pendientes: { vencidas: number; sinPagar:
             data-etiqueta={nombreUsuario}
           >
             <span className="rail__avatar">
-              {sesion ? iniciales(sesion.email.split('@')[0]) : <IconoPersonas tam={16} />}
+              {foto ? <img src={foto} alt="" /> : sesion ? inicialesUsuario : <IconoPersonas tam={16} />}
               <i className={sesion ? 'en-linea' : 'local'} />
             </span>
             <span className="rail__perfil-texto rail__desvanece">
@@ -314,6 +322,12 @@ export function Menu({ pendientes }: { pendientes: { vencidas: number; sinPagar:
           </button>
         </div>
       </div>
+      {/* Va afuera del menú: el vidrio del menú encierra a lo que es «fixed». */}
+      {editandoPerfil &&
+        createPortal(
+          <PerfilModal nombre={nombreUsuario} iniciales={inicialesUsuario} onCerrar={cerrarPerfil} />,
+          document.body,
+        )}
     </nav>
   );
 }

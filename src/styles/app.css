@@ -458,6 +458,12 @@ a { color: var(--acento); text-decoration-thickness: 1px; text-underline-offset:
   background: linear-gradient(140deg, var(--acento), var(--acento-fuerte));
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
 }
+.rail__avatar img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
 .rail__avatar i {
   position: absolute;
   right: -1px;
@@ -504,7 +510,12 @@ a { color: var(--acento); text-decoration-thickness: 1px; text-underline-offset:
 @keyframes perfil-abre {
   from { opacity: 0; transform: translateY(6px) scale(0.96); filter: blur(3px); }
 }
-.rail__perfil-cab { padding: 8px 10px 10px; border-bottom: 1px solid var(--borde); margin-bottom: 4px; }
+.rail__perfil-cab {
+  padding: 8px 10px 10px;
+  border-bottom: 1px solid var(--borde);
+  margin-bottom: 4px;
+  text-align: center;
+}
 .rail__perfil-cab strong { display: block; font-size: 13.5px; }
 .rail__perfil-cab span { display: block; font-size: 12px; color: var(--tinta-3); }
 .rail__perfil-menu button {
@@ -524,7 +535,7 @@ a { color: var(--acento); text-decoration-thickness: 1px; text-underline-offset:
 }
 .rail__perfil-menu button:hover { background: var(--velo-hover); color: var(--tinta); }
 .rail__perfil-menu button.peligro { color: var(--critico); }
-.rail__perfil-nota { padding: 6px 10px 6px; font-size: 11.5px; color: var(--tinta-3); }
+.rail__perfil-nota { padding: 6px 10px 6px; font-size: 11.5px; color: var(--tinta-3); text-align: center; }
 
 /* ── Plegado (solo en pantalla ancha; en el celular el menú es otra cosa) ── */
 @media (min-width: 901px) {
@@ -1436,3 +1447,41 @@ select.suelto { width: auto; border-radius: var(--r-pill); background: var(--pan
   .panel, .dato, .carta { box-shadow: none; border-color: #ddd; }
   body { background: #fff; }
 }
+
+/* ── Mi perfil ── */
+.perfil {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+}
+.perfil__foto {
+  width: 96px;
+  height: 96px;
+  margin-bottom: 8px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  font-family: var(--fuente-titulo);
+  font-size: 32px;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(140deg, var(--acento), var(--acento-fuerte));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 6px 18px rgba(10, 40, 90, 0.18);
+}
+.perfil__foto img { width: 100%; height: 100%; object-fit: cover; }
+.perfil__nombre { font-family: var(--fuente-titulo); font-size: 17px; }
+.perfil__email { font-size: 13px; color: var(--tinta-3); }
+.perfil__acciones { display: flex; gap: 8px; justify-content: center; margin: 10px 0 4px; }
+.perfil .nota { width: 100%; text-align: left; }
+.perfil__clave {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--borde);
+}
+.perfil__clave h3 { margin: 0; font-size: 14.5px; }

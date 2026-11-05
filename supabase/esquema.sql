@@ -264,6 +264,17 @@ create table if not exists indice (
   primary key (organizacion_id, "periodo")
 );
 
+/* ───────────── Columnas que la app usa y faltaban en la base ──────────── */
+
+-- La app manda cada campo con su nombre: si la tabla no tiene la columna,
+-- PostgREST rechaza la fila entera («Could not find the … column»). Van con
+-- «if not exists» para que correr de nuevo este archivo las agregue en una
+-- base ya creada sin tocar lo que hay.
+alter table contrato    add column if not exists "depositoGarantia"            numeric not null default 0;
+alter table liquidacion add column if not exists "comisionTotal"               numeric not null default 0;
+alter table cuota       add column if not exists "notas"                       text;
+alter table gasto       add column if not exists "seLeDescuentaAlPropietario"  boolean not null default true;
+
 /* ─────────── Índices de apoyo para las consultas más frecuentes ───────── */
 
 create index if not exists cuota_por_contrato on cuota (organizacion_id, "contratoId");
@@ -366,3 +377,6 @@ grant execute on function mis_organizaciones() to authenticated;
 
 revoke all on all tables in schema public from anon;
 revoke execute on function mis_organizaciones() from anon, public;
+
+-- Que la API vea enseguida las columnas nuevas, sin esperar a que refresque.
+notify pgrst, 'reload schema';

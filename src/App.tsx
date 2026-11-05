@@ -1,22 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
+import { Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { EstadoSincronizacion } from './components/EstadoSincronizacion';
 import { Ingresar } from './components/Ingresar';
-import {
-  IconoAjustes,
-  IconoCobranzas,
-  IconoContratos,
-  IconoGastos,
-  IconoLiquidaciones,
-  IconoPanel,
-  IconoPersonas,
-  IconoPropiedades,
-} from './components/iconos';
+import { Menu } from './components/Menu';
 import { useApp, useDb } from './data/store';
 import { saldoDeCuota } from './domain/cobranzas';
-import { hoy, periodoActual } from './domain/util';
+import { hoy } from './domain/util';
 
-import { Logo } from './components/Logo';
 import fondo from './assets/ingreso-fondo.webp';
 
 import Inicio from './pages/Inicio';
@@ -36,7 +26,6 @@ export default function App() {
   const modoServidor = useApp((e) => e.modoServidor);
   const verificandoSesion = useApp((e) => e.verificandoSesion);
   const sesion = useApp((e) => e.sesion);
-  const cerrarSesion = useApp((e) => e.cerrarSesion);
   const navegar = useNavigate();
 
   // La salida del ingreso: al entrar, la credencial sale tirada hacia arriba
@@ -74,16 +63,6 @@ export default function App() {
     return { vencidas, sinPagar };
   }, [db]);
 
-  const enlaces = [
-    { a: '/', Icono: IconoPanel, texto: 'Inicio' },
-    { a: '/cobranzas', Icono: IconoCobranzas, texto: 'Cobranzas', conteo: pendientes.vencidas },
-    { a: '/contratos', Icono: IconoContratos, texto: 'Contratos' },
-    { a: '/propiedades', Icono: IconoPropiedades, texto: 'Propiedades' },
-    { a: '/liquidaciones', Icono: IconoLiquidaciones, texto: 'Liquidaciones', conteo: pendientes.sinPagar },
-    { a: '/gastos', Icono: IconoGastos, texto: 'Gastos' },
-    { a: '/personas', Icono: IconoPersonas, texto: 'Personas' },
-    { a: '/ajustes', Icono: IconoAjustes, texto: 'Ajustes' },
-  ];
 
   if (verificandoSesion) {
     return <div className="ingreso ingreso--abriendo"><span className="tenue">Abriendo…</span></div>;
@@ -135,44 +114,7 @@ export default function App() {
       )}
       {!panelListo ? null : (
         <div className={saliendo ? 'app app--llega' : 'app'}>
-          <nav className="rail no-imprimir" aria-label="Navegación principal">
-            <div className="marca">
-              <Logo tam={44} />
-              <span className="marca__texto">
-                <strong>{db.configuracion.nombre || 'Alquileres'}</strong>
-                <span>Inmobiliaria</span>
-              </span>
-            </div>
-
-            {enlaces.map(({ a, Icono, texto, conteo }) => (
-              <NavLink
-                key={a}
-                to={a}
-                end={a === '/'}
-                className={({ isActive }) => `rail__link${isActive ? ' rail__link--activo' : ''}`}
-              >
-                <Icono />
-                <span className="texto">{texto}</span>
-                {conteo ? <span className="rail__conteo">{conteo}</span> : null}
-              </NavLink>
-            ))}
-
-            <div className="rail__pie">
-              Período {periodoActual()}
-              <br />
-              {modoServidor ? (
-                <>
-                  {sesion?.email}
-                  <br />
-                  <button className="btn btn--fantasma btn--chico" onClick={() => void cerrarSesion()}>
-                    Cerrar sesión
-                  </button>
-                </>
-              ) : (
-                'Los datos se guardan en este navegador.'
-              )}
-            </div>
-          </nav>
+          <Menu pendientes={pendientes} />
 
           <main className="principal">
             <EstadoSincronizacion />

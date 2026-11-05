@@ -13,6 +13,20 @@ archivo.
 
 ![Pantalla de inicio](docs/inicio.png)
 
+## El menú
+
+Una pieza de vidrio que se pliega a una columna de íconos y se despliega con
+nombres. Una pastilla se desliza hasta el ítem que se señala y vuelve sola
+al de la pantalla actual. Abajo, «Modo noche» y el perfil (con «Cerrar
+sesión» cuando hay servidor). Se acuerda si quedó plegado.
+
+| Atajo | Qué hace |
+|---|---|
+| `Ctrl K` / `⌘ K` | Buscar una pantalla por nombre; Enter va a la primera |
+| `Ctrl B` / `⌘ B` | Plegar o desplegar el menú |
+
+En el celular es la barra de arriba, con el avatar al final.
+
 ## Arrancar
 
 ```bash

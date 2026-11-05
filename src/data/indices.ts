@@ -38,12 +38,6 @@ const VAR_ICL = [
   1.9, 1.8, 1.7, 1.6, 1.6, 1.5, 1.5, 1.4, 1.4, 1.3, 1.3, 1.2,
 ];
 
-const VAR_CASA_PROPIA = [
-  0, 5.5, 6.5, 8.0, 10.0, 9.0, 7.5, 6.5, 4.5, 3.8, 3.4, 3.2, 3.0,
-  2.2, 2.0, 2.1, 1.9, 2.0, 2.4, 2.2, 1.4, 1.4, 1.6, 1.6, 1.7, 1.8, 1.6, 1.5,
-  1.4, 1.3, 1.3, 1.2, 1.2, 1.1, 1.1, 1.0, 1.0, 1.0, 0.9, 0.9,
-];
-
 function encadenar(base: number, variaciones: number[]): number[] {
   const out: number[] = [];
   let v = base;
@@ -58,14 +52,12 @@ export function construirIndices(): ValorIndice[] {
   const icl = encadenar(100, VAR_ICL);
   const ipc = encadenar(100, VAR_IPC);
   const ipcCba = encadenar(100, VAR_IPC_CBA);
-  const casa = encadenar(100, VAR_CASA_PROPIA);
 
   return VAR_IPC.map((_, i) => ({
     periodo: sumarPeriodos(PERIODO_BASE, i),
     ICL: icl[i],
     IPC: ipc[i],
     IPC_CBA: ipcCba[i],
-    CASA_PROPIA: casa[i],
   }));
 }
 

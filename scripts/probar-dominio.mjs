@@ -205,8 +205,8 @@ const csvComas = 'Codigo,Descripcion,oct-26,nov-26\n,NIVEL GENERAL,"133,1","135,
 ok('y el separado por comas, con los decimales entre comillas', ipc.serieDeCSV(csvComas).get('2026-10') === 133.1);
 
 const previos = [
-  { periodo: '2025-10', ICL: 50, IPC: 60, IPC_CBA: 99, CASA_PROPIA: 70 },
-  { periodo: '2025-11', ICL: 51, IPC: 61, IPC_CBA: 105.7, CASA_PROPIA: 71 },
+  { periodo: '2025-10', ICL: 50, IPC: 60, IPC_CBA: 99 },
+  { periodo: '2025-11', ICL: 51, IPC: 61, IPC_CBA: 105.7 },
 ];
 const aplicado = ipc.aplicarIpcCordoba(previos, unida.serie);
 ok('el dato oficial pisa lo cargado a mano', aplicado.indices.find((i) => i.periodo === '2025-10').IPC_CBA === 103);

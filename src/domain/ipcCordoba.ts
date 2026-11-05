@@ -164,7 +164,7 @@ export function problemaDeSerie(serie: Map<Periodo, number>): string | null {
   return null;
 }
 
-/** Los índices que la app trae sola. Casa Propia no tiene fuente automatizable. */
+/** Los índices que la app trae sola: todos los que llevan serie. */
 export type IndiceAutomatico = 'IPC_CBA' | 'ICL' | 'IPC';
 
 /**
@@ -184,7 +184,7 @@ export function aplicarSerie(
     const fila = porPeriodo.get(periodo);
     if (fila && fila[campo] === valor) continue;
     porPeriodo.set(periodo, {
-      ...(fila ?? { periodo, ICL: 0, IPC: 0, IPC_CBA: 0, CASA_PROPIA: 0 }),
+      ...(fila ?? { periodo, ICL: 0, IPC: 0, IPC_CBA: 0 }),
       [campo]: valor,
     });
     cambios += 1;

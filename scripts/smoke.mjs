@@ -1,8 +1,11 @@
 /**
  * Verificación de humo sobre la app construida.
  *
- *   npm run build && npm run preview &
+ *   VITE_PROXY_IPC=https://proxy-ipc.prueba npx vite build --mode demo && npm run preview &
  *   npm run smoke
+ *
+ * En modo demo (sin las claves de Supabase) y con el intermediario del IPC
+ * apuntando a un host de mentira, que la prueba simula.
  */
 import { readFile } from 'node:fs/promises';
 import { chromium } from 'playwright';
@@ -62,12 +65,17 @@ const FILAS_IPC = {
 const CSV_MENSUAL = 'Código;Descripción;jul-26;ago-26;sep-26\n;NIVEL GENERAL;128,4;130,6;132,9\n';
 
 const navegadorContexto = pagina.context();
+// El intermediario de Cloudflare: la build de prueba se arma con
+// VITE_PROXY_IPC=https://proxy-ipc.prueba (ver el encabezado del script).
+await navegadorContexto.route('https://proxy-ipc.prueba/**', async (ruta) => {
+  const destino = new URL(ruta.request().url()).searchParams.get('url') ?? '';
+  const cuerpo = destino.includes('mensual-csv') ? CSV_MENSUAL : '';
+  return ruta.fulfill({ status: 200, body: cuerpo, headers: { 'access-control-allow-origin': '*', 'content-type': 'text/csv' } });
+});
 await navegadorContexto.route(`${PORTAL_IPC}/**`, async (ruta) => {
   const url = new URL(ruta.request().url());
-  if (url.pathname.endsWith('.csv')) {
-    const cuerpo = url.pathname.includes('mensual-csv') ? CSV_MENSUAL : '';
-    return ruta.fulfill({ status: 200, body: cuerpo, headers: { 'access-control-allow-origin': '*', 'content-type': 'text/csv' } });
-  }
+  // El portal de verdad no manda CORS: la app no debe pedirle los archivos directo.
+  if (url.pathname.endsWith('.csv')) return ruta.fulfill({ status: 200, body: '' });
   const accion = url.pathname.split('/').pop();
   const resultado =
     accion === 'package_show'

@@ -19,22 +19,39 @@ const MESES: Record<string, string> = {
   jul: '07', ago: '08', sep: '09', set: '09', oct: '10', nov: '11', dic: '12',
 };
 
-/** `abr-22` → `2022-04`; `sep-2026` → `2026-09`. Cualquier otra cosa, null. */
+/**
+ * `abr-22` → `2022-04`; `sep-2026` → `2026-09`. También las fechas, por si
+ * la planilla se exporta con la celda como fecha: `2025-11-01`, `1/11/2025`.
+ * Cualquier otra cosa, null.
+ */
 export function periodoDeColumna(columna: string): Periodo | null {
-  const m = columna.trim().toLowerCase().match(/^([a-z]{3})[a-z]*[-\s/](\d{2}|\d{4})$/);
-  if (!m || !MESES[m[1]]) return null;
-  const anio = m[2].length === 2 ? `20${m[2]}` : m[2];
-  return `${anio}-${MESES[m[1]]}`;
+  const texto = columna.trim().toLowerCase();
+  let m = texto.match(/^([a-z]{3})[a-z]*[-\s/](\d{2}|\d{4})$/);
+  if (m && MESES[m[1]]) return `${m[2].length === 2 ? `20${m[2]}` : m[2]}-${MESES[m[1]]}`;
+  m = texto.match(/^(20\d{2})-(\d{2})-\d{2}/);
+  if (m) return `${m[1]}-${m[2]}`;
+  m = texto.match(/^\d{1,2}\/(\d{1,2})\/(20\d{2})$/);
+  if (m) return `${m[2]}-${m[1].padStart(2, '0')}`;
+  return null;
 }
 
-/** `"105,7"` → 105.7; `"1.234,5"` → 1234.5. Lo que no sea un número positivo, null. */
+/**
+ * `"105,7"` → 105.7; `"1.234,5"` → 1234.5; `"105.6655"` → 105.7.
+ * Con coma, la coma es el decimal y los puntos separan miles; sin coma, el
+ * punto es el decimal. Se redondea a un decimal porque así publica la
+ * Provincia el índice, y así se calculan los ajustes. Lo que no sea un número
+ * positivo, null.
+ */
 export function numeroDeCelda(celda: unknown): number | null {
-  if (typeof celda === 'number') return Number.isFinite(celda) && celda > 0 ? celda : null;
-  if (typeof celda !== 'string') return null;
-  const limpio = celda.trim().replace(/\./g, '').replace(',', '.');
-  if (!/^\d+(\.\d+)?$/.test(limpio)) return null;
-  const n = Number(limpio);
-  return n > 0 ? n : null;
+  let n: number;
+  if (typeof celda === 'number') n = celda;
+  else if (typeof celda === 'string') {
+    const texto = celda.trim();
+    const limpio = texto.includes(',') ? texto.replace(/\./g, '').replace(',', '.') : texto;
+    if (!/^\d+(\.\d+)?$/.test(limpio)) return null;
+    n = Number(limpio);
+  } else return null;
+  return Number.isFinite(n) && n > 0 ? Math.round(n * 10) / 10 : null;
 }
 
 const esNivelGeneral = (fila: Record<string, unknown>) =>

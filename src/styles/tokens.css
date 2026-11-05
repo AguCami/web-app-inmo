@@ -30,7 +30,7 @@
   /* Tinta */
   --tinta: #151b22;
   --tinta-2: #555f6a;
-  --tinta-3: #67707c;
+  --tinta-3: #5a636e;
   --tinta-sobre-acento: #ffffff;
 
   /* Líneas */
@@ -44,9 +44,9 @@
   --acento-tinta: #0a4795;
 
   /* Estado — pares fondo/tinta, se invierten juntos por tema */
-  --ok: #1a7f46;
+  --ok: #16733f;
   --ok-fondo: #e4f4ea;
-  --alerta: #9a6b00;
+  --alerta: #855c00;
   --alerta-fondo: #fbf0d8;
   --critico: #b23a34;
   --critico-fondo: #fbe8e6;
@@ -111,7 +111,7 @@
 
     --tinta: #eef2f7;
     --tinta-2: #a8b2bd;
-    --tinta-3: #7c858f;
+    --tinta-3: #8a939d;
     --tinta-sobre-acento: #05203f;
 
     --borde: #242c35;
@@ -169,7 +169,7 @@
 
   --tinta: #eef2f7;
   --tinta-2: #a8b2bd;
-  --tinta-3: #7c858f;
+  --tinta-3: #8a939d;
   --tinta-sobre-acento: #05203f;
 
   --borde: #242c35;

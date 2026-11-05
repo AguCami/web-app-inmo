@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { useContador } from './animacion';
 import { IconoAlerta, IconoCerrar, IconoCheck, IconoInfo } from './iconos';
 
@@ -200,15 +200,54 @@ export function Modal({
   ancho?: boolean;
 }) {
   const ref = useRef<HTMLDivElement>(null);
+  const idTitulo = useId();
+  // onCerrar suele ser una flecha nueva en cada render: si fuera dependencia
+  // del efecto, el foco volvería al primer campo con cada tecla.
+  const cerrar = useRef(onCerrar);
+  cerrar.current = onCerrar;
 
+  // Al abrir: el foco va al primer campo del cuerpo (o a «Cerrar» si no hay
+  // campos), queda atrapado adentro con Tab, y al cerrar vuelve a lo que lo
+  // abrió. Escape cierra solo el de más arriba, si hay uno encima de otro.
   useEffect(() => {
+    const dialogo = ref.current;
+    if (!dialogo) return;
+    const antes = document.activeElement as HTMLElement | null;
+    const enfocables = () =>
+      [...dialogo.querySelectorAll<HTMLElement>(
+        'a[href], button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])',
+      )].filter((el) => el.offsetParent !== null);
+
+    const primero =
+      dialogo.querySelector<HTMLElement>('.modal__cuerpo :is(input, select, textarea):not(:disabled)') ??
+      dialogo.querySelector<HTMLElement>('.modal__cab button');
+    primero?.focus();
+
     const alTeclear = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onCerrar();
+      const abiertos = document.querySelectorAll('.modal');
+      if (abiertos[abiertos.length - 1] !== dialogo) return;
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        cerrar.current();
+      } else if (e.key === 'Tab') {
+        const lista = enfocables();
+        if (lista.length === 0) return;
+        const [a, z] = [lista[0], lista[lista.length - 1]];
+        if (e.shiftKey && (document.activeElement === a || !dialogo.contains(document.activeElement))) {
+          e.preventDefault();
+          z.focus();
+        } else if (!e.shiftKey && (document.activeElement === z || !dialogo.contains(document.activeElement))) {
+          e.preventDefault();
+          a.focus();
+        }
+      }
     };
     document.addEventListener('keydown', alTeclear);
-    ref.current?.querySelector<HTMLElement>('input, select, textarea, button')?.focus();
-    return () => document.removeEventListener('keydown', alTeclear);
-  }, [onCerrar]);
+    return () => {
+      document.removeEventListener('keydown', alTeclear);
+      if (antes && document.contains(antes)) antes.focus();
+    };
+  }, []);
 
   return (
     <div className="modal-fondo" onMouseDown={(e) => e.target === e.currentTarget && onCerrar()}>
@@ -216,12 +255,12 @@ export function Modal({
         className={ancho ? 'modal modal--ancho' : 'modal'}
         role="dialog"
         aria-modal="true"
-        aria-label={titulo}
+        aria-labelledby={idTitulo}
         ref={ref}
       >
         <header className="modal__cab">
           <div>
-            <h2>{titulo}</h2>
+            <h2 id={idTitulo}>{titulo}</h2>
             {subtitulo && <p className="panel__sub">{subtitulo}</p>}
           </div>
           <button className="btn btn--fantasma btn--icono" onClick={onCerrar} aria-label="Cerrar">
@@ -333,19 +372,23 @@ export function Serie({
   const maximo = Math.max(1, ...datos.map((d) => d.total));
   return (
     <div>
-      <div className="serie">
+      {/* El title solo aparece con el mouse: cada barra lleva además su
+          dato como nombre accesible, así se oye con lector de pantalla. */}
+      <div className="serie" role="list">
         {datos.map((d) => (
           <div
             key={d.etiqueta}
             className="serie__barra"
+            role="listitem"
             style={{ height: `${Math.max(8, (d.total / maximo) * 100)}%` }}
             title={`${d.titulo}: cobrado ${formato(d.parte)} de ${formato(d.total)}`}
           >
+            <span className="solo-lector">{`${d.titulo}: cobrado ${formato(d.parte)} de ${formato(d.total)}`}</span>
             <span style={{ height: `${d.total > 0 ? Math.min(100, (d.parte / d.total) * 100) : 0}%` }} />
           </div>
         ))}
       </div>
-      <div className="serie__pie">
+      <div className="serie__pie" aria-hidden="true">
         {datos.map((d) => (
           <span key={d.etiqueta}>{d.etiqueta}</span>
         ))}
@@ -431,8 +474,11 @@ export function Importe({
   const mostrado = useContador(valor);
   // El valor final va en el DOM para quien use lector de pantalla: lo que
   // se anuncia es el importe, no los pasos intermedios.
+  // (Un aria-label sobre un <span> sin rol no lo lee nadie: por eso va como
+  // texto escondido.)
   return (
-    <span aria-label={formato(valor)}>
+    <span>
+      <span className="solo-lector">{formato(valor)}</span>
       <span aria-hidden="true">{formato(mostrado)}</span>
     </span>
   );

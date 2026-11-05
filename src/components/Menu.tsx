@@ -342,6 +342,7 @@ export function Menu({ pendientes }: { pendientes: { vencidas: number; sinPagar:
             onClick={() => setPerfilAbierto((a) => !a)}
             aria-haspopup="menu"
             aria-expanded={perfilAbierto}
+            aria-label={`${nombreUsuario}: ${detalleUsuario}`}
             data-etiqueta={nombreUsuario}
           >
             <span className="rail__avatar">

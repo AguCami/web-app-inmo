@@ -83,7 +83,8 @@ export function Ingresar({
   };
 
   return (
-    <div className={saliendo ? 'ingreso tema-claro ingreso--sale' : 'ingreso tema-claro'} aria-hidden={saliendo || undefined}>
+    <main className={saliendo ? 'ingreso tema-claro ingreso--sale' : 'ingreso tema-claro'} aria-hidden={saliendo || undefined}>
+      <h1 className="solo-lector">Ingresar</h1>
       {/* La espiral de la marca, detrás de la tarjeta. */}
       <img className="ingreso__fondo" src={fondo} alt="" aria-hidden="true" />
 
@@ -132,6 +133,6 @@ export function Ingresar({
           </div>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

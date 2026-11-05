@@ -1,21 +1,29 @@
 /**
- * Intermediario para bajar las planillas del IPC de Córdoba.
+ * Intermediario para bajar los índices de actualización de los alquileres.
  *
- * El portal de Estadística (datosestadistica.cba.gov.ar) no manda permisos
- * CORS, así que el navegador no deja que la app lea sus archivos. Este Worker
- * los baja y se los pasa a la app con el permiso puesto.
+ * Ni el portal de Estadística de Córdoba ni las APIs nacionales le dan
+ * permisos CORS a la app, así que el navegador no la deja leerlos. Este
+ * Worker los baja y se los pasa con el permiso puesto.
  *
- * Solo acepta archivos del dataset del IPC de Córdoba y solo responde a la
- * app: no es un proxy abierto que cualquiera pueda usar para otra cosa.
+ * Solo acepta tres fuentes —la planilla del IPC de Córdoba, el ICL del BCRA y
+ * el IPC nacional del INDEC— y solo responde a la app: no es un proxy abierto
+ * que cualquiera pueda usar para otra cosa.
  *
  * Se instala pegándolo en Cloudflare → Workers (ver README, «El IPC de
  * Córdoba, actualizado solo»).
  */
 const DATASET_IPC = 'fedc5285-5517-41aa-9095-bb62c6dbc485';
-const PERMITIDO = new RegExp(
-  `^https://datosestadistica\\.cba\\.gov\\.ar/dataset/${DATASET_IPC}/resource/[0-9a-f-]+/download/[^/?#]+\\.(csv|xlsx)$`,
-  'i',
-);
+const PERMITIDOS = [
+  // Planillas del IPC de Córdoba (Estadística y Censos).
+  new RegExp(
+    `^https://datosestadistica\\.cba\\.gov\\.ar/dataset/${DATASET_IPC}/resource/[0-9a-f-]+/download/[^/?#]+\\.(csv|xlsx)$`,
+    'i',
+  ),
+  // ICL del BCRA (variable 40).
+  /^https:\/\/api\.bcra\.gob\.ar\/estadisticas\/v[34]\.0\/monetarias\/40\?[\w=&.-]*$/,
+  // IPC nacional del INDEC, en el API de series de tiempo.
+  /^https:\/\/apis\.datos\.gob\.ar\/series\/api\/series\/\?ids=148\.3_INIVELNAL_DICI_M_26(&[\w=.-]*)*$/,
+];
 const ORIGENES = [
   'https://gestion.inversionesgeneralesmym.com.ar',
   'https://agucami.github.io',
@@ -38,15 +46,16 @@ export default {
     }
 
     const destino = new URL(request.url).searchParams.get('url') ?? '';
-    if (!PERMITIDO.test(destino)) {
-      return new Response('Este intermediario solo baja planillas del IPC de Córdoba.', {
+    if (!PERMITIDOS.some((r) => r.test(destino))) {
+      return new Response('Este intermediario solo baja los índices de los alquileres.', {
         status: 400,
         headers: cors,
       });
     }
 
     try {
-      // Cloudflare guarda la copia unas horas: el dato sale una vez por mes.
+      // Cloudflare guarda la copia unas horas: los datos salen una vez por mes
+      // (el ICL, una vez por día, y se usa el del primero de cada mes).
       const respuesta = await fetch(destino, {
         cf: { cacheTtl: 6 * 60 * 60, cacheEverything: true },
         headers: { 'User-Agent': 'Mozilla/5.0 (compatible; gestion-alquileres)' },

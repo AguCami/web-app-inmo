@@ -164,27 +164,29 @@ export function problemaDeSerie(serie: Map<Periodo, number>): string | null {
   return null;
 }
 
+/** Los índices que la app trae sola. Casa Propia no tiene fuente automatizable. */
+export type IndiceAutomatico = 'IPC_CBA' | 'ICL' | 'IPC';
+
 /**
- * Vuelca la serie oficial sobre la tabla de índices de la app. El dato
+ * Vuelca una serie oficial sobre la tabla de índices de la app. El dato
  * publicado manda sobre lo cargado a mano para ese mes. Un mes que todavía
  * no existía se crea con los demás índices en 0, que la app lee como «sin
  * publicar» y resuelve arrastrando el último valor conocido.
  */
-export function aplicarIpcCordoba(
+export function aplicarSerie(
   actuales: ValorIndice[],
   serie: Map<Periodo, number>,
+  campo: IndiceAutomatico,
 ): { indices: ValorIndice[]; cambios: number } {
   const porPeriodo = new Map(actuales.map((i) => [i.periodo, i]));
   let cambios = 0;
   for (const [periodo, valor] of serie) {
     const fila = porPeriodo.get(periodo);
-    if (fila && fila.IPC_CBA === valor) continue;
-    porPeriodo.set(
-      periodo,
-      fila
-        ? { ...fila, IPC_CBA: valor }
-        : { periodo, ICL: 0, IPC: 0, IPC_CBA: valor, CASA_PROPIA: 0 },
-    );
+    if (fila && fila[campo] === valor) continue;
+    porPeriodo.set(periodo, {
+      ...(fila ?? { periodo, ICL: 0, IPC: 0, IPC_CBA: 0, CASA_PROPIA: 0 }),
+      [campo]: valor,
+    });
     cambios += 1;
   }
   return {
@@ -192,3 +194,6 @@ export function aplicarIpcCordoba(
     cambios,
   };
 }
+
+export const aplicarIpcCordoba = (actuales: ValorIndice[], serie: Map<Periodo, number>) =>
+  aplicarSerie(actuales, serie, 'IPC_CBA');

@@ -21,7 +21,11 @@ export default function Ajustes() {
   const actualizar = useApp((e) => e.actualizarConfiguracion);
   const guardarIndices = useApp((e) => e.guardarIndices);
   const sincronizar = useApp((e) => e.sincronizarIndices);
-  const ipcCordoba = useApp((e) => e.ipcCordoba);
+  const fuentes = useApp((e) => e.fuentesIndices);
+  const fallidas = INDICES_CON_SERIE.flatMap((i) => {
+    const f = i === 'CASA_PROPIA' ? undefined : fuentes[i];
+    return f?.estado === 'error' ? [{ indice: i, mensaje: f.mensaje }] : [];
+  });
   const reemplazar = useApp((e) => e.reemplazarBase);
   const cargarDemo = useApp((e) => e.cargarDemo);
   const vaciar = useApp((e) => e.vaciar);
@@ -135,22 +139,26 @@ export default function Ajustes() {
 
         {vista === 'indices' && (
           <>
-            {/* El IPC de Córdoba se trae solo: solo se avisa si algo falló. */}
-            {ipcCordoba.estado === 'error' && (
-              <Nota tono="alerta" titulo="No pudimos traer el IPC de Córdoba">
+            {/* Los índices se traen solos: solo se avisa si alguno falló. */}
+            {fallidas.length > 0 && (
+              <Nota
+                tono="alerta"
+                titulo={`No pudimos traer ${fallidas.map((f) => ETIQUETA_INDICE[f.indice]).join(', ')}`}
+              >
                 <span className="mini">
-                  {`${ipcCordoba.mensaje} Podés cargar el valor a mano acá abajo o probar de nuevo en un rato.`}
+                  {fallidas.map((f) => `${ETIQUETA_INDICE[f.indice]}: ${f.mensaje}`).join(' ')}
+                  {' Podés cargar el valor a mano acá abajo o probar de nuevo en un rato.'}
                 </span>
                 <button
                   className="btn btn--suave btn--chico"
                   style={{ marginTop: 10 }}
                   onClick={async () => {
                     await sincronizar();
-                    const estado = useApp.getState().ipcCordoba;
+                    const siguen = Object.values(useApp.getState().fuentesIndices).some((f) => f.estado === 'error');
                     setAviso(
-                      estado.estado === 'ok'
-                        ? { tono: 'ok', texto: `IPC Córdoba actualizado hasta ${formatearPeriodoLargo(estado.ultimo)}.` }
-                        : { tono: 'critico', texto: 'No se pudo traer el IPC de Córdoba.' },
+                      siguen
+                        ? { tono: 'critico', texto: 'Algún índice todavía no se pudo traer.' }
+                        : { tono: 'ok', texto: 'Índices actualizados.' },
                     );
                   }}
                 >

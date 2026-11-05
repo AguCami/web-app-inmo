@@ -67,10 +67,22 @@ const CSV_MENSUAL = 'Código;Descripción;jul-26;ago-26;sep-26\n;NIVEL GENERAL;1
 const navegadorContexto = pagina.context();
 // El intermediario de Cloudflare: la build de prueba se arma con
 // VITE_PROXY_IPC=https://proxy-ipc.prueba (ver el encabezado del script).
+// Del mismo intermediario salen el ICL del BCRA y el IPC nacional del INDEC.
+const ICL_BCRA = { status: 200, results: [{ idVariable: 40, detalle: [
+  { fecha: '2026-08-01', valor: 25.2 }, { fecha: '2026-09-01', valor: 25.79 }, { fecha: '2026-10-01', valor: 26.43 },
+] }] };
+const IPC_INDEC = { data: [['2026-08-01', 9512.3], ['2026-09-01', 9701.2]] };
 await navegadorContexto.route('https://proxy-ipc.prueba/**', async (ruta) => {
   const destino = new URL(ruta.request().url()).searchParams.get('url') ?? '';
+  const cabeceras = { 'access-control-allow-origin': '*' };
+  if (destino.startsWith('https://api.bcra.gob.ar/')) {
+    return ruta.fulfill({ status: 200, json: ICL_BCRA, headers: cabeceras });
+  }
+  if (destino.startsWith('https://apis.datos.gob.ar/')) {
+    return ruta.fulfill({ status: 200, json: IPC_INDEC, headers: cabeceras });
+  }
   const cuerpo = destino.includes('mensual-csv') ? CSV_MENSUAL : '';
-  return ruta.fulfill({ status: 200, body: cuerpo, headers: { 'access-control-allow-origin': '*', 'content-type': 'text/csv' } });
+  return ruta.fulfill({ status: 200, body: cuerpo, headers: { ...cabeceras, 'content-type': 'text/csv' } });
 });
 await navegadorContexto.route(`${PORTAL_IPC}/**`, async (ruta) => {
   const url = new URL(ruta.request().url());
@@ -132,6 +144,13 @@ const valorSep26 = await pagina
   .inputValue()
   .catch(() => '');
 comprobar('el valor de septiembre 2026 quedó cargado', valorSep26 === '132.9', valorSep26);
+
+await pagina.locator('button', { hasText: 'ICL' }).last().click();
+const iclOct26 = await pagina.locator('input[aria-label="ICL · BCRA de oct 2026"]').first().inputValue().catch(() => '');
+comprobar('el ICL se trae del BCRA', iclOct26 === '26.43', iclOct26);
+await pagina.locator('button', { hasText: 'Nacional' }).last().click();
+const ipcSep26 = await pagina.locator('input[aria-label="IPC nacional · INDEC de sep 2026"]').first().inputValue().catch(() => '');
+comprobar('y el IPC nacional, del INDEC', ipcSep26 === '9701.2', ipcSep26);
 
 /* ── 2. Cobrar baja la deuda y persiste ──────────────────────────── */
 await pagina.goto(`${BASE}/#/cobranzas`, { waitUntil: 'networkidle' });

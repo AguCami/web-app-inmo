@@ -26,8 +26,27 @@ import { Sincronizador, type EstadoSincronizacion } from './sincronizador';
 import { baseVacia, crearBaseDemo } from './seed';
 import { combinarIndices, traerIndicesPublicados } from './indices';
 import { traerIpcCordoba } from './ipcCordoba';
-import { aplicarIpcCordoba } from '../domain/ipcCordoba';
+import { traerICL, traerIPCNacional } from './indicesNacionales';
+import { aplicarSerie, type IndiceAutomatico } from '../domain/ipcCordoba';
 
+
+export type EstadoFuente =
+  | { estado: 'pendiente' | 'buscando' }
+  | { estado: 'ok'; ultimo: Periodo; cambios: number }
+  | { estado: 'error'; mensaje: string };
+
+const FUENTES_PENDIENTES: Record<IndiceAutomatico, EstadoFuente> = {
+  IPC_CBA: { estado: 'pendiente' },
+  ICL: { estado: 'pendiente' },
+  IPC: { estado: 'pendiente' },
+};
+
+/** Qué trae cada índice automático. */
+const TRAER: Record<IndiceAutomatico, () => Promise<{ serie: Map<Periodo, number>; ultimo: Periodo }>> = {
+  IPC_CBA: traerIpcCordoba,
+  ICL: traerICL,
+  IPC: traerIPCNacional,
+};
 
 interface EstadoApp {
   db: BaseDatos;
@@ -49,11 +68,8 @@ interface EstadoApp {
 
   /** Última vez que se sincronizó la serie publicada de índices. */
   indicesSincronizados: 'pendiente' | 'ok' | 'sin_archivo';
-  /** Cómo salió la última consulta del IPC de Córdoba al portal de Estadística. */
-  ipcCordoba:
-    | { estado: 'pendiente' | 'buscando' }
-    | { estado: 'ok'; ultimo: Periodo; cambios: number }
-    | { estado: 'error'; mensaje: string };
+  /** Cómo salió la última consulta de cada índice que la app trae sola. */
+  fuentesIndices: Record<IndiceAutomatico, EstadoFuente>;
 
   reemplazarBase: (db: BaseDatos) => void;
   cargarDemo: () => void;
@@ -144,7 +160,7 @@ export const useApp = create<EstadoApp>((set, get) => {
   return {
     db: HAY_SERVIDOR ? baseVacia() : cargarBase(),
     indicesSincronizados: 'pendiente',
-    ipcCordoba: { estado: 'pendiente' },
+    fuentesIndices: FUENTES_PENDIENTES,
 
     modoServidor: HAY_SERVIDOR,
     verificandoSesion: HAY_SERVIDOR,
@@ -166,7 +182,7 @@ export const useApp = create<EstadoApp>((set, get) => {
       sincronizador = null;
       usarServidorParaArchivos(null);
       await salir();
-      set({ sesion: null, db: baseVacia(), sincronizacion: 'al_dia', ipcCordoba: { estado: 'pendiente' } });
+      set({ sesion: null, db: baseVacia(), sincronizacion: 'al_dia', fuentesIndices: FUENTES_PENDIENTES });
     },
 
     reintentarSincronizacion: () => sincronizador?.reintentar(),
@@ -205,9 +221,10 @@ export const useApp = create<EstadoApp>((set, get) => {
       })),
 
     /**
-     * Trae la serie que publica la tarea programada y, aparte, el IPC de
-     * Córdoba directo del portal de Estadística. Las dos se mezclan con lo
-     * que ya está cargado.
+     * Trae la serie que publica la tarea programada y, aparte, los índices
+     * que la app busca sola: el IPC de Córdoba del portal de Estadística, el
+     * ICL del BCRA y el IPC nacional del INDEC. Todo se mezcla con lo que ya
+     * está cargado; si una fuente falla, las otras se aplican igual.
      */
     sincronizarIndices: async () => {
       // Con cuentas, sin sesión no hay base abierta: se espera al login.
@@ -217,18 +234,31 @@ export const useApp = create<EstadoApp>((set, get) => {
       if (publicados) mutar((db) => ({ ...db, indices: combinarIndices(db.indices, publicados) }));
       set({ indicesSincronizados: publicados ? 'ok' : 'sin_archivo' });
 
-      if (get().ipcCordoba.estado === 'buscando') return;
-      set({ ipcCordoba: { estado: 'buscando' } });
-      try {
-        const { serie, ultimo } = await traerIpcCordoba();
-        // Pudo cerrarse la sesión mientras se esperaba al portal.
-        if (HAY_SERVIDOR && !sincronizador) return set({ ipcCordoba: { estado: 'pendiente' } });
-        const { indices, cambios } = aplicarIpcCordoba(get().db.indices, serie);
-        if (cambios > 0) mutar((db) => ({ ...db, indices }));
-        set({ ipcCordoba: { estado: 'ok', ultimo, cambios } });
-      } catch (e) {
-        set({ ipcCordoba: { estado: 'error', mensaje: e instanceof Error ? e.message : String(e) } });
-      }
+      if (Object.values(get().fuentesIndices).some((f) => f.estado === 'buscando')) return;
+      const campos = Object.keys(TRAER) as IndiceAutomatico[];
+      set({ fuentesIndices: Object.fromEntries(campos.map((c) => [c, { estado: 'buscando' }])) as EstadoApp['fuentesIndices'] });
+
+      const resultados = await Promise.allSettled(campos.map((c) => TRAER[c]()));
+      // Pudo cerrarse la sesión mientras se esperaba a las fuentes.
+      if (HAY_SERVIDOR && !sincronizador) return set({ fuentesIndices: FUENTES_PENDIENTES });
+
+      let indices = get().db.indices;
+      let huboCambios = false;
+      const estados = {} as EstadoApp['fuentesIndices'];
+      campos.forEach((campo, i) => {
+        const r = resultados[i];
+        if (r.status === 'rejected') {
+          const e = r.reason;
+          estados[campo] = { estado: 'error', mensaje: e instanceof Error ? e.message : String(e) };
+          return;
+        }
+        const aplicado = aplicarSerie(indices, r.value.serie, campo);
+        indices = aplicado.indices;
+        huboCambios ||= aplicado.cambios > 0;
+        estados[campo] = { estado: 'ok', ultimo: r.value.ultimo, cambios: aplicado.cambios };
+      });
+      if (huboCambios) mutar((db) => ({ ...db, indices }));
+      set({ fuentesIndices: estados });
     },
 
     guardarPersona: (p) => mutar((db) => ({ ...db, personas: upsert(db.personas, p) })),

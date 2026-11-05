@@ -373,9 +373,10 @@ Lo que cuida (`src/domain/ipcCordoba.ts`, probado en `npm run dominio`):
 
 ### El intermediario en Cloudflare
 
-Un Worker gratuito que baja la planilla del portal y se la pasa a la app con
-el permiso CORS puesto. Solo acepta archivos del dataset del IPC de Córdoba y
-solo le contesta a la app.
+Un Worker gratuito que baja los índices y se los pasa a la app con el permiso
+CORS puesto. Solo acepta tres fuentes —la planilla del IPC de Córdoba, el ICL
+del BCRA y el IPC nacional del INDEC— y solo le contesta a la app. Cada vez
+que cambia `cloudflare/proxy-ipc.js` hay que volver a pegarlo en Cloudflare.
 
 1. Cloudflare → **Compute (Workers)** → **Create** → **Start with Hello
    World** → nombre `ipc-cordoba` → **Deploy**.
@@ -383,7 +384,19 @@ solo le contesta a la app.
 3. Copiar la dirección que queda (`https://ipc-cordoba.<cuenta>.workers.dev`)
    en `.env.production` como `VITE_PROXY_IPC=` y publicar.
 
-El ICL, el IPC nacional y Casa Propia siguen cargándose a mano en Ajustes.
+### El ICL y el IPC nacional
+
+También se traen solos, por el mismo intermediario de Cloudflare
+(`src/data/indicesNacionales.ts`):
+
+| Índice | Fuente | Qué se toma |
+|---|---|---|
+| ICL | API de estadísticas del BCRA, variable 40 (prueba la v4 y si no, la v3) | El valor del día 1 de cada mes, o el primero publicado de ese mes. El ICL es diario; la app trabaja por mes |
+| IPC nacional | API de series de tiempo de datos.gob.ar, serie `148.3_INIVELNAL_DICI_M_26` (INDEC, base dic 2016 = 100) | El índice mensual, redondeado a un decimal |
+
+Pasan por el mismo control de variaciones que el IPC de Córdoba, y si una
+fuente falla las otras se aplican igual. **Casa Propia** sigue a mano: el
+Ministerio lo publica como un coeficiente suelto, sin API ni planilla estable.
 
 La tarea programada de GitHub (`.github/workflows/indices.yml`) sigue
 existiendo para cuando el portal vuelva a contestarle a servidores de afuera;

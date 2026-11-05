@@ -86,7 +86,6 @@ export type IndiceAjuste =
   | 'ICL'
   | 'IPC'
   | 'IPC_CBA'
-  | 'CASA_PROPIA'
   | 'PORCENTAJE_FIJO'
   | 'SIN_AJUSTE';
 
@@ -291,7 +290,6 @@ export interface ValorIndice {
   IPC: number;
   /** IPC de la provincia de Córdoba (Dirección General de Estadística y Censos). */
   IPC_CBA: number;
-  CASA_PROPIA: number;
   /** true cuando el valor todavía no es el definitivo publicado. */
   provisorio?: boolean;
 }

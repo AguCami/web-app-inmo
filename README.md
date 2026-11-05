@@ -395,8 +395,11 @@ También se traen solos, por el mismo intermediario de Cloudflare
 | IPC nacional | API de series de tiempo de datos.gob.ar, serie `148.3_INIVELNAL_DICI_M_26` (INDEC, base dic 2016 = 100) | El índice mensual, redondeado a un decimal |
 
 Pasan por el mismo control de variaciones que el IPC de Córdoba, y si una
-fuente falla las otras se aplican igual. **Casa Propia** sigue a mano: el
-Ministerio lo publica como un coeficiente suelto, sin API ni planilla estable.
+fuente falla las otras se aplican igual.
+
+**Casa Propia se sacó de la app**: el Ministerio lo publica como un
+coeficiente suelto, sin API ni planilla estable, y ningún contrato lo usaba.
+La columna `CASA_PROPIA` de la tabla `indice` quedó en el esquema, sin uso.
 
 La tarea programada de GitHub (`.github/workflows/indices.yml`) sigue
 existiendo para cuando el portal vuelva a contestarle a servidores de afuera;

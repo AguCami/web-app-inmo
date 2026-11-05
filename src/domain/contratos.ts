@@ -155,13 +155,12 @@ export const ETIQUETA_INDICE: Record<IndiceAjuste, string> = {
   ICL: 'ICL · BCRA',
   IPC: 'IPC nacional · INDEC',
   IPC_CBA: 'IPC Córdoba',
-  CASA_PROPIA: 'Casa Propia',
   PORCENTAJE_FIJO: 'Porcentaje fijo',
   SIN_AJUSTE: 'Sin ajuste',
 };
 
 /** Los índices que se leen de una serie publicada (los otros no llevan tabla). */
-export const INDICES_CON_SERIE = ['ICL', 'IPC', 'IPC_CBA', 'CASA_PROPIA'] as const;
+export const INDICES_CON_SERIE = ['ICL', 'IPC', 'IPC_CBA'] as const;
 
 export type IndiceConSerie = (typeof INDICES_CON_SERIE)[number];
 

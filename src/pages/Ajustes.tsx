@@ -23,7 +23,7 @@ export default function Ajustes() {
   const sincronizar = useApp((e) => e.sincronizarIndices);
   const fuentes = useApp((e) => e.fuentesIndices);
   const fallidas = INDICES_CON_SERIE.flatMap((i) => {
-    const f = i === 'CASA_PROPIA' ? undefined : fuentes[i];
+    const f = fuentes[i];
     return f?.estado === 'error' ? [{ indice: i, mensaje: f.mensaje }] : [];
   });
   const reemplazar = useApp((e) => e.reemplazarBase);
@@ -60,7 +60,7 @@ export default function Ajustes() {
   const agregarMes = () =>
     guardarIndices([
       ...db.indices,
-      { periodo: mesParaAgregar, ICL: 0, IPC: 0, IPC_CBA: 0, CASA_PROPIA: 0 },
+      { periodo: mesParaAgregar, ICL: 0, IPC: 0, IPC_CBA: 0 },
     ]);
   const contratosPorIndice = (indice: string) =>
     db.contratos.filter((x) => x.estado === 'activo' && x.indiceAjuste === indice).length;
@@ -189,7 +189,7 @@ export default function Ajustes() {
                   onCambio={setIndiceVisible}
                   opciones={INDICES_CON_SERIE.map((i) => ({
                     id: i,
-                    texto: i === 'IPC_CBA' ? 'Córdoba' : i === 'IPC' ? 'Nacional' : i === 'ICL' ? 'ICL' : 'Casa Propia',
+                    texto: i === 'IPC_CBA' ? 'Córdoba' : i === 'IPC' ? 'Nacional' : 'ICL',
                   }))}
                 />
               }

@@ -115,7 +115,7 @@ await pagina.locator('button', { hasText: 'Índices' }).first().click();
 const notaIpc = pagina.locator('.nota', { hasText: 'IPC Córdoba' }).first();
 await notaIpc.waitFor({ timeout: 10_000 });
 const textoNotaIpc = (await notaIpc.textContent()) ?? '';
-comprobar('el IPC de Córdoba se trae del portal', textoNotaIpc.includes('al día'), textoNotaIpc.slice(0, 80));
+comprobar('el IPC de Córdoba se trae del portal', textoNotaIpc.includes('último dato del portal'), textoNotaIpc.slice(0, 80));
 comprobar('y llega hasta el mes que solo estaba en el CSV', textoNotaIpc.includes('septiembre de 2026'));
 const valorSep26 = await pagina
   .locator('input[aria-label="IPC Córdoba de sep 2026"]')

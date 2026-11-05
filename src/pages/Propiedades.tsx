@@ -124,13 +124,6 @@ export default function Propiedades() {
           <div className="grid grid--cartas">
             {lista.map((p) => {
               const contrato = contratoDe(p.id);
-              const rasgos = [
-                p.ambientes ? `${p.ambientes} amb.` : null,
-                p.dormitorios ? `${p.dormitorios} dorm.` : null,
-                p.m2 ? `${p.m2} m²` : null,
-                p.cochera ? 'cochera' : null,
-              ].filter(Boolean) as string[];
-
               return (
                 <button key={p.id} className="carta" onClick={() => setEditando(p)}>
                   <div className="carta__cab">
@@ -138,26 +131,19 @@ export default function Propiedades() {
                     <div className="crece">
                       <div className="carta__titulo">{direccionDe(p)}</div>
                       <div className="carta__sub">
-                        {p.codigo} · {NOMBRE_TIPO[p.tipo]} · {p.barrio}
+                        {[p.codigo, NOMBRE_TIPO[p.tipo], p.barrio?.trim()].filter(Boolean).join(' · ')}
                       </div>
                     </div>
                   </div>
 
                   <div className="carta__rasgos">
                     <Pastilla tono={TONO_ESTADO[p.estado]}>{TEXTO_ESTADO[p.estado]}</Pastilla>
-                    {rasgos.map((r) => (
-                      <span className="rasgo" key={r}>{r}</span>
-                    ))}
                   </div>
 
                   <div className="carta__pie">
                     <div className="carta__monto">
-                      {contrato
-                        ? formatearMoneda(montoVigente(contrato, periodoActual(), db.indices), contrato.moneda)
-                        : p.alquilerSugerido
-                          ? formatearMoneda(p.alquilerSugerido)
-                          : '—'}
-                      <small>{contrato ? 'alquiler vigente' : 'valor sugerido'}</small>
+                      {contrato ? formatearMoneda(montoVigente(contrato, periodoActual(), db.indices), contrato.moneda) : '—'}
+                      <small>{contrato ? 'alquiler vigente' : 'sin contrato'}</small>
                     </div>
                     <div className="mini tenue" style={{ textAlign: 'right' }}>
                       {nombreDe(p.propietarioId)}
@@ -305,41 +291,6 @@ function FormularioPropiedad({
         <Campo etiqueta="Barrio">
           <input value={f.barrio} onChange={(e) => set('barrio', e.target.value)} />
         </Campo>
-      </div>
-
-      <div className="grid grid--form">
-        <Campo etiqueta="Ambientes">
-          <input
-            className="entrada-num"
-            type="number"
-            value={f.ambientes ?? ''}
-            onChange={(e) => set('ambientes', Number(e.target.value) || undefined)}
-          />
-        </Campo>
-        <Campo etiqueta="Dormitorios">
-          <input
-            className="entrada-num"
-            type="number"
-            value={f.dormitorios ?? ''}
-            onChange={(e) => set('dormitorios', Number(e.target.value) || undefined)}
-          />
-        </Campo>
-        <Campo etiqueta="Baños">
-          <input
-            className="entrada-num"
-            type="number"
-            value={f.banos ?? ''}
-            onChange={(e) => set('banos', Number(e.target.value) || undefined)}
-          />
-        </Campo>
-        <Campo etiqueta="Metros cuadrados">
-          <input
-            className="entrada-num"
-            type="number"
-            value={f.m2 ?? ''}
-            onChange={(e) => set('m2', Number(e.target.value) || undefined)}
-          />
-        </Campo>
         <Campo etiqueta="Expensas">
           <input
             className="entrada-num"
@@ -348,20 +299,7 @@ function FormularioPropiedad({
             onChange={(e) => set('expensas', Number(e.target.value) || undefined)}
           />
         </Campo>
-        <Campo etiqueta="Alquiler sugerido" ayuda="Para cuando quede libre.">
-          <input
-            className="entrada-num"
-            type="number"
-            value={f.alquilerSugerido ?? ''}
-            onChange={(e) => set('alquilerSugerido', Number(e.target.value) || undefined)}
-          />
-        </Campo>
       </div>
-
-      <label className="fila" style={{ gap: 8 }}>
-        <input type="checkbox" checked={f.cochera} onChange={(e) => set('cochera', e.target.checked)} />
-        Tiene cochera
-      </label>
 
       <Campo etiqueta="Notas">
         <textarea value={f.notas ?? ''} onChange={(e) => set('notas', e.target.value)} />

@@ -379,7 +379,7 @@ export default function ContratoDetalle() {
                 <Item
                   avatar={<Avatar nombre={propiedad.codigo} />}
                   titulo={`${propiedad.codigo} · ${direccionDe(propiedad)}`}
-                  sub={`${propiedad.barrio}${propiedad.m2 ? ` · ${propiedad.m2} m²` : ''}`}
+                  sub={propiedad.barrio}
                 />
               )}
             </Panel>

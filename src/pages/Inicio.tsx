@@ -256,8 +256,6 @@ export default function Inicio() {
                   avatar={<Avatar nombre={p.codigo} />}
                   titulo={`${p.codigo} · ${direccionDe(p)}`}
                   sub={`${p.barrio}${p.notas ? ` — ${p.notas}` : ''}`}
-                  monto={p.alquilerSugerido ? formatearMoneda(p.alquilerSugerido) : undefined}
-                  montoPie={p.alquilerSugerido ? 'sugerido' : undefined}
                 />
               ))
             )}

@@ -201,7 +201,11 @@ export default function ContratoDetalle() {
                     sub={
                       <>
                         Vence {formatearFecha(c.vencimiento)} ·{' '}
-                        {c.items.map((i) => `${i.descripcion} ${formatearMoneda(i.monto, c.moneda)}`).join(' + ')}
+                        {c.items
+                          .map((i) =>
+                            i.aCompletar ? `${i.descripcion} a completar al cobrar` : `${i.descripcion} ${formatearMoneda(i.monto, c.moneda)}`,
+                          )
+                          .join(' + ')}
                         {mora > 0 &&
                           ` · ${plural(mora, 'día', 'días')}, ${formatearMoneda(punitoriosDeCuota(c, contrato, db.pagos), c.moneda)} de punitorios`}
                       </>
@@ -414,7 +418,7 @@ export default function ContratoDetalle() {
                             — {cf.aCuentaDelPropietario ? 'se le rinde al propietario' : 'a cargo del inquilino'}
                           </span>
                         </span>
-                        <strong style={{ fontSize: 13.5 }}>{formatearMoneda(cf.monto, contrato.moneda)}</strong>
+                        <span className="mini tenue">importe al cobrar</span>
                       </div>
                     ))}
                   </div>

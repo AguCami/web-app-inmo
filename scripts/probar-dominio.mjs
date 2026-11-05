@@ -30,6 +30,7 @@ const { saludDeLosDatos, DIAS_TOLERADOS } = await empaquetar('src/domain/salud.t
 const ipc = await empaquetar('src/domain/ipcCordoba.ts', 'ipc.mjs');
 const nac = await empaquetar('src/domain/indicesNacionales.ts', 'nacionales.mjs');
 const { valorIndice } = await empaquetar('src/domain/contratos.ts', 'contratos-indice.mjs');
+const cobranzas = await empaquetar('src/domain/cobranzas.ts', 'cobranzas.mjs');
 
 let fallos = 0;
 const ok = (n, c, d = '') => { if (!c) fallos += 1; console.log(`${c ? '✓' : '✗'} ${n}${d ? ` — ${d}` : ''}`); };
@@ -264,6 +265,24 @@ const conICL = ipc.aplicarSerie(previos, icl3, 'ICL');
 ok('aplicar el ICL no toca el IPC de Córdoba',
   conICL.indices.find((i) => i.periodo === '2026-09').ICL === 25.79 &&
   conICL.indices.find((i) => i.periodo === '2025-10').IPC_CBA === 99);
+
+/* ── Los servicios se completan al cobrar ── */
+const cuotaServ = cobranzas.armarCuota(
+  { ...viejo, conceptosFijos: [
+    { id: 'l', descripcion: 'Luz', monto: 0, aCuentaDelPropietario: false },
+    { id: 'a', descripcion: 'Agua', monto: 5000, aCuentaDelPropietario: false },
+  ] },
+  '2026-03',
+  [],
+);
+ok('la cuota sale con los servicios sin importe, para completar al cobrar',
+  cobranzas.itemsACompletar(cuotaServ).length === 2 &&
+  cuotaServ.items.filter((i) => i.aCompletar).every((i) => i.monto === 0));
+ok('y el total es solo el alquiler mientras tanto', cuotaServ.total === 780000, String(cuotaServ.total));
+const completa = cobranzas.completarItems(cuotaServ, new Map([[1, 12345.5], [2, 0]]));
+ok('al completarlos se suman al total', completa.total === 792345.5, String(completa.total));
+ok('y dejan de estar pendientes', cobranzas.itemsACompletar(completa).length === 0);
+ok('el alquiler no se toca', completa.items[0].monto === 780000 && !completa.items[0].aCompletar);
 
 console.log(fallos === 0 ? '\nTodo en orden.' : `\n${fallos} fallaron.`);
 process.exit(fallos ? 1 : 0);

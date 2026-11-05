@@ -1508,3 +1508,13 @@ select.suelto { width: auto; border-radius: var(--r-pill); background: var(--pan
 @media print {
   .version { display: none; }
 }
+
+/* Los servicios que se completan al cobrar. */
+.pago__servicios {
+  padding: 14px 16px 16px;
+  border-radius: var(--r-md, 14px);
+  border: 1px solid var(--borde);
+  background: var(--velo);
+}
+.pago__servicios h3 { margin: 0 0 2px; font-size: 14px; }
+.pago__servicios .grid { margin-top: 12px; }

@@ -94,6 +94,10 @@ export type EstadoContrato = 'activo' | 'finalizado' | 'rescindido';
 export interface ConceptoFijo {
   id: ID;
   descripcion: string;
+  /**
+   * Ya no se carga: el importe de cada servicio se pide al cobrar, porque
+   * cambia mes a mes (luz, agua…). Queda por los contratos viejos.
+   */
   monto: number;
   /** Si es true, el importe se le rinde al propietario en la liquidación. */
   aCuentaDelPropietario: boolean;
@@ -142,6 +146,11 @@ export interface ItemCuota {
   descripcion: string;
   monto: number;
   tipo: 'alquiler' | 'expensas' | 'servicio' | 'otro';
+  /**
+   * El importe todavía no se sabe: se completa al cobrar (luz, agua,
+   * expensas del mes). Mientras tanto vale 0 y no suma al total.
+   */
+  aCompletar?: boolean;
 }
 
 export interface Cuota {

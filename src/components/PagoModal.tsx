@@ -33,6 +33,7 @@ export function PagoModal({
 }) {
   const db = useDb();
   const registrar = useApp((e) => e.registrarPago);
+  const completarCuota = useApp((e) => e.completarCuota);
 
   const contrato = db.contratos.find((c) => c.id === cuota.contratoId);
   const inquilino = db.personas.find((p) => p.id === contrato?.inquilinoId);
@@ -42,8 +43,21 @@ export function PagoModal({
     ? Math.round((new Date(hoy()).getTime() - new Date(cuota.vencimiento).getTime()) / 86_400_000)
     : 0;
 
+  // Los servicios que se cargan al cobrar (luz, agua, expensas del mes):
+  // sus importes son obligatorios y se suman a lo que hay que cobrar.
+  const aCompletar = cuota.items
+    .map((item, indice) => ({ item, indice }))
+    .filter(({ item }) => item.aCompletar);
+  const [servicios, setServicios] = useState<Record<number, string>>({});
+  const faltanServicios = aCompletar.some(({ indice }) => (servicios[indice] ?? '').trim() === '' || Number(servicios[indice]) < 0);
+  const totalServicios = sumar(aCompletar, ({ indice }) => Number(servicios[indice]) || 0);
+  const saldoConServicios = saldo + totalServicios;
+
   const [fecha, setFecha] = useState(hoy());
-  const [monto, setMonto] = useState(String(saldo));
+  // El monto acompaña a los servicios mientras no se lo toque a mano.
+  const [montoManual, setMontoManual] = useState<string | null>(null);
+  const monto = montoManual ?? String(saldoConServicios);
+  const setMonto = (v: string) => setMontoManual(v);
   const [punitorios, setPunitorios] = useState(String(punitoriosSugeridos));
   const [medio, setMedio] = useState<MedioPago>('transferencia');
   const [comprobante, setComprobante] = useState('');
@@ -60,7 +74,7 @@ export function PagoModal({
   const montoNum = Number(monto) || 0;
   const punitoriosNum = Number(punitorios) || 0;
   const total = montoNum + punitoriosNum;
-  const quedaSaldo = saldo - montoNum;
+  const quedaSaldo = saldoConServicios - montoNum;
 
   return (
     <Modal
@@ -72,9 +86,15 @@ export function PagoModal({
           <button className="btn btn--fantasma" onClick={onCerrar}>Cancelar</button>
           <button
             className="btn btn--primario"
-            disabled={montoNum <= 0 || emitiendo || frenado}
+            disabled={montoNum <= 0 || emitiendo || frenado || faltanServicios}
             onClick={async () => {
               setEmitiendo(true);
+              if (aCompletar.length) {
+                completarCuota(
+                  cuota.id,
+                  new Map(aCompletar.map(({ indice }) => [indice, Number(servicios[indice]) || 0])),
+                );
+              }
               const pago = registrar({
                 cuotaId: cuota.id,
                 fecha,
@@ -129,14 +149,47 @@ export function PagoModal({
 
       <Nota tono={diasMora > 0 ? 'alerta' : 'neutro'}>
         <strong>
-          Saldo de la cuota: {formatearMoneda(saldo, cuota.moneda)}
+          Saldo de la cuota: {formatearMoneda(saldoConServicios, cuota.moneda)}
         </strong>
         <span className="mini">
           Venció el {formatearFecha(cuota.vencimiento)}
           {diasMora > 0 ? ` · ${plural(diasMora, 'día', 'días')} de atraso` : ' · todavía en término'}
-          {' · '}total facturado {formatearMoneda(cuota.total, cuota.moneda)}
+          {' · '}total facturado {formatearMoneda(cuota.total + totalServicios, cuota.moneda)}
         </span>
       </Nota>
+
+      {aCompletar.length > 0 && (
+        <div className="pago__servicios">
+          <h3>Servicios de {formatearPeriodo(cuota.periodo, true)}</h3>
+          <p className="mini tenue">Obligatorios: poné el importe de la factura de este mes. Si no corresponde, poné 0.</p>
+          <div className="grid grid--form">
+            {aCompletar.map(({ item, indice }) => {
+              const valor = servicios[indice] ?? '';
+              return (
+                <Campo key={indice} etiqueta={item.descripcion}>
+                  <input
+                    className="entrada-num"
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    required
+                    aria-required="true"
+                    aria-invalid={valor.trim() === '' || undefined}
+                    value={valor}
+                    placeholder="Importe"
+                    onChange={(e) => setServicios((s) => ({ ...s, [indice]: e.target.value }))}
+                  />
+                </Campo>
+              );
+            })}
+          </div>
+          {faltanServicios && (
+            <p className="mini" style={{ color: 'var(--critico)', marginTop: 8 }}>
+              Completá {aCompletar.length === 1 ? 'el importe del servicio' : 'los importes de todos los servicios'} para poder cobrar.
+            </p>
+          )}
+        </div>
+      )}
 
       <div className="grid grid--form">
         <Campo etiqueta="Fecha del pago">

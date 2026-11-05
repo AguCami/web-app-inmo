@@ -230,7 +230,12 @@ export function FormularioContrato({
   const inquilinos = db.personas.filter(
     (p) => p.roles.includes('inquilino') && (p.activo || p.id === contrato.inquilinoId),
   );
-  const valido = f.numero.trim() && f.propiedadId && f.inquilinoId && f.montoInicial > 0;
+  const valido =
+    f.numero.trim() &&
+    f.propiedadId &&
+    f.inquilinoId &&
+    f.montoInicial > 0 &&
+    f.conceptosFijos.every((cf) => cf.descripcion.trim());
   // Un contrato que todavía no está guardado (nuevo o renovación) arranca
   // activo: el estado solo se elige al editar uno existente.
   const esNuevo = !db.contratos.some((c) => c.id === contrato.id);
@@ -376,7 +381,7 @@ export function FormularioContrato({
             onClick={() =>
               set('conceptosFijos', [
                 ...f.conceptosFijos,
-                { id: nuevoId('cf'), descripcion: 'Expensas', monto: 0, aCuentaDelPropietario: false },
+                { id: nuevoId('cf'), descripcion: '', monto: 0, aCuentaDelPropietario: false },
               ])
             }
           >
@@ -385,30 +390,21 @@ export function FormularioContrato({
           </button>
         </div>
         {f.conceptosFijos.length === 0 ? (
-          <p className="mini tenue">Nada más que el alquiler. Lo habitual acá son las expensas o el ABL.</p>
+          <p className="mini tenue">Nada más que el alquiler. Lo habitual acá son la luz, el agua, las expensas o el ABL.</p>
         ) : (
           <div className="pila" style={{ gap: 8 }}>
+            <p className="mini tenue">El importe de cada uno se pide al cobrar, con lo que dice la factura de ese mes.</p>
             {f.conceptosFijos.map((cf, i) => (
               <div className="fila" key={cf.id} style={{ gap: 8 }}>
                 <input
                   className="crece"
                   value={cf.descripcion}
+                  placeholder="Luz, agua, expensas…"
                   aria-label="Descripción del concepto"
+                  aria-invalid={!cf.descripcion.trim() || undefined}
                   onChange={(e) => {
                     const copia = [...f.conceptosFijos];
                     copia[i] = { ...cf, descripcion: e.target.value };
-                    set('conceptosFijos', copia);
-                  }}
-                />
-                <input
-                  className="entrada-num"
-                  style={{ width: 130, flex: 'none' }}
-                  type="number"
-                  value={cf.monto || ''}
-                  aria-label="Monto del concepto"
-                  onChange={(e) => {
-                    const copia = [...f.conceptosFijos];
-                    copia[i] = { ...cf, monto: Number(e.target.value) };
                     set('conceptosFijos', copia);
                   }}
                 />

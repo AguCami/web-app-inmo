@@ -14,7 +14,7 @@ import type {
   Propiedad,
   ValorIndice,
 } from '../domain/types';
-import { generarCuotasFaltantes, siguienteNumeroRecibo } from '../domain/cobranzas';
+import { completarItems, generarCuotasFaltantes, siguienteNumeroRecibo } from '../domain/cobranzas';
 import { armarLiquidacion } from '../domain/liquidaciones';
 import { sanear, type ColeccionBorrable } from '../domain/integridad';
 import { hoy, nuevoId, periodoActual } from '../domain/util';
@@ -95,6 +95,8 @@ interface EstadoApp {
 
   emitirCuotas: (hasta?: Periodo) => number;
   anularCuota: (cuotaId: ID) => void;
+  /** Pone los importes de los servicios que se completan al cobrar (por posición del ítem). */
+  completarCuota: (cuotaId: ID, montos: Map<number, number>) => void;
   /** Devuelve el pago ya creado, con su número de recibo, para poder emitirlo. */
   registrarPago: (pago: Omit<Pago, 'id' | 'recibo'>) => Pago;
   eliminarPago: (pagoId: ID) => void;
@@ -374,6 +376,12 @@ export const useApp = create<EstadoApp>((set, get) => {
           c.id === cuotaId ? { ...c, estado: 'anulada' as Cuota['estado'] } : c,
         ),
         pagos: db.pagos.filter((p) => p.cuotaId !== cuotaId),
+      })),
+
+    completarCuota: (cuotaId, montos) =>
+      mutar((db) => ({
+        ...db,
+        cuotas: db.cuotas.map((c) => (c.id === cuotaId ? completarItems(c, montos) : c)),
       })),
 
     registrarPago: (pago) => {

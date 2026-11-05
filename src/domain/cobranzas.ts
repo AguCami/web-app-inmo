@@ -23,11 +23,14 @@ export function armarCuota(c: Contrato, periodo: Periodo, indices: ValorIndice[]
   const alquiler = montoVigente(c, periodo, indices);
   const items: ItemCuota[] = [{ descripcion: 'Alquiler', monto: alquiler, tipo: 'alquiler' }];
 
+  // Los servicios van sin importe: se completa al cobrar, con lo que dice
+  // la factura de ese mes.
   for (const cf of c.conceptosFijos) {
     items.push({
       descripcion: cf.descripcion,
-      monto: cf.monto,
+      monto: 0,
       tipo: cf.descripcion.toLowerCase().includes('expensa') ? 'expensas' : 'servicio',
+      aCompletar: true,
     });
   }
 
@@ -270,4 +273,20 @@ export function antiguedadDeuda(
     tramos[i].cantidad += 1;
   }
   return tramos;
+}
+
+/** Los ítems de la cuota a los que todavía les falta el importe. */
+export function itemsACompletar(cuota: Cuota): ItemCuota[] {
+  return cuota.items.filter((i) => i.aCompletar);
+}
+
+/**
+ * Pone los importes que faltaban (por posición en `cuota.items`) y recalcula
+ * el total. Los ítems que no vienen en `montos` quedan como estaban.
+ */
+export function completarItems(cuota: Cuota, montos: Map<number, number>): Cuota {
+  const items = cuota.items.map((item, i) =>
+    montos.has(i) ? { ...item, monto: redondear(montos.get(i)!), aCompletar: undefined } : item,
+  );
+  return { ...cuota, items, total: redondear(sumar(items, (i) => i.monto)) };
 }

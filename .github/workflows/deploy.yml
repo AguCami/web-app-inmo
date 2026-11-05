@@ -78,3 +78,7 @@ jobs:
 
       - id: despliegue
         uses: actions/deploy-pages@v4
+        with:
+          # GitHub Pages a veces tarda bastante más de los 10 minutos que
+          # espera por defecto; cortarlo antes deja todo sin publicar.
+          timeout: 1800000

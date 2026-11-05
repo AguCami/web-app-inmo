@@ -11,7 +11,13 @@
  * es un invertido automático del claro.
  */
 
-:root {
+/* .tema-claro: un pedazo de pantalla que va en claro aunque la app esté en
+   oscuro (el ingreso). Las reglas del oscuro apuntan solo a :root, así que
+   acá vuelven a valer los valores claros. El color de letra se hereda ya
+   resuelto desde body, así que se vuelve a fijar. */
+.tema-claro { color: var(--tinta); }
+:root,
+.tema-claro {
   color-scheme: light;
 
   /* Superficies */

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Campo, Nota } from './ui';
 import { Logo } from './Logo';
 import { useApp } from '../data/store';
@@ -14,13 +14,27 @@ const CINTA = Array(8).fill('Inversiones Generales M & M').join('  ·  ');
  * app no muestra ni un dato antes de saber quién está del otro lado.
  *
  * Va siempre en claro: el fondo es la espiral sobre blanco, y una tarjeta
- * oscura encima no combina. Al salir se devuelve el tema que había.
+ * oscura encima no combina. El claro se fija solo acá (.tema-claro), no en
+ * toda la página: al salir, el panel ya aparece con el tema elegido.
  *
  * La tarjeta es una credencial colgada de una cinta: se balancea, se puede
  * agarrar y revolear, y vuelve sola. Los campos y el botón no arrastran, así
  * que escribir y tocar funciona como siempre.
  */
-export function Ingresar() {
+export function Ingresar({
+  saliendo = false,
+  alMostrarPanel,
+  alTerminar,
+  alEntrarDePrueba,
+}: {
+  /** Se entró: la tarjeta sale tirada hacia arriba y deja ver el panel. */
+  saliendo?: boolean;
+  /** La tarjeta ya salió de la pantalla: se puede dibujar el panel debajo. */
+  alMostrarPanel?: () => void;
+  alTerminar?: () => void;
+  /** Sin servidor: el botón muestra la salida en vez de autenticar. */
+  alEntrarDePrueba?: () => void;
+} = {}) {
   const iniciarSesion = useApp((e) => e.iniciarSesion);
   // Sin servidor esta pantalla es una vista previa: no hay a quién
   // preguntarle si la contraseña es correcta.
@@ -33,19 +47,30 @@ export function Ingresar() {
   const calma = usePrefiereCalma();
   const { brazo, tarjeta, empujar, manejadores } = useColgante(calma);
 
+  // La salida: un tirón de la cinta y la tarjeta se va para arriba. Cuando
+  // termina, App la desmonta y queda el panel.
+  // Los avisos llegan nuevos en cada render de App: por ref, para que los
+  // temporizadores no vuelvan a empezar cada vez que App se dibuja.
+  const avisos = useRef({ alMostrarPanel, alTerminar });
+  avisos.current = { alMostrarPanel, alTerminar };
   useEffect(() => {
-    const raiz = document.documentElement;
-    const antes = raiz.getAttribute('data-theme');
-    raiz.setAttribute('data-theme', 'light');
+    if (!saliendo) return;
+    // Los tiempos van con los de .colgante--sale e .ingreso--sale en app.css.
+    const panel = window.setTimeout(() => avisos.current.alMostrarPanel?.(), calma ? 0 : 520);
+    const fin = window.setTimeout(() => avisos.current.alTerminar?.(), calma ? 260 : 1000);
     return () => {
-      if (antes === null) raiz.removeAttribute('data-theme');
-      else raiz.setAttribute('data-theme', antes);
+      window.clearTimeout(panel);
+      window.clearTimeout(fin);
     };
-  }, []);
+  }, [saliendo, calma]);
 
   const enviar = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (entrando) return;
+    if (entrando || saliendo) return;
+    if (!modoServidor) {
+      alEntrarDePrueba?.();
+      return;
+    }
     setEntrando(true);
     setError('');
     const falla = await iniciarSesion(email.trim(), clave);
@@ -58,11 +83,11 @@ export function Ingresar() {
   };
 
   return (
-    <div className="ingreso">
+    <div className={saliendo ? 'ingreso tema-claro ingreso--sale' : 'ingreso tema-claro'} aria-hidden={saliendo || undefined}>
       {/* La espiral de la marca, detrás de la tarjeta. */}
       <img className="ingreso__fondo" src={fondo} alt="" aria-hidden="true" />
 
-      <div className={calma ? 'colgante' : 'colgante colgante--entra'}>
+      <div className={saliendo ? 'colgante colgante--sale' : calma ? 'colgante' : 'colgante colgante--entra'}>
         <div className="colgante__brazo" ref={brazo}>
           <div className="colgante__cinta" aria-hidden="true">
             <span>{CINTA}</span>
@@ -100,7 +125,7 @@ export function Ingresar() {
                 />
               </Campo>
 
-              <button className="btn btn--primario btn--ancho" type="submit" disabled={entrando || !modoServidor}>
+              <button className="btn btn--primario btn--ancho" type="submit" disabled={entrando || saliendo || (!modoServidor && !alEntrarDePrueba)}>
                 {entrando ? 'Entrando…' : 'Entrar'}
               </button>
             </form>

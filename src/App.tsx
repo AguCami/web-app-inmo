@@ -1,5 +1,5 @@
-import { useEffect, useMemo } from 'react';
-import { NavLink, Route, Routes, useLocation } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { AvisoDatos } from './components/AvisoDatos';
 import { EstadoSincronizacion } from './components/EstadoSincronizacion';
 import { Ingresar } from './components/Ingresar';
@@ -37,6 +37,28 @@ export default function App() {
   const verificandoSesion = useApp((e) => e.verificandoSesion);
   const sesion = useApp((e) => e.sesion);
   const cerrarSesion = useApp((e) => e.cerrarSesion);
+  const navegar = useNavigate();
+
+  // La salida del ingreso: al entrar, la credencial sale tirada hacia arriba
+  // por encima del panel, que ya está dibujado debajo. Mientras dura, se
+  // muestran los dos.
+  const pideIngreso = modoServidor && !sesion;
+  const [saliendo, setSaliendo] = useState(false);
+  // El panel se dibuja recién cuando la tarjeta ya salió de la pantalla:
+  // dibujarlo cuesta un par de cientos de milisegundos, y si coincide con el
+  // tirón la tarjeta se queda congelada justo cuando tiene que salir.
+  const [panelListo, setPanelListo] = useState(true);
+  // Se decide durante el render, no en un efecto: así el mismo render que ya
+  // no pide ingreso trae la tarjeta saliendo, y React la conserva en vez de
+  // desmontarla y montar otra quieta.
+  const [pediaIngreso, setPediaIngreso] = useState(pideIngreso);
+  if (pediaIngreso !== pideIngreso) {
+    setPediaIngreso(pideIngreso);
+    if (!pideIngreso && sesion) {
+      setSaliendo(true);
+      setPanelListo(false);
+    }
+  }
 
   // Al abrir, se busca la serie de índices que publica la tarea programada.
   // Si no está, la app sigue con la que tiene guardada.
@@ -66,7 +88,10 @@ export default function App() {
   if (verificandoSesion) {
     return <div className="ingreso ingreso--abriendo"><span className="tenue">Abriendo…</span></div>;
   }
-  if (modoServidor && !sesion) return <Ingresar />;
+  // El ingreso va siempre en el mismo lugar del árbol —segundo hijo del
+  // fragmento—, así React conserva la misma tarjeta al pasar de «pidiendo
+  // ingreso» a «saliendo» y sigue hamacándose desde donde estaba.
+  if (pideIngreso) return <>{null}<Ingresar /></>;
   // Vista previa del ingreso.
   //
   // Sin Supabase configurado `modoServidor` es falso y esta pantalla no se
@@ -77,66 +102,89 @@ export default function App() {
   // buena es la del hash: en GitHub Pages, una dirección sin la barra
   // final redirige y en esa redirección se pierde la query, así que
   // ?ingreso puede no llegar nunca. El hash siempre sobrevive.
-  if (ruta === '/ingreso' || new URLSearchParams(window.location.search).has('ingreso')) {
-    return <Ingresar />;
+  //
+  // Sin servidor el botón no autentica: muestra la salida y lleva al panel,
+  // para poder ver cómo se siente entrar.
+  const enVistaPrevia =
+    !saliendo && (ruta === '/ingreso' || new URLSearchParams(window.location.search).has('ingreso'));
+  if (enVistaPrevia) {
+    return (
+      <>
+        {null}
+        <Ingresar
+          alEntrarDePrueba={() => {
+            setSaliendo(true);
+            setPanelListo(false);
+            navegar('/', { replace: true });
+          }}
+        />
+      </>
+    );
   }
 
   return (
-    <div className="app">
-      <nav className="rail no-imprimir" aria-label="Navegación principal">
-        <div className="marca">
-          <Logo tam={44} />
-          <span className="marca__texto">
-            <strong>{db.configuracion.nombre || 'Alquileres'}</strong>
-            <span>Inmobiliaria</span>
-          </span>
-        </div>
+    <>
+      {!panelListo ? null : (
+        <div className={saliendo ? 'app app--llega' : 'app'}>
+          <nav className="rail no-imprimir" aria-label="Navegación principal">
+            <div className="marca">
+              <Logo tam={44} />
+              <span className="marca__texto">
+                <strong>{db.configuracion.nombre || 'Alquileres'}</strong>
+                <span>Inmobiliaria</span>
+              </span>
+            </div>
 
-        {enlaces.map(({ a, Icono, texto, conteo }) => (
-          <NavLink
-            key={a}
-            to={a}
-            end={a === '/'}
-            className={({ isActive }) => `rail__link${isActive ? ' rail__link--activo' : ''}`}
-          >
-            <Icono />
-            <span className="texto">{texto}</span>
-            {conteo ? <span className="rail__conteo">{conteo}</span> : null}
-          </NavLink>
-        ))}
+            {enlaces.map(({ a, Icono, texto, conteo }) => (
+              <NavLink
+                key={a}
+                to={a}
+                end={a === '/'}
+                className={({ isActive }) => `rail__link${isActive ? ' rail__link--activo' : ''}`}
+              >
+                <Icono />
+                <span className="texto">{texto}</span>
+                {conteo ? <span className="rail__conteo">{conteo}</span> : null}
+              </NavLink>
+            ))}
 
-        <div className="rail__pie">
-          Período {periodoActual()}
-          <br />
-          {modoServidor ? (
-            <>
-              {sesion?.email}
+            <div className="rail__pie">
+              Período {periodoActual()}
               <br />
-              <button className="btn btn--fantasma btn--chico" onClick={() => void cerrarSesion()}>
-                Cerrar sesión
-              </button>
-            </>
-          ) : (
-            'Los datos se guardan en este navegador.'
-          )}
-        </div>
-      </nav>
+              {modoServidor ? (
+                <>
+                  {sesion?.email}
+                  <br />
+                  <button className="btn btn--fantasma btn--chico" onClick={() => void cerrarSesion()}>
+                    Cerrar sesión
+                  </button>
+                </>
+              ) : (
+                'Los datos se guardan en este navegador.'
+              )}
+            </div>
+          </nav>
 
-      <main className="principal">
-        <EstadoSincronizacion />
-        <AvisoDatos />
-        <Routes>
-          <Route path="/" element={<Inicio />} />
-          <Route path="/cobranzas" element={<Cobranzas />} />
-          <Route path="/contratos" element={<Contratos />} />
-          <Route path="/contratos/:id" element={<ContratoDetalle />} />
-          <Route path="/propiedades" element={<Propiedades />} />
-          <Route path="/liquidaciones" element={<Liquidaciones />} />
-          <Route path="/gastos" element={<Gastos />} />
-          <Route path="/personas" element={<Personas />} />
-          <Route path="/ajustes" element={<Ajustes />} />
-        </Routes>
-      </main>
-    </div>
+          <main className="principal">
+            <EstadoSincronizacion />
+            <AvisoDatos />
+            <Routes>
+              <Route path="/" element={<Inicio />} />
+              <Route path="/cobranzas" element={<Cobranzas />} />
+              <Route path="/contratos" element={<Contratos />} />
+              <Route path="/contratos/:id" element={<ContratoDetalle />} />
+              <Route path="/propiedades" element={<Propiedades />} />
+              <Route path="/liquidaciones" element={<Liquidaciones />} />
+              <Route path="/gastos" element={<Gastos />} />
+              <Route path="/personas" element={<Personas />} />
+              <Route path="/ajustes" element={<Ajustes />} />
+            </Routes>
+          </main>
+        </div>
+      )}
+      {saliendo && (
+        <Ingresar saliendo alMostrarPanel={() => setPanelListo(true)} alTerminar={() => setSaliendo(false)} />
+      )}
+    </>
   );
 }

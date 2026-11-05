@@ -22,7 +22,6 @@ sesión» cuando hay servidor). Se acuerda si quedó plegado.
 
 | Atajo | Qué hace |
 |---|---|
-| `Ctrl K` / `⌘ K` | Buscar una pantalla por nombre; Enter va a la primera |
 | `Ctrl B` / `⌘ B` | Plegar o desplegar el menú |
 
 En el celular es la barra de arriba, con el avatar al final.

@@ -2,7 +2,6 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, type Compone
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
   IconoAjustes,
-  IconoBuscar,
   IconoCobranzas,
   IconoContratos,
   IconoGastos,
@@ -71,9 +70,7 @@ export function Menu({ pendientes }: { pendientes: { vencidas: number; sinPagar:
   const navegar = useNavigate();
 
   const [colapsado, setColapsado] = useState(leerColapsado);
-  const [busqueda, setBusqueda] = useState('');
   const [perfilAbierto, setPerfilAbierto] = useState(false);
-  const buscador = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     try {
@@ -104,22 +101,12 @@ export function Menu({ pendientes }: { pendientes: { vencidas: number; sinPagar:
     { titulo: 'Sistema', enlaces: [{ a: '/ajustes', Icono: IconoAjustes, texto: 'Ajustes' }] },
   ];
 
-  // El buscador filtra las pantallas. Enter va a la primera que quede.
-  const filtro = busqueda.trim().toLocaleLowerCase('es');
-  const visibles = secciones
-    .map((s) => ({ ...s, enlaces: s.enlaces.filter((e) => e.texto.toLocaleLowerCase('es').includes(filtro)) }))
-    .filter((s) => s.enlaces.length > 0);
-
-  // ⌘K abre el buscador; ⌘B pliega y despliega.
+  // ⌘B pliega y despliega.
   useEffect(() => {
     const tecla = (e: KeyboardEvent) => {
       if (!(e.metaKey || e.ctrlKey)) return;
       const k = e.key.toLowerCase();
-      if (k === 'k') {
-        e.preventDefault();
-        setColapsado(false);
-        buscador.current?.focus();
-      } else if (k === 'b') {
+      if (k === 'b') {
         e.preventDefault();
         setColapsado((c) => !c);
       }
@@ -156,7 +143,7 @@ export function Menu({ pendientes }: { pendientes: { vencidas: number; sinPagar:
     );
   }, [destino]);
 
-  useLayoutEffect(medir, [medir, colapsado, filtro]);
+  useLayoutEffect(medir, [medir, colapsado]);
   useEffect(() => {
     // Al plegar o desplegar los ítems cambian de alto durante la transición:
     // se vuelve a medir cuando el tamaño se asienta.
@@ -209,37 +196,8 @@ export function Menu({ pendientes }: { pendientes: { vencidas: number; sinPagar:
 
       <div className="marca">
         <Logo tam={36} />
-        <span className="marca__texto rail__desvanece">
-          {/* «M & M» no se parte en dos renglones. */}
-          <strong>{(db.configuracion.nombre || 'Alquileres').replace(/ & /g, '\u00a0&\u00a0')}</strong>
-          <span>Inmobiliaria</span>
-        </span>
+        <NombreMarca nombre={db.configuracion.nombre} />
       </div>
-
-      <label className="rail__buscar">
-        <IconoBuscar tam={16} />
-        <input
-          ref={buscador}
-          className="rail__desvanece"
-          type="search"
-          placeholder="Buscar pantalla"
-          value={busqueda}
-          onChange={(e) => setBusqueda(e.target.value)}
-          onFocus={() => setColapsado(false)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && visibles[0]) {
-              navegar(visibles[0].enlaces[0].a);
-              setBusqueda('');
-              buscador.current?.blur();
-            } else if (e.key === 'Escape') {
-              setBusqueda('');
-              buscador.current?.blur();
-            }
-          }}
-          aria-label="Buscar pantalla"
-        />
-        <kbd className="rail__desvanece">{TECLA} K</kbd>
-      </label>
 
       {/* Plegado, el nombre aparece en un globo al costado. Es uno solo y
           viaja junto con la pastilla. */}
@@ -267,7 +225,7 @@ export function Menu({ pendientes }: { pendientes: { vencidas: number; sinPagar:
           />
         )}
 
-        {visibles.map((s) => (
+        {secciones.map((s) => (
           <div className="rail__seccion" key={s.titulo}>
             <div className="rail__titulo">
               <span className="rail__desvanece">{s.titulo}</span>
@@ -284,7 +242,6 @@ export function Menu({ pendientes }: { pendientes: { vencidas: number; sinPagar:
                 onPointerEnter={() => setSeñalado(a)}
                 onFocus={() => setSeñalado(a)}
                 onBlur={() => setSeñalado(null)}
-                onClick={() => setBusqueda('')}
               >
                 <Icono />
                 <span className="texto rail__desvanece">{texto}</span>
@@ -293,7 +250,6 @@ export function Menu({ pendientes }: { pendientes: { vencidas: number; sinPagar:
             ))}
           </div>
         ))}
-        {visibles.length === 0 && <p className="rail__nada rail__desvanece">Ninguna pantalla se llama así.</p>}
       </div>
 
       <div className="rail__pie">
@@ -359,5 +315,30 @@ export function Menu({ pendientes }: { pendientes: { vencidas: number; sinPagar:
         </div>
       </div>
     </nav>
+  );
+}
+
+/**
+ * El nombre junto al logo, igual que en la tarjeta del ingreso: en tres
+ * renglones, con «M & M» al medio y destacado. Si en Ajustes se pone un
+ * nombre que no termina en «M & M», va tal cual, en dos renglones como mucho.
+ */
+function NombreMarca({ nombre }: { nombre: string }) {
+  const partes = /^(.*?)\s*(M\s*&\s*M)$/i.exec(nombre.trim());
+  if (partes) {
+    return (
+      <span className="marca__texto marca__texto--mym rail__desvanece">
+        {partes[1] && <span>{partes[1]}</span>}
+        <strong>M&nbsp;&amp;&nbsp;M</strong>
+        <span>Inmobiliaria</span>
+      </span>
+    );
+  }
+  return (
+    <span className="marca__texto rail__desvanece">
+      {/* «M & M» no se parte en dos renglones. */}
+      <strong>{(nombre || 'Alquileres').replace(/ & /g, '\u00a0&\u00a0')}</strong>
+      <span>Inmobiliaria</span>
+    </span>
   );
 }

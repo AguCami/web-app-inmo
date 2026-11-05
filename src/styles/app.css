@@ -242,47 +242,32 @@ a { color: var(--acento); text-decoration-thickness: 1px; text-underline-offset:
   white-space: nowrap;
 }
 
-/* El buscador. Plegado queda solo la lupa; tocarla despliega el menú. */
-.rail__buscar {
+/* Como en la tarjeta del ingreso: «M & M» grande al medio, y arriba y abajo
+   el resto en mayúsculas espaciadas. Más chico, para que entre al lado del logo. */
+.marca__texto--mym {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 9px;
-  height: 40px;
-  padding: 0 8px 0 16px;
-  border-radius: 14px;
-  background: var(--velo);
-  border: 1px solid var(--vidrio-borde);
-  color: var(--tinta-3);
-  cursor: text;
-  flex: none;
-  overflow: hidden;
+  text-align: center;
 }
-.rail__buscar svg { flex: none; }
-.rail__buscar input {
-  flex: 1;
-  min-width: 0;
-  height: 100%;
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: none;
-  font-size: 13.5px;
+.marca__texto--mym span {
+  margin: 0 -0.14em 0 0;
+  font-family: var(--fuente-titulo);
+  font-size: 9.5px;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
   color: var(--tinta);
 }
-.rail__buscar input:focus { background: none; outline: none; }
-.rail__buscar:focus-within { border-color: var(--acento); }
-.rail__buscar input::-webkit-search-cancel-button { display: none; }
-.rail__buscar kbd {
-  flex: none;
-  font-family: var(--fuente);
-  font-size: 10.5px;
-  font-weight: 600;
-  color: var(--tinta-3);
-  background: var(--velo);
-  border: 1px solid var(--borde);
-  border-radius: 6px;
-  padding: 1px 6px;
-  white-space: nowrap;
+.marca__texto--mym strong {
+  display: block;
+  margin-right: -0.06em;
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: 0.06em;
+  color: var(--acento-fuerte);
 }
 
 .rail__lista {
@@ -322,7 +307,6 @@ a { color: var(--acento); text-decoration-thickness: 1px; text-underline-offset:
   opacity: 0;
   transition: opacity 200ms ease;
 }
-.rail__nada { padding: 14px 12px; font-size: 12.5px; color: var(--tinta-3); }
 
 .rail__link,
 .rail__noche {
@@ -554,8 +538,6 @@ a { color: var(--acento); text-decoration-thickness: 1px; text-underline-offset:
     transition-delay: 0ms;
   }
   .rail--colapsado .rail__titulo::before { opacity: 1; }
-  .rail--colapsado .rail__buscar { cursor: pointer; }
-  .rail--colapsado .rail__buscar kbd { visibility: hidden; }
   /* El número se vuelve un punto sobre el ícono. */
   .rail--colapsado .rail__conteo {
     position: absolute;
@@ -1434,7 +1416,7 @@ select.suelto { width: auto; border-radius: var(--r-pill); background: var(--pan
     gap: 4px;
     border-radius: 22px;
   }
-  .marca, .rail__buscar, .rail__plegar, .rail__titulo, .rail__lente, .rail__globo,
+  .marca, .rail__plegar, .rail__titulo, .rail__lente, .rail__globo,
   .rail__noche, .rail__perfil-texto, .rail__perfil > svg { display: none; }
   .rail__lista { display: flex; flex: 1; overflow-x: auto; overflow-y: hidden; margin: 0; padding: 0; }
   .rail__seccion { display: contents; }

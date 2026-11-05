@@ -1518,3 +1518,13 @@ select.suelto { width: auto; border-radius: var(--r-pill); background: var(--pan
 }
 .pago__servicios h3 { margin: 0 0 2px; font-size: 14px; }
 .pago__servicios .grid { margin-top: 12px; }
+
+/* Un dato que pone la app sola (el número de un contrato nuevo): se ve, no se edita. */
+.entrada-fija,
+.entrada-fija:focus {
+  color: var(--tinta-2);
+  background: transparent;
+  border-color: var(--borde);
+  outline: none;
+  cursor: default;
+}

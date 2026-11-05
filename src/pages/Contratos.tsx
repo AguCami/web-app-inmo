@@ -8,6 +8,7 @@ import {
   ETIQUETA_INDICE,
   montoVigente,
   proximoAjuste,
+  siguienteNumeroContrato,
   vigenciaContrato,
   type VigenciaContrato,
 } from '../domain/contratos';
@@ -37,11 +38,11 @@ export const TEXTO_VIGENCIA: Record<VigenciaContrato, string> = {
   no_iniciado: 'Por empezar',
 };
 
-export function contratoNuevo(comision: number, punitorio: number): Contrato {
+export function contratoNuevo(comision: number, punitorio: number, numero: string): Contrato {
   const inicio = `${periodoActual()}-01`;
   return {
     id: nuevoId('c'),
-    numero: `LOC-${new Date().getFullYear()}-`,
+    numero,
     propiedadId: '',
     inquilinoId: '',
     garanteIds: [],
@@ -100,6 +101,7 @@ export default function Contratos() {
               contratoNuevo(
                 db.configuracion.comisionAdminPctDefault,
                 db.configuracion.punitorioDiarioPctDefault,
+                siguienteNumeroContrato(db.contratos),
               ),
             )
           }
@@ -253,16 +255,26 @@ export function FormularioContrato({
             </button>
           )}
           <button className="btn btn--fantasma" onClick={onCerrar}>Cancelar</button>
-          <button className="btn btn--primario" disabled={!valido} onClick={() => onGuardar(f)}>
+          <button className="btn btn--primario" disabled={!valido} onClick={() =>
+              // El número se vuelve a calcular al guardar: si mientras tanto
+              // se cargó otro contrato, este toma el siguiente y no se repite.
+              onGuardar(esNuevo ? { ...f, numero: siguienteNumeroContrato(db.contratos) } : f)
+            }>
             Guardar
           </button>
         </>
       }
     >
       <div className="grid grid--form">
-        <Campo etiqueta="Número">
-          <input value={f.numero} onChange={(e) => set('numero', e.target.value)} />
-        </Campo>
+        {esNuevo ? (
+          <Campo etiqueta="Número" ayuda="Se asigna solo.">
+            <input value={f.numero} readOnly aria-readonly="true" tabIndex={-1} className="entrada-fija" />
+          </Campo>
+        ) : (
+          <Campo etiqueta="Número">
+            <input value={f.numero} onChange={(e) => set('numero', e.target.value)} />
+          </Campo>
+        )}
         <Campo etiqueta="Propiedad">
           <select value={f.propiedadId} onChange={(e) => set('propiedadId', e.target.value)}>
             <option value="">Elegir…</option>

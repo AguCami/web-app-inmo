@@ -168,7 +168,7 @@ export type IndiceConSerie = (typeof INDICES_CON_SERIE)[number];
 
 /**
  * El número que sigue, con el formato LOC-AAAA-NNN que usa la cartera.
- * Si la inmobiliaria numera de otra forma, es solo una sugerencia editable.
+ * Un contrato nuevo lo toma solo; al editar uno guardado se puede cambiar.
  */
 export function siguienteNumeroContrato(
   contratos: Contrato[],

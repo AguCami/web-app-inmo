@@ -366,13 +366,13 @@ export default function ContratoDetalle() {
                 avatar={<Avatar nombre={inquilino?.nombre ?? '—'} />}
                 titulo={inquilino?.nombre ?? '—'}
                 sub={`Inquilino · ${inquilino?.tipoDoc ?? ''} ${inquilino?.documento ?? ''}`}
-                fin={<span className="mini tenue">{inquilino?.telefono ?? inquilino?.email ?? ''}</span>}
+                fin={<span className="mini tenue">{inquilino?.telefono ? `Tel. ${inquilino.telefono}` : inquilino?.email ?? ''}</span>}
               />
               <Item
                 avatar={<Avatar nombre={propietario?.nombre ?? '—'} />}
                 titulo={propietario?.nombre ?? '—'}
                 sub={`Propietario · ${propietario?.cbu ? `CBU ${propietario.cbu}` : 'sin CBU cargado'}`}
-                fin={<span className="mini tenue">{propietario?.telefono ?? ''}</span>}
+                fin={<span className="mini tenue">{propietario?.telefono ? `Tel. ${propietario.telefono}` : ''}</span>}
               />
               {propiedad && (
                 <Item

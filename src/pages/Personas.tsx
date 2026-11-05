@@ -127,7 +127,7 @@ export default function Personas() {
                   sub={
                     <>
                       {p.tipoDoc} {p.documento}
-                      {p.telefono && ` · ${p.telefono}`}
+                      {p.telefono && ` · Tel. ${p.telefono}`}
                       {p.email && ` · ${p.email}`}
                     </>
                   }

@@ -366,8 +366,22 @@ Lo que cuida (`src/domain/ipcCordoba.ts`, probado en `npm run dominio`):
   cálculo lee como «sin publicar» y resuelve arrastrando el último valor.
 - **La tabla del datastore se atrasa.** La Provincia no siempre la refresca
   (en noviembre de 2026 llegaba a julio, y el archivo, a septiembre). Por eso
-  también se intenta bajar el CSV; si el portal no lo permite, quedan los
-  meses del datastore y la nota de Ajustes dice hasta cuál llegó.
+  también se baja el CSV. El portal no manda permisos CORS para los archivos,
+  así que el navegador no deja leerlos directo: pasan por un intermediario en
+  Cloudflare, `cloudflare/proxy-ipc.js`. Sin él, quedan los meses del
+  datastore y los que falten se cargan con **Agregar mes**.
+
+### El intermediario en Cloudflare
+
+Un Worker gratuito que baja la planilla del portal y se la pasa a la app con
+el permiso CORS puesto. Solo acepta archivos del dataset del IPC de Córdoba y
+solo le contesta a la app.
+
+1. Cloudflare → **Compute (Workers)** → **Create** → **Start with Hello
+   World** → nombre `ipc-cordoba` → **Deploy**.
+2. **Edit code**, borrar todo, pegar `cloudflare/proxy-ipc.js` → **Deploy**.
+3. Copiar la dirección que queda (`https://ipc-cordoba.<cuenta>.workers.dev`)
+   en `.env.production` como `VITE_PROXY_IPC=` y publicar.
 
 El ICL, el IPC nacional y Casa Propia siguen cargándose a mano en Ajustes.
 

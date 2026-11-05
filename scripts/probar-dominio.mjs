@@ -175,6 +175,13 @@ ok('una columna que no es mes no es período', ipc.periodoDeColumna('Descripcion
 ok('la coma es el decimal', ipc.numeroDeCelda('105,7') === 105.7);
 ok('el punto separa miles', ipc.numeroDeCelda('6.543,2') === 6543.2);
 ok('un encabezado repetido no es un número', ipc.numeroDeCelda('nov-25') === null);
+ok('sin coma, el punto es el decimal, redondeado como publica la Provincia',
+  ipc.numeroDeCelda('132.5076651581576') === 132.5);
+ok('un número de la planilla también se redondea', ipc.numeroDeCelda(130.69720218771903) === 130.7);
+ok('una columna con fecha ISO es período', ipc.periodoDeColumna('2026-09-01 00:00:00') === '2026-09');
+ok('y una con fecha día/mes/año', ipc.periodoDeColumna('1/8/2026') === '2026-08');
+ok('el título de la planilla no es período',
+  ipc.periodoDeColumna('Índice de Precios al Consumidor Córdoba. Base Jun - Nov 2025=100') === null);
 
 const empalme = ipc.serieDeFilas(EMPALME);
 ok('toma el nivel general y no el de alimentos', empalme.get('2025-11') === 105.7);

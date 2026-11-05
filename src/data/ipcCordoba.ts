@@ -91,14 +91,22 @@ async function serieDelDatastore(recurso: Recurso): Promise<Map<Periodo, number>
 }
 
 /**
- * El archivo CSV completo. Suele estar más al día que la tabla del datastore,
- * que la Provincia no siempre refresca. Bajarlo necesita que el servidor
- * mande permisos CORS: si no los manda, se sigue sin él.
+ * El intermediario de Cloudflare (`cloudflare/proxy-ipc.js`). El portal no
+ * manda permisos CORS, así que el navegador no deja leer sus archivos
+ * directo: los baja el Worker y los pasa con el permiso puesto. Sin esta
+ * variable, la app se arregla con la tabla del datastore.
+ */
+const PROXY = (import.meta.env.VITE_PROXY_IPC as string | undefined)?.replace(/\/$/, '');
+
+/**
+ * El archivo CSV completo. Suele estar más al día que la tabla del
+ * datastore, que la Provincia no siempre refresca: en noviembre de 2026 la
+ * tabla llegaba a julio y el archivo, a septiembre.
  */
 async function serieDelArchivo(recurso: Recurso): Promise<Map<Periodo, number>> {
-  if (String(recurso.format).toUpperCase() !== 'CSV' || !recurso.url) return new Map();
+  if (!PROXY || String(recurso.format).toUpperCase() !== 'CSV' || !recurso.url) return new Map();
   try {
-    const r = await fetch(recurso.url, { cache: 'no-cache' });
+    const r = await fetch(`${PROXY}/?url=${encodeURIComponent(recurso.url)}`, { cache: 'no-cache' });
     if (!r.ok) return new Map();
     return serieDeCSV(await r.text());
   } catch {

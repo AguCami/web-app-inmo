@@ -333,49 +333,47 @@ que promete el cartel es exactamente lo que pasa.
 
 ## El IPC de Córdoba, actualizado solo
 
-La app es un sitio estático. El navegador no puede pedirle los datos al organismo
-—CORS, y el sitio puede estar caído justo cuando alguien abre la app— así que el
-que consulta es GitHub Actions:
+Lo trae **el navegador de quien abre la app**, directo del portal de datos de
+la Dirección General de Estadística y Censos (`datosestadistica.cba.gov.ar`,
+dataset `indic`). Pasa al abrir la app —con cuentas, apenas se inicia
+sesión— y con **Ajustes → Índices → Buscar ahora**.
+
+Por qué desde el navegador y no desde un servidor: el portal **no les contesta
+a los servidores de afuera de Argentina**. A GitHub Actions, que corre en
+Estados Unidos, le devuelve 404 en todas las rutas; a una compu en Córdoba le
+contesta normal. Y como el API de CKAN no manda permisos CORS, se le pide por
+**JSONP** (`callback=`), que sí acepta.
 
 ```
-cron diario  →  scripts/actualizar-indices.mjs  →  public/indices.json  →  deploy
-                (portal de datos abiertos                    ↓
-                 de la Provincia de Córdoba)        la app lo lee al abrir
-                                                    y lo mezcla con lo local
+abrir la app → package_show (qué planillas hay)
+             → datastore_search de cada una (JSONP)
+             → el CSV, por si trae meses más nuevos (si el portal da CORS)
+             → unir, controlar, volcar en la columna IPC_CBA
 ```
 
-Si el organismo cambia el formato, el script **falla y no escribe nada**: el
-workflow queda en rojo, que es mejor que publicar un índice mal leído. Y siempre
-se puede corregir cualquier mes a mano desde Ajustes.
+Lo que cuida (`src/domain/ipcCordoba.ts`, probado en `npm run dominio`):
 
-### Estado: la fuente no contesta desde GitHub
+- **La base.** En 2026 la Provincia pasó de *2014 = 100* a *jun-nov 2025 =
+  100*. Mezclar las dos haría que un ajuste multiplique por 60 en vez de por
+  1,05. Se usan solo las planillas en la base nueva: la **serie empalmada**
+  (que lleva la historia a esa base) y la mensual. Cada planilla extra solo se
+  suma si coincide con las anteriores en los meses que comparten; si no, se
+  descarta entera.
+- **Que los números sean creíbles.** Una variación mensual de menos de −10 %
+  o más de +50 % frena todo y no se toca nada.
+- **El dato oficial manda.** Pisa lo cargado a mano en esos meses. Un mes que
+  no existía se crea con el IPC de Córdoba y los otros índices en 0, que el
+  cálculo lee como «sin publicar» y resuelve arrastrando el último valor.
+- **La tabla del datastore se atrasa.** La Provincia no siempre la refresca
+  (en noviembre de 2026 llegaba a julio, y el archivo, a septiembre). Por eso
+  también se intenta bajar el CSV; si el portal no lo permite, quedan los
+  meses del datastore y la nota de Ajustes dice hasta cuál llegó.
 
-La tarea ya corrió y **no funciona todavía, por el lado del organismo**. El
-runner de Actions sale por un datacenter de Microsoft en Estados Unidos, y los
-sitios de la Provincia responden distinto según de dónde se les pregunte:
+El ICL, el IPC nacional y Casa Propia siguen cargándose a mano en Ajustes.
 
-| Fuente | Qué devuelve al runner |
-|---|---|
-| `datosestadistica.cba.gov.ar` | CKAN 2.11.5 vivo, pero **404 en todas las rutas**, la raíz incluida, con y sin user-agent de navegador. Los buscadores tienen indexados sus datasets, así que desde Argentina anda. |
-| `estadistica.cba.gov.ar` | Siempre la misma cáscara de 1357 bytes, con `x-cache: Error from cloudfront`: el origen está fallando. El portal real es un sitio ArcGIS Hub. |
-| `prensa.cba.gov.ar` | `403 Request blocked` del WAF. |
-| `apis.datos.gob.ar` | Responde bien, pero **no publica el IPC de Córdoba** (sí el de Tucumán, Santa Fe, Chaco y CABA). |
-
-Mientras eso siga así, el script distingue dos situaciones que antes trataba
-igual:
-
-- **No se pudo llegar a la fuente** (no resuelve, la bloquean, 404, 5xx):
-  avisa y termina bien. Es una condición de afuera, y dejar la tarea en rojo
-  todos los días hasta que el organismo vuelva solo entrena a ignorarla.
-- **La fuente contestó con datos y no se los entiende:** falla, queda en rojo
-  y no toca el archivo. Eso sí hay que mirarlo.
-
-Cada corrida deja el detalle en el resumen del job y como anotación, así se ve
-desde afuera sin entrar al log.
-
-**Mientras tanto los índices se cargan a mano en Ajustes**, mes a mes, que es
-además donde se corrigen si el organismo publica un dato provisorio y después
-lo rectifica.
+La tarea programada de GitHub (`.github/workflows/indices.yml`) sigue
+existiendo para cuando el portal vuelva a contestarle a servidores de afuera;
+hoy termina sin hacer nada.
 
 ## Cómo está armado
 

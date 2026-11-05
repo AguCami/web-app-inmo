@@ -25,6 +25,8 @@ import { HAY_SERVIDOR, ingresar, salir, sesionActual, type Sesion } from './serv
 import { Sincronizador, type EstadoSincronizacion } from './sincronizador';
 import { baseVacia, crearBaseDemo } from './seed';
 import { combinarIndices, traerIndicesPublicados } from './indices';
+import { traerIpcCordoba } from './ipcCordoba';
+import { aplicarIpcCordoba } from '../domain/ipcCordoba';
 
 
 interface EstadoApp {
@@ -47,6 +49,11 @@ interface EstadoApp {
 
   /** Última vez que se sincronizó la serie publicada de índices. */
   indicesSincronizados: 'pendiente' | 'ok' | 'sin_archivo';
+  /** Cómo salió la última consulta del IPC de Córdoba al portal de Estadística. */
+  ipcCordoba:
+    | { estado: 'pendiente' | 'buscando' }
+    | { estado: 'ok'; ultimo: Periodo; cambios: number }
+    | { estado: 'error'; mensaje: string };
 
   reemplazarBase: (db: BaseDatos) => void;
   cargarDemo: () => void;
@@ -117,6 +124,9 @@ export const useApp = create<EstadoApp>((set, get) => {
       const db = conRecibos(await cargarDesdeServidor());
       sincronizador = new Sincronizador(sesion.organizacionId, db, anotarEstado);
       set({ db, sincronizacion: 'al_dia', errorSincronizacion: undefined });
+      // Recién ahora hay una base donde volcar los índices: antes del login
+      // se escribiría en el navegador, que en modo cuentas no se toca.
+      void get().sincronizarIndices();
     } catch (e) {
       set({
         sincronizacion: 'error',
@@ -134,6 +144,7 @@ export const useApp = create<EstadoApp>((set, get) => {
   return {
     db: HAY_SERVIDOR ? baseVacia() : cargarBase(),
     indicesSincronizados: 'pendiente',
+    ipcCordoba: { estado: 'pendiente' },
 
     modoServidor: HAY_SERVIDOR,
     verificandoSesion: HAY_SERVIDOR,
@@ -155,7 +166,7 @@ export const useApp = create<EstadoApp>((set, get) => {
       sincronizador = null;
       usarServidorParaArchivos(null);
       await salir();
-      set({ sesion: null, db: baseVacia(), sincronizacion: 'al_dia' });
+      set({ sesion: null, db: baseVacia(), sincronizacion: 'al_dia', ipcCordoba: { estado: 'pendiente' } });
     },
 
     reintentarSincronizacion: () => sincronizador?.reintentar(),
@@ -193,15 +204,31 @@ export const useApp = create<EstadoApp>((set, get) => {
         indices: [...indices].sort((a, b) => a.periodo.localeCompare(b.periodo)),
       })),
 
-    /** Trae la serie que publica la tarea programada y la mezcla con la local. */
+    /**
+     * Trae la serie que publica la tarea programada y, aparte, el IPC de
+     * Córdoba directo del portal de Estadística. Las dos se mezclan con lo
+     * que ya está cargado.
+     */
     sincronizarIndices: async () => {
+      // Con cuentas, sin sesión no hay base abierta: se espera al login.
+      if (HAY_SERVIDOR && !sincronizador) return;
+
       const publicados = await traerIndicesPublicados();
-      if (!publicados) {
-        set({ indicesSincronizados: 'sin_archivo' });
-        return;
+      if (publicados) mutar((db) => ({ ...db, indices: combinarIndices(db.indices, publicados) }));
+      set({ indicesSincronizados: publicados ? 'ok' : 'sin_archivo' });
+
+      if (get().ipcCordoba.estado === 'buscando') return;
+      set({ ipcCordoba: { estado: 'buscando' } });
+      try {
+        const { serie, ultimo } = await traerIpcCordoba();
+        // Pudo cerrarse la sesión mientras se esperaba al portal.
+        if (HAY_SERVIDOR && !sincronizador) return set({ ipcCordoba: { estado: 'pendiente' } });
+        const { indices, cambios } = aplicarIpcCordoba(get().db.indices, serie);
+        if (cambios > 0) mutar((db) => ({ ...db, indices }));
+        set({ ipcCordoba: { estado: 'ok', ultimo, cambios } });
+      } catch (e) {
+        set({ ipcCordoba: { estado: 'error', mensaje: e instanceof Error ? e.message : String(e) } });
       }
-      mutar((db) => ({ ...db, indices: combinarIndices(db.indices, publicados) }));
-      set({ indicesSincronizados: 'ok' });
     },
 
     guardarPersona: (p) => mutar((db) => ({ ...db, personas: upsert(db.personas, p) })),

@@ -33,6 +33,54 @@ const pagina = await navegador.newPage({
   acceptDownloads: true,
 });
 
+/*
+ * El portal de Estadística de Córdoba, simulado. Desde el CI no se llega (la
+ * Provincia no les contesta a servidores de afuera), y de paso así se prueba
+ * el recorrido entero: package_show y datastore_search por JSONP, y el CSV
+ * por fetch con CORS. Las filas son recortes de lo que devolvió el portal.
+ */
+const PORTAL_IPC = 'https://datosestadistica.cba.gov.ar';
+const RECURSOS_IPC = [
+  { id: 'mensual-csv', name: 'IPC-CBA ', description: '(Base Jun - Nov 2025=100). Septiembre 2026', format: 'CSV',
+    datastore_active: true, position: 1, url: `${PORTAL_IPC}/dataset/x/resource/mensual-csv/download/ipc.csv` },
+  { id: 'empalme-csv', name: 'IPC-CBA.  Empalme serie base 2014', description: 'Base  Jun - Nov 2025', format: 'CSV',
+    datastore_active: true, position: 3, url: `${PORTAL_IPC}/dataset/x/resource/empalme-csv/download/empalme.csv` },
+  { id: 'vieja', name: 'IPC-CBA (Base 2014=100) ', description: 'Julio 2013 a Noviembre 2025', format: 'CSV',
+    datastore_active: true, position: 6, url: `${PORTAL_IPC}/vieja.csv` },
+];
+const FILAS_IPC = {
+  'empalme-csv': [{ _id: 1, COICOP: null, Descripcion: 'NIVEL GENERAL',
+    'jun-25': '95,2', 'jul-25': '97', 'ago-25': '98,9', 'sep-25': '100,7', 'oct-25': '103', 'nov-25': '105,7' }],
+  'mensual-csv': [
+    { _id: 1, Codigo: 'Código', Descripcion: 'Descripción', 'nov-25': 'nov-25', 'dic-25': 'dic-25', 'jul-26': 'jul-26' },
+    { _id: 2, Codigo: null, Descripcion: 'NIVEL GENERAL', 'nov-25': '105,7', 'dic-25': '108,8', 'ene-26': '111,4',
+      'feb-26': '114,3', 'mar-26': '118', 'abr-26': '121,4', 'may-26': '123,7', 'jun-26': '126,1', 'jul-26': '128,4' },
+  ],
+  vieja: [{ Descripcion: 'NIVEL GENERAL', 'oct-25': '6400', 'nov-25': '6543,2' }],
+};
+// El CSV trae dos meses que la tabla del datastore todavía no tiene.
+const CSV_MENSUAL = 'Código;Descripción;jul-26;ago-26;sep-26\n;NIVEL GENERAL;128,4;130,6;132,9\n';
+
+const navegadorContexto = pagina.context();
+await navegadorContexto.route(`${PORTAL_IPC}/**`, async (ruta) => {
+  const url = new URL(ruta.request().url());
+  if (url.pathname.endsWith('.csv')) {
+    const cuerpo = url.pathname.includes('mensual-csv') ? CSV_MENSUAL : '';
+    return ruta.fulfill({ status: 200, body: cuerpo, headers: { 'access-control-allow-origin': '*', 'content-type': 'text/csv' } });
+  }
+  const accion = url.pathname.split('/').pop();
+  const resultado =
+    accion === 'package_show'
+      ? { resources: RECURSOS_IPC }
+      : { records: FILAS_IPC[url.searchParams.get('resource_id')] ?? [] };
+  const callback = url.searchParams.get('callback');
+  return ruta.fulfill({
+    status: 200,
+    contentType: 'application/javascript',
+    body: `${callback}(${JSON.stringify({ success: true, result: resultado })});`,
+  });
+});
+
 const errores = [];
 pagina.on('pageerror', (e) => errores.push(`pageerror: ${e.message}`));
 pagina.on('console', (m) => {
@@ -60,6 +108,21 @@ comprobar(
   'no aparecen las barras de aviso de datos',
   (await pagina.locator('.aviso-datos').count()) === 0,
 );
+
+/* ── El IPC de Córdoba se trae solo del portal ─────────────────── */
+await pagina.goto(`${BASE}/#/ajustes`, { waitUntil: 'networkidle' });
+await pagina.locator('button', { hasText: 'Índices' }).first().click();
+const notaIpc = pagina.locator('.nota', { hasText: 'IPC Córdoba' }).first();
+await notaIpc.waitFor({ timeout: 10_000 });
+const textoNotaIpc = (await notaIpc.textContent()) ?? '';
+comprobar('el IPC de Córdoba se trae del portal', textoNotaIpc.includes('al día'), textoNotaIpc.slice(0, 80));
+comprobar('y llega hasta el mes que solo estaba en el CSV', textoNotaIpc.includes('septiembre de 2026'));
+const valorSep26 = await pagina
+  .locator('input[aria-label="IPC Córdoba de sep 2026"]')
+  .first()
+  .inputValue()
+  .catch(() => '');
+comprobar('el valor de septiembre 2026 quedó cargado', valorSep26 === '132.9', valorSep26);
 
 /* ── 2. Cobrar baja la deuda y persiste ──────────────────────────── */
 await pagina.goto(`${BASE}/#/cobranzas`, { waitUntil: 'networkidle' });

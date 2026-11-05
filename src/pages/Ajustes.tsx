@@ -12,7 +12,7 @@ import {
 import { ETIQUETA_INDICE, INDICES_CON_SERIE } from '../domain/contratos';
 import type { IndiceConSerie } from '../domain/contratos';
 import type { ValorIndice } from '../domain/types';
-import { formatearFecha, formatearPeriodo, periodoActual, plural, redondear } from '../domain/util';
+import { formatearFecha, formatearPeriodo, formatearPeriodoLargo, periodoActual, plural, redondear } from '../domain/util';
 
 type Vista = 'datos' | 'indices' | 'respaldo';
 
@@ -21,7 +21,7 @@ export default function Ajustes() {
   const actualizar = useApp((e) => e.actualizarConfiguracion);
   const guardarIndices = useApp((e) => e.guardarIndices);
   const sincronizar = useApp((e) => e.sincronizarIndices);
-  const estadoSync = useApp((e) => e.indicesSincronizados);
+  const ipcCordoba = useApp((e) => e.ipcCordoba);
   const reemplazar = useApp((e) => e.reemplazarBase);
   const cargarDemo = useApp((e) => e.cargarDemo);
   const vaciar = useApp((e) => e.vaciar);
@@ -126,25 +126,38 @@ export default function Ajustes() {
 
         {vista === 'indices' && (
           <>
-            <Nota tono={estadoSync === 'ok' ? 'ok' : 'alerta'} titulo={
-              estadoSync === 'ok'
-                ? 'Los índices se actualizan solos'
-                : 'Por ahora los índices se cargan a mano'
-            }>
+            <Nota
+              tono={ipcCordoba.estado === 'ok' ? 'ok' : ipcCordoba.estado === 'error' ? 'alerta' : 'neutro'}
+              titulo={
+                ipcCordoba.estado === 'ok'
+                  ? `IPC Córdoba al día: último dato, ${formatearPeriodoLargo(ipcCordoba.ultimo)}`
+                  : ipcCordoba.estado === 'error'
+                    ? 'No pudimos traer el IPC de Córdoba'
+                    : 'Buscando el IPC de Córdoba…'
+              }
+            >
               <span className="mini">
-                {estadoSync === 'ok'
-                  ? 'Una tarea programada consulta la fuente todos los días y publica el valor nuevo cuando sale. Igual podés corregir cualquier mes acá abajo.'
-                  : 'Todavía no hay una serie publicada para esta instalación. Cargá los valores del mes acá abajo; en cuanto la tarea programada empiece a publicar, se sincroniza sola.'}
+                {ipcCordoba.estado === 'error'
+                  ? `${ipcCordoba.mensaje} Podés cargar el valor a mano acá abajo o probar de nuevo en un rato.`
+                  : 'Cada vez que se abre la app, el IPC de Córdoba se trae solo del portal de Estadística y Censos de la Provincia, y pisa lo cargado a mano en esos meses. El ICL, el IPC nacional y Casa Propia se siguen cargando acá abajo.'}
+                {ipcCordoba.estado === 'ok' && ipcCordoba.cambios > 0 &&
+                  ` En esta consulta se actualizaron ${plural(ipcCordoba.cambios, 'mes', 'meses')}.`}
               </span>
               <button
                 className="btn btn--suave btn--chico"
                 style={{ marginTop: 10 }}
+                disabled={ipcCordoba.estado === 'buscando'}
                 onClick={async () => {
                   await sincronizar();
-                  setAviso({ tono: 'ok', texto: 'Buscamos la serie publicada.' });
+                  const estado = useApp.getState().ipcCordoba;
+                  setAviso(
+                    estado.estado === 'ok'
+                      ? { tono: 'ok', texto: `IPC Córdoba actualizado hasta ${formatearPeriodoLargo(estado.ultimo)}.` }
+                      : { tono: 'critico', texto: 'No se pudo traer el IPC de Córdoba.' },
+                  );
                 }}
               >
-                Buscar ahora
+                {ipcCordoba.estado === 'buscando' ? 'Buscando…' : 'Buscar ahora'}
               </button>
             </Nota>
 
@@ -153,7 +166,7 @@ export default function Ajustes() {
                 <Dato
                   key={i}
                   etiqueta={ETIQUETA_INDICE[i]}
-                  valor={(db.indices[db.indices.length - 1]?.[i] ?? 0).toFixed(2).replace('.', ',')}
+                  valor={([...db.indices].reverse().find((f) => f[i] > 0)?.[i] ?? 0).toFixed(2).replace('.', ',')}
                   tono={i === indiceVisible ? 'acento' : 'neutro'}
                   pie={`${plural(contratosPorIndice(i), 'contrato usa', 'contratos usan')} este índice`}
                 />
@@ -178,9 +191,10 @@ export default function Ajustes() {
               <div className="pila" style={{ gap: 6 }}>
                 {ultimos.map((fila, idx) => {
                   const anterior = ultimos[idx + 1];
-                  const variacion = anterior
-                    ? (fila[indiceVisible] / anterior[indiceVisible] - 1) * 100
-                    : null;
+                  const variacion =
+                    anterior && fila[indiceVisible] > 0 && anterior[indiceVisible] > 0
+                      ? (fila[indiceVisible] / anterior[indiceVisible] - 1) * 100
+                      : null;
                   const esActual = fila.periodo === periodoActual();
                   return (
                     <div
@@ -210,7 +224,8 @@ export default function Ajustes() {
                         style={{ width: 130, flex: 'none' }}
                         type="number"
                         step="0.01"
-                        value={fila[indiceVisible]}
+                        value={fila[indiceVisible] || ''}
+                        placeholder="sin cargar"
                         aria-label={`${ETIQUETA_INDICE[indiceVisible]} de ${formatearPeriodo(fila.periodo, true)}`}
                         onChange={(e) => editarIndice(fila.periodo, indiceVisible, Number(e.target.value))}
                       />

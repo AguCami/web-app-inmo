@@ -135,40 +135,29 @@ export default function Ajustes() {
 
         {vista === 'indices' && (
           <>
-            <Nota
-              tono={ipcCordoba.estado === 'ok' ? 'ok' : ipcCordoba.estado === 'error' ? 'alerta' : 'neutro'}
-              titulo={
-                ipcCordoba.estado === 'ok'
-                  ? `IPC Córdoba: último dato del portal, ${formatearPeriodoLargo(ipcCordoba.ultimo)}`
-                  : ipcCordoba.estado === 'error'
-                    ? 'No pudimos traer el IPC de Córdoba'
-                    : 'Buscando el IPC de Córdoba…'
-              }
-            >
-              <span className="mini">
-                {ipcCordoba.estado === 'error'
-                  ? `${ipcCordoba.mensaje} Podés cargar el valor a mano acá abajo o probar de nuevo en un rato.`
-                  : 'Cada vez que se abre la app, el IPC de Córdoba se trae solo del portal de Estadística y Censos de la Provincia, y pisa lo cargado a mano en esos meses. El ICL, el IPC nacional y Casa Propia se siguen cargando acá abajo.'}
-                {ipcCordoba.estado === 'ok' && ipcCordoba.cambios > 0 &&
-                  ` En esta consulta se actualizaron ${plural(ipcCordoba.cambios, 'mes', 'meses')}.`}
-              </span>
-              <button
-                className="btn btn--suave btn--chico"
-                style={{ marginTop: 10 }}
-                disabled={ipcCordoba.estado === 'buscando'}
-                onClick={async () => {
-                  await sincronizar();
-                  const estado = useApp.getState().ipcCordoba;
-                  setAviso(
-                    estado.estado === 'ok'
-                      ? { tono: 'ok', texto: `IPC Córdoba actualizado hasta ${formatearPeriodoLargo(estado.ultimo)}.` }
-                      : { tono: 'critico', texto: 'No se pudo traer el IPC de Córdoba.' },
-                  );
-                }}
-              >
-                {ipcCordoba.estado === 'buscando' ? 'Buscando…' : 'Buscar ahora'}
-              </button>
-            </Nota>
+            {/* El IPC de Córdoba se trae solo: solo se avisa si algo falló. */}
+            {ipcCordoba.estado === 'error' && (
+              <Nota tono="alerta" titulo="No pudimos traer el IPC de Córdoba">
+                <span className="mini">
+                  {`${ipcCordoba.mensaje} Podés cargar el valor a mano acá abajo o probar de nuevo en un rato.`}
+                </span>
+                <button
+                  className="btn btn--suave btn--chico"
+                  style={{ marginTop: 10 }}
+                  onClick={async () => {
+                    await sincronizar();
+                    const estado = useApp.getState().ipcCordoba;
+                    setAviso(
+                      estado.estado === 'ok'
+                        ? { tono: 'ok', texto: `IPC Córdoba actualizado hasta ${formatearPeriodoLargo(estado.ultimo)}.` }
+                        : { tono: 'critico', texto: 'No se pudo traer el IPC de Córdoba.' },
+                    );
+                  }}
+                >
+                  Probar de nuevo
+                </button>
+              </Nota>
+            )}
 
             <div className="grid grid--resumen">
               {INDICES_CON_SERIE.map((i) => (

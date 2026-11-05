@@ -120,11 +120,12 @@ comprobar(
 /* ── El IPC de Córdoba se trae solo del portal ─────────────────── */
 await pagina.goto(`${BASE}/#/ajustes`, { waitUntil: 'networkidle' });
 await pagina.locator('button', { hasText: 'Índices' }).first().click();
-const notaIpc = pagina.locator('.nota', { hasText: 'IPC Córdoba' }).first();
-await notaIpc.waitFor({ timeout: 10_000 });
-const textoNotaIpc = (await notaIpc.textContent()) ?? '';
-comprobar('el IPC de Córdoba se trae del portal', textoNotaIpc.includes('último dato del portal'), textoNotaIpc.slice(0, 80));
-comprobar('y llega hasta el mes que solo estaba en el CSV', textoNotaIpc.includes('septiembre de 2026'));
+// Cuando sale bien no se muestra nada: se comprueba por los valores.
+await pagina.waitForTimeout(1500);
+comprobar('si todo sale bien no hay cartel del IPC',
+  (await pagina.locator('.nota', { hasText: 'IPC de Córdoba' }).count()) === 0);
+const valorAgo26 = await pagina.locator('input[aria-label="IPC Córdoba de ago 2026"]').first().inputValue().catch(() => '');
+comprobar('llega hasta los meses que solo estaban en el CSV', valorAgo26 === '130.6', valorAgo26);
 const valorSep26 = await pagina
   .locator('input[aria-label="IPC Córdoba de sep 2026"]')
   .first()

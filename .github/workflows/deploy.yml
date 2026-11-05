@@ -43,16 +43,10 @@ jobs:
       - name: Instalar dependencias
         run: npm ci
 
-      # Con estas dos variables cargadas, lo publicado pasa a modo cuentas
-      # (login y datos en Supabase). Vacías, se publica la demo.
-      # Se cargan en Settings → Secrets and variables → Actions → Variables.
-      # Son variables y no secretos a propósito: la clave anon viaja igual en
-      # el JavaScript que baja cualquier visitante.
+      # Las claves de Supabase salen de .env.production: con ese archivo,
+      # lo publicado pide login y guarda en el servidor; sin él, es la demo.
       - name: Compilar
         run: npm run build
-        env:
-          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
 
       - uses: actions/configure-pages@v5
 

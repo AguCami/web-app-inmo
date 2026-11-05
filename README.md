@@ -115,11 +115,10 @@ que la demo no descarga.
    public*.
    - Para probar en la compu: a `.env.local` (ver `.env.ejemplo`) y
      `npm run dev`.
-   - Para lo publicado: en GitHub, **Settings → Secrets and variables →
-     Actions → Variables**, crear `VITE_SUPABASE_URL` y
-     `VITE_SUPABASE_ANON_KEY`, y volver a correr el workflow de deploy.
-     Ojo: desde ese momento la dirección de GitHub Pages pide login y deja
-     de mostrar la demo. Borrando las variables vuelve a ser la demo.
+   - Para lo publicado: van en `.env.production`, que sí está en el
+     repositorio (la clave anon es pública). Ojo: con ese archivo la
+     dirección de GitHub Pages pide login y deja de mostrar la demo.
+     Borrándolo vuelve a ser la demo.
 6. Si ya había datos cargados en un navegador: bajar el respaldo ahí
    (**Ajustes → Respaldo**), entrar con cuenta y subirlo desde el mismo
    lugar. Las filas van a la base y los archivos que trae adentro, a Storage.

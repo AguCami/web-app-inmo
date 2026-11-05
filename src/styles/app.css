@@ -1488,3 +1488,23 @@ select.suelto { width: auto; border-radius: var(--r-pill); background: var(--pan
   border-top: 1px solid var(--borde);
 }
 .perfil__clave h3 { margin: 0; font-size: 14.5px; }
+
+/* La versión, en la esquina de abajo a la derecha. No tapa nada ni recibe
+   clics (salvo para mostrar la fecha al pasar el mouse) y no sale impresa. */
+.version {
+  position: fixed;
+  right: 10px;
+  bottom: 8px;
+  z-index: 200;
+  font-family: var(--fuente-titulo);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--tinta-3);
+  opacity: 0.55;
+  user-select: none;
+  -webkit-user-select: none;
+}
+@media print {
+  .version { display: none; }
+}

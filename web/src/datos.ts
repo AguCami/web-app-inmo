@@ -88,13 +88,11 @@ export function enlaceWhatsapp(texto: string): string | null {
 }
 
 /**
- * La selección que se muestra en las tarjetas animadas del inicio, en orden.
+ * La selección que se muestra en el carrusel del inicio, en orden.
  * Se elige a mano: cambiar los códigos alcanza. Si un código ya no está
  * publicado, se saltea.
  */
-export const SELECCION = ['P-0216', 'P-0223', 'P-0229', 'P-0243', 'P-0227', 'P-0225', 'P-0240'];
-/** La que sube en grande al final de la animación. */
-export const DESTACADA = 'P-0241';
+export const SELECCION = ['P-0241', 'P-0216', 'P-0223', 'P-0229', 'P-0243', 'P-0227', 'P-0225', 'P-0240', 'P-0205'];
 
 export function porCodigo(codigo: string): Propiedad | undefined {
   return PROPIEDADES.find((p) => p.codigo === codigo);

@@ -6,6 +6,7 @@
  */
 
 html { scroll-behavior: smooth; }
+html, body { overflow-x: clip; }
 a.btn { text-decoration: none; }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 
@@ -108,214 +109,167 @@ body:has(.sitio) { background: #f1f4f7; color-scheme: light; }
   .barra__nombre small { display: none; }
 }
 
-/* ── La escena del inicio (Escena.tsx) ──
+/* ── El carrusel del inicio (Carrusel.tsx) ──
  *
- * Mide varias pantallas de alto; adentro, .escena__fija queda pegada arriba
- * mientras se recorre y Escena.tsx mueve las tarjetas según el avance. Va a
- * todo el ancho de la ventana, fuera del margen del sitio, para que las
- * tarjetas puedan salir volando por el costado. */
-html, body { overflow-x: clip; }
-.escena {
-  position: relative;
-  height: 420vh;
-  width: 100vw;
-  margin-left: calc(50% - 50vw);
-  margin-top: -76px;
+ * Todas las tarjetas parten del mismo punto, al medio del escenario, y
+ * Carrusel.tsx las corre con transform. La transición hace el resto: la
+ * llegada (con una demora distinta para cada una) y cada cambio. */
+@keyframes subir {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
 }
-.escena--quieta { height: 100vh; }
-.escena__fija {
-  position: sticky;
-  top: 0;
-  height: 100vh;
-  overflow: hidden;
-}
-.escena__capa { position: absolute; z-index: 2; }
-
-.escena__capa--portada {
-  inset: 0 16px;
-  padding-top: max(110px, 14vh);
+.carrusel {
   display: flex;
   flex-direction: column;
   align-items: center;
-  text-align: center;
-  pointer-events: none;
+  padding: clamp(24px, 4.5vh, 56px) 0 8px;
+  overflow-x: clip;
+  /* A todo el ancho de la ventana: las tarjetas de los costados no se cortan en el margen. */
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
 }
-.escena__capa--portada > * { pointer-events: auto; }
-.escena__pre {
+.carrusel__cab { text-align: center; padding: 0 16px; animation: subir 700ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.carrusel__pre {
   font-family: var(--fuente-titulo);
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.24em;
   text-transform: uppercase;
   color: var(--tinta-2);
-  margin-bottom: 14px;
-  animation: subir 700ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  margin-bottom: 8px;
 }
-.escena__titulo {
+.carrusel__titulo {
   font-family: var(--fuente-titulo);
-  font-size: clamp(30px, 4.6vw, 58px);
+  font-size: clamp(28px, 3.6vw, 46px);
   font-weight: 600;
   line-height: 1.08;
   letter-spacing: -0.025em;
-  max-width: 16ch;
+  max-width: 17ch;
+  margin: 0 auto;
   text-wrap: balance;
-  color: var(--tinta);
-}
-.escena__titulo [data-palabra] { display: inline-block; white-space: pre; }
-.escena__titulo--izq { max-width: 15ch; }
-/* El título de la portada entra solo, palabra por palabra, al abrir. */
-.escena__titulo--entra [data-palabra] {
-  animation: palabra 800ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
-  animation-delay: calc(120ms + var(--i) * 70ms);
-}
-@keyframes palabra {
-  from { opacity: 0; filter: blur(10px); transform: translateY(12px); }
-  to { opacity: 1; filter: none; transform: none; }
-}
-@keyframes subir {
-  from { opacity: 0; transform: translateY(14px); }
-  to { opacity: 1; transform: none; }
-}
-.escena__capa--portada .busqueda {
-  position: absolute;
-  bottom: max(24px, 5vh);
-  left: 50%;
-  translate: -50% 0;
-  width: min(680px, calc(100vw - 32px));
-  margin: 0;
-  animation: subir 700ms 500ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
-/* La cascada: el texto a la izquierda, las tarjetas a la derecha. */
-.escena__capa--texto {
-  left: max(24px, calc(50vw - 560px));
-  top: 50%;
-  translate: 0 -50%;
-  width: min(460px, 42vw);
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 18px;
-  visibility: hidden;
+.carrusel__escenario {
+  --ancho: clamp(200px, min(21vw, 34vh), 280px);
+  position: relative;
+  width: 100%;
+  height: calc(var(--ancho) * 1.25 + 46px);
+  margin-top: clamp(18px, 3vh, 32px);
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: grab;
 }
-.escena__etiqueta {
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--acento);
-}
-.escena__bajada { color: var(--tinta-2); font-size: 16px; max-width: 38ch; }
-.escena__capa--texto [data-palabra],
-.escena__capa--destacada [data-palabra] { opacity: 0.08; will-change: opacity, filter, transform; }
-.escena__capa--texto .escena__titulo [data-palabra]:nth-child(3) { color: var(--acento); }
-
+.carrusel__escenario.es-arrastrado { cursor: grabbing; }
 @media (max-width: 759px) {
-  .escena__capa--portada { padding-top: 104px; }
-  .escena__capa--portada .busqueda { bottom: 16px; flex-direction: row; border-radius: var(--r-xl); padding: 6px; gap: 2px; }
-  .escena__capa--portada .busqueda__campo { padding: 6px 10px; }
-  .escena__capa--portada .busqueda__campo select { font-size: 14px; }
-  .escena__capa--portada .busqueda__boton { width: 48px; min-height: 48px; padding: 0; font-size: 0; gap: 0; border-radius: var(--r-lg); }
-  .escena__capa--texto { top: 96px; translate: none; width: auto; right: 20px; left: 20px; gap: 12px; }
-  .escena__bajada { font-size: 14.5px; }
+  .carrusel__escenario { --ancho: min(62vw, 260px); }
 }
 
-/* Las tarjetas: todas parten del borde de arriba, al medio, y Escena.tsx
-   las lleva a su lugar con transform. */
-.escena__mazo { position: absolute; inset: 0; z-index: 1; }
-.naipe {
+.carta-p {
   position: absolute;
   left: 50%;
   top: 0;
-  border-radius: 18px;
-  will-change: transform;
-  transform-origin: 50% 50%;
-  box-shadow: 0 2px 6px rgba(10, 30, 60, 0.12), 0 18px 40px -12px rgba(10, 30, 60, 0.35);
+  width: var(--ancho);
+  aspect-ratio: 4 / 5;
+  margin-left: calc(var(--ancho) / -2);
+  border-radius: 22px;
   background: #dfe5ec;
-  color: #fff;
-  text-decoration: none;
-  transition: box-shadow 200ms ease;
+  box-shadow: 0 2px 6px rgba(10, 30, 60, 0.1), 0 22px 44px -16px rgba(10, 30, 60, 0.38);
+  transform-origin: 50% 100%;
+  will-change: transform;
+  transition:
+    transform 900ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 500ms ease,
+    box-shadow 300ms ease;
+  -webkit-tap-highlight-color: transparent;
 }
-.naipe img {
-  position: absolute;
-  inset: 0;
+/* Mientras se arrastra, sigue al dedo sin demora. */
+.es-arrastrado .carta-p { transition: none; }
+.carta-p img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
   border-radius: inherit;
-  border: 3px solid #fff;
+  border: 4px solid #fff;
+  pointer-events: none;
 }
-.naipe:hover { box-shadow: 0 2px 6px rgba(10, 30, 60, 0.14), 0 26px 50px -12px rgba(10, 30, 60, 0.45); }
-.naipe__pie {
+.carta-p--activa { box-shadow: 0 4px 10px rgba(10, 30, 60, 0.12), 0 34px 60px -18px rgba(10, 30, 60, 0.5); }
+.carta-p__chip {
   position: absolute;
-  left: 3px;
-  right: 3px;
-  bottom: 3px;
-  display: flex;
-  flex-direction: column;
-  padding: 26px 12px 10px;
-  border-radius: 0 0 15px 15px;
-  background: linear-gradient(to top, rgba(8, 18, 32, 0.72), transparent);
-  line-height: 1.2;
-}
-.naipe__pie strong { font-family: var(--fuente-titulo); font-size: 15px; font-weight: 700; }
-.naipe__pie span { font-size: 11.5px; opacity: 0.9; }
-/* Las etiquetas que flotan sobre algunas tarjetas, como en la referencia. */
-.naipe__chip {
-  position: absolute;
-  top: -12px;
-  left: -14px;
+  top: 14px;
+  left: 14px;
   padding: 4px 11px;
   border-radius: var(--r-pill);
-  background: var(--acento);
-  color: #fff;
+  background: rgba(255, 255, 255, 0.86);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  color: var(--acento-fuerte);
   font-size: 12px;
   font-weight: 700;
-  box-shadow: 0 6px 14px -4px rgba(11, 87, 181, 0.6);
-  white-space: nowrap;
 }
-.naipe__chip--der { left: auto; right: -14px; background: #1f7168; box-shadow: 0 6px 14px -4px rgba(31, 113, 104, 0.6); }
 
-/* La destacada: sube desde abajo y ocupa la pantalla. */
-.escena__capa--destacada {
-  inset: 96px max(16px, calc(50vw - 590px)) 24px;
+.carrusel__pie {
   display: flex;
-  flex-direction: column;
-  gap: 18px;
-  z-index: 3;
-  visibility: hidden;
-  will-change: transform;
+  align-items: center;
+  gap: 16px;
+  width: min(640px, calc(100% - 32px));
 }
-.destacada__cab { display: flex; flex-direction: column; gap: 8px; }
-.destacada__cab .escena__titulo { font-size: clamp(26px, 3.6vw, 44px); max-width: 22ch; }
-.destacada__foto {
-  position: relative;
+.carrusel__info {
   flex: 1;
-  min-height: 0;
-  border-radius: var(--r-xl);
-  overflow: hidden;
-  background: #dfe5ec;
-  box-shadow: 0 30px 70px -30px rgba(10, 30, 60, 0.5);
-  color: #fff;
-  text-decoration: none;
+  min-width: 0;
+  text-align: center;
+  animation: palabra 520ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
-.destacada__foto img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 700ms cubic-bezier(0.2, 0.8, 0.2, 1); }
-@media (hover: hover) { .destacada__foto:hover img { transform: scale(1.03); } }
-.destacada__datos {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 60px 24px 22px;
-  background: linear-gradient(to top, rgba(8, 18, 32, 0.7), transparent);
+@keyframes palabra {
+  from { opacity: 0; filter: blur(6px); transform: translateY(8px); }
+  to { opacity: 1; filter: none; transform: none; }
 }
-.destacada__datos span { display: inline-flex; align-items: center; gap: 5px; font-size: 14px; }
-.destacada__datos strong { font-family: var(--fuente-titulo); font-size: clamp(24px, 3vw, 34px); font-weight: 700; }
-.destacada__ir { position: absolute; right: 22px; bottom: 22px; }
-@media (max-width: 559px) { .destacada__ir { display: none; } }
+.carrusel__loc { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; color: var(--tinta-2); }
+.carrusel__loc svg { width: 15px; height: 15px; }
+.carrusel__info h2 {
+  font-size: clamp(18px, 2.2vw, 22px);
+  line-height: 1.25;
+  margin: 4px 0 10px;
+  text-wrap: balance;
+}
+.carrusel__fila { display: flex; align-items: center; justify-content: center; gap: 14px; flex-wrap: wrap; }
+.carrusel__fila strong { font-family: var(--fuente-titulo); font-size: 22px; font-weight: 700; color: var(--acento-fuerte); }
+.carrusel__flecha {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--borde-fuerte);
+  background: #fff;
+  color: var(--tinta);
+  cursor: pointer;
+  box-shadow: var(--sombra-suave);
+  transition: transform 120ms ease, background 140ms ease, border-color 140ms ease;
+}
+.carrusel__flecha:hover { border-color: var(--acento); color: var(--acento); }
+.carrusel__flecha:active { transform: scale(0.94); }
+.carrusel__puntos { display: flex; gap: 6px; margin-top: 18px; }
+.carrusel__punto {
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-pill);
+  background: var(--borde-fuerte);
+  cursor: pointer;
+  transition: width 300ms cubic-bezier(0.22, 1, 0.36, 1), background 200ms ease;
+}
+.carrusel__punto--activo { width: 24px; background: var(--acento); }
+@media (max-width: 559px) {
+  .carrusel__pie { gap: 8px; }
+  .carrusel__flecha { width: 42px; height: 42px; }
+}
+
+/* El buscador va debajo del carrusel. */
+.sitio__main > .busqueda { margin: 36px auto 0; }
 
 /* El buscador: una pieza de vidrio con dos selectores y el botón. */
 .busqueda {

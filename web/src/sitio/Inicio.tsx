@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { PROPIEDADES, TIPOS, recientes, tipoDeFiltro } from '../datos';
-import { Escena } from './Escena';
+import { Buscador } from './Buscador';
+import { Carrusel } from './Carrusel';
 import { BASE } from './Sitio';
 import { Tarjeta } from './Tarjeta';
 import { IcoCasa, IcoFlecha, IcoTerreno } from './iconos';
@@ -16,7 +17,8 @@ const CUENTA_POR_TIPO = (() => {
 export function Inicio() {
   return (
     <>
-      <Escena />
+      <Carrusel />
+      <Buscador />
 
       <section className="seccion">
         <div className="seccion__cab">

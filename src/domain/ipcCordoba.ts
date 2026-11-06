@@ -195,6 +195,34 @@ export function aplicarSerie(
     });
     cambios += 1;
   }
+
+  // Los meses posteriores al último publicado: si traen un valor que no
+  // encaja con la serie oficial (otra base, como la de demostración que se
+  // coló en alguna cuenta), se borra y queda «sin publicar». Un valor cargado
+  // a mano que sí encaja se respeta.
+  const ultimos = [...serie.entries()].sort(([a], [b]) => a.localeCompare(b));
+  const ultimo = ultimos[ultimos.length - 1];
+  if (ultimo) {
+    let previo = ultimo[1];
+    for (const fila of [...porPeriodo.values()].sort((a, b) => a.periodo.localeCompare(b.periodo))) {
+      if (fila.periodo <= ultimo[0]) continue;
+      const v = fila[campo];
+      if (!(v > 0)) continue;
+      const variacion = v / previo - 1;
+      if (variacion < -0.1 || variacion > 0.5) {
+        porPeriodo.set(fila.periodo, { ...fila, [campo]: 0 });
+        cambios += 1;
+      } else {
+        previo = v;
+      }
+    }
+  }
+
+  // Un mes que se quedó sin ningún índice no aporta nada: se saca.
+  for (const [periodo, fila] of porPeriodo) {
+    if (!(fila.ICL > 0) && !(fila.IPC > 0) && !(fila.IPC_CBA > 0)) porPeriodo.delete(periodo);
+  }
+
   return {
     indices: [...porPeriodo.values()].sort((a, b) => a.periodo.localeCompare(b.periodo)),
     cambios,

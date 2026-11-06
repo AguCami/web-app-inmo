@@ -349,6 +349,8 @@ export function baseVacia(): BaseDatos {
     gastos: [],
     adjuntos: [],
     novedades: [],
-    indices: construirIndices(),
+    // Sin índices: los de construirIndices() son inventados (base 100) y no
+    // pueden terminar en una cuenta real. Los oficiales llegan solos.
+    indices: [],
   };
 }

@@ -266,6 +266,25 @@ ok('aplicar el ICL no toca el IPC de Córdoba',
   conICL.indices.find((i) => i.periodo === '2026-09').ICL === 25.79 &&
   conICL.indices.find((i) => i.periodo === '2025-10').IPC_CBA === 99);
 
+/* ── Los índices de demostración que se colaron después del último publicado ── */
+const conDemo = [
+  { periodo: '2026-08', ICL: 0, IPC: 0, IPC_CBA: 140 },
+  { periodo: '2026-09', ICL: 0, IPC: 0, IPC_CBA: 142 },
+  { periodo: '2026-10', ICL: 0, IPC: 0, IPC_CBA: 538 },
+  { periodo: '2026-11', ICL: 0, IPC: 0, IPC_CBA: 545 },
+  { periodo: '2026-12', ICL: 3, IPC: 0, IPC_CBA: 550 },
+];
+const limpio = ipc.aplicarSerie(conDemo, new Map([['2026-08', 140.5], ['2026-09', 142.4]]), 'IPC_CBA').indices;
+ok('los meses de otra base después del último publicado se borran',
+  !limpio.some((i) => i.periodo === '2026-10' || i.periodo === '2026-11'), limpio.map((i) => i.periodo).join(','));
+ok('si al mes le queda otro índice, se conserva sin el que no encajaba',
+  limpio.find((i) => i.periodo === '2026-12')?.IPC_CBA === 0 && limpio.find((i) => i.periodo === '2026-12')?.ICL === 3);
+const aMano = ipc.aplicarSerie(
+  [{ periodo: '2026-09', ICL: 0, IPC: 0, IPC_CBA: 142 }, { periodo: '2026-10', ICL: 0, IPC: 0, IPC_CBA: 144.1 }],
+  new Map([['2026-08', 140.5], ['2026-09', 142.4]]), 'IPC_CBA').indices;
+ok('un valor cargado a mano que encaja con la serie se respeta',
+  aMano.find((i) => i.periodo === '2026-10')?.IPC_CBA === 144.1);
+
 /* ── Los servicios se completan al cobrar ── */
 const cuotaServ = cobranzas.armarCuota(
   { ...viejo, conceptosFijos: [

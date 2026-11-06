@@ -247,6 +247,19 @@ body:has(.sitio) { background: #f1f4f7; color-scheme: light; }
   line-height: 1.25;
   margin: 4px 0 10px;
   text-wrap: balance;
+  /* Siempre el alto de dos renglones, tenga el nombre uno o dos: así lo de
+     abajo no salta al pasar de una propiedad a otra. Si no entra en dos, se
+     corta con puntos suspensivos. */
+  height: 2.5em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.carrusel__info h2 span {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 .carrusel__fila { display: flex; align-items: center; justify-content: center; gap: 14px; flex-wrap: wrap; }
 .carrusel__fila strong { font-family: var(--fuente-titulo); font-size: 22px; font-weight: 700; color: var(--acento-fuerte); }

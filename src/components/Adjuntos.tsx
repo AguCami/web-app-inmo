@@ -2,7 +2,8 @@ import { useRef, useState } from 'react';
 import { Item, Nota } from './ui';
 import { IconoCerrar, IconoLiquidaciones } from './iconos';
 import { useApp, useDb } from '../data/store';
-import { abrirArchivo, formatearTamano } from '../data/archivos';
+import { abrirArchivo, formatearTamano, leerArchivo } from '../data/archivos';
+import { VisorArchivo } from './VisorArchivo';
 import type { Adjunto, ID } from '../domain/types';
 import { formatearFecha } from '../domain/util';
 
@@ -105,14 +106,22 @@ export function SubirArchivos({
 export function ListaAdjuntos({ adjuntos }: { adjuntos: Adjunto[] }) {
   const eliminarAdjunto = useApp((e) => e.eliminarAdjunto);
   const [faltante, setFaltante] = useState('');
+  const [viendo, setViendo] = useState<Adjunto | null>(null);
 
+  // Los PDF y las imágenes se leen adentro de la app; el resto se baja.
   const abrir = async (a: Adjunto) => {
+    if (a.tipo === 'application/pdf' || a.tipo.startsWith('image/')) {
+      if (await leerArchivo(a.id)) setViendo(a);
+      else setFaltante(a.nombre);
+      return;
+    }
     const ok = await abrirArchivo(a.id, a.nombre);
     if (!ok) setFaltante(a.nombre);
   };
 
   return (
     <>
+      {viendo && <VisorArchivo adjunto={viendo} onCerrar={() => setViendo(null)} />}
       {faltante && (
         <Nota tono="critico" titulo="No encontramos el archivo">
           <span className="mini">

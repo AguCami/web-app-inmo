@@ -164,3 +164,16 @@ export function formatearTamano(bytes: number): string {
   if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} kB`;
   return `${(bytes / (1024 * 1024)).toFixed(1).replace('.', ',')} MB`;
 }
+
+/** Baja el archivo a la computadora, con su nombre. */
+export async function descargarArchivo(id: string, nombre: string): Promise<boolean> {
+  const contenido = await leerArchivo(id);
+  if (!contenido) return false;
+  const url = URL.createObjectURL(contenido);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = nombre;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  return true;
+}

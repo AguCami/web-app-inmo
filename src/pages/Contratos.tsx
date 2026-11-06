@@ -1,4 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
+import { VisorArchivo } from '../components/VisorArchivo';
+import { descargarArchivo, formatearTamano } from '../data/archivos';
 import { useNavigate } from 'react-router-dom';
 import { Encabezado } from '../components/Encabezado';
 import { Avatar, Campo, Modal, Pastilla, Segmentos, Vacio } from '../components/ui';
@@ -13,7 +15,7 @@ import {
   type VigenciaContrato,
 } from '../domain/contratos';
 import { direccionDe } from '../domain/propiedades';
-import type { Contrato, IndiceAjuste } from '../domain/types';
+import type { Adjunto, Contrato, IndiceAjuste } from '../domain/types';
 import {
   formatearFecha,
   formatearMoneda,
@@ -209,6 +211,9 @@ export default function Contratos() {
 
 /* ─────────────────────── Formulario de contrato ──────────────────── */
 
+/** Así se marca, entre los archivos del contrato, la copia firmada. */
+const COPIA_FIRMADA = 'Contrato firmado';
+
 export function FormularioContrato({
   contrato,
   onGuardar,
@@ -242,6 +247,53 @@ export function FormularioContrato({
   // activo: el estado solo se elige al editar uno existente.
   const esNuevo = !db.contratos.some((c) => c.id === contrato.id);
 
+  // La copia firmada del contrato, en PDF. En uno nuevo se elige acá y se
+  // sube recién al guardar: antes el contrato no existe y el archivo
+  // quedaría colgado de nada.
+  const adjuntar = useApp((e) => e.adjuntar);
+  const eliminarAdjunto = useApp((e) => e.eliminarAdjunto);
+  const copias = db.adjuntos.filter(
+    (a) => a.contratoId === contrato.id && !a.novedadId && a.descripcion === COPIA_FIRMADA,
+  );
+  const selectorCopia = useRef<HTMLInputElement>(null);
+  const [copiaPendiente, setCopiaPendiente] = useState<File | null>(null);
+  const [subiendoCopia, setSubiendoCopia] = useState(false);
+  const [errorCopia, setErrorCopia] = useState('');
+  const [viendo, setViendo] = useState<Adjunto | null>(null);
+
+  const elegirCopia = async (archivo: File | undefined) => {
+    if (!archivo) return;
+    setErrorCopia('');
+    if (archivo.type !== 'application/pdf') {
+      setErrorCopia('Tiene que ser un PDF.');
+      return;
+    }
+    if (esNuevo) {
+      setCopiaPendiente(archivo);
+      return;
+    }
+    setSubiendoCopia(true);
+    try {
+      await adjuntar(contrato.id, archivo, { descripcion: COPIA_FIRMADA });
+    } catch (e) {
+      setErrorCopia(e instanceof Error ? e.message : 'No se pudo subir el PDF.');
+    } finally {
+      setSubiendoCopia(false);
+    }
+  };
+
+  const guardar = () => {
+    // El número se vuelve a calcular al guardar: si mientras tanto se cargó
+    // otro contrato, este toma el siguiente y no se repite.
+    const final = esNuevo ? { ...f, numero: siguienteNumeroContrato(db.contratos) } : f;
+    onGuardar(final);
+    if (copiaPendiente) {
+      void adjuntar(final.id, copiaPendiente, { descripcion: COPIA_FIRMADA }).catch((e) =>
+        window.alert(e instanceof Error ? e.message : 'No se pudo subir la copia del contrato.'),
+      );
+    }
+  };
+
   return (
     <Modal
       titulo={contrato.propiedadId ? `Contrato ${contrato.numero}` : 'Nuevo contrato'}
@@ -255,11 +307,7 @@ export function FormularioContrato({
             </button>
           )}
           <button className="btn btn--fantasma" onClick={onCerrar}>Cancelar</button>
-          <button className="btn btn--primario" disabled={!valido} onClick={() =>
-              // El número se vuelve a calcular al guardar: si mientras tanto
-              // se cargó otro contrato, este toma el siguiente y no se repite.
-              onGuardar(esNuevo ? { ...f, numero: siguienteNumeroContrato(db.contratos) } : f)
-            }>
+          <button className="btn btn--primario" disabled={!valido} onClick={guardar}>
             Guardar
           </button>
         </>
@@ -445,9 +493,52 @@ export function FormularioContrato({
         )}
       </div>
 
+      <div className="copia-contrato">
+        <div className="fila" style={{ marginBottom: 8 }}>
+          <strong className="crece">Contrato firmado (PDF)</strong>
+          <button
+            className="btn btn--suave btn--chico"
+            onClick={() => selectorCopia.current?.click()}
+            disabled={subiendoCopia}
+          >
+            <IconoMas tam={15} />
+            {subiendoCopia ? 'Subiendo…' : copias.length || copiaPendiente ? 'Subir otra' : 'Subir PDF'}
+          </button>
+          <input
+            ref={selectorCopia}
+            type="file"
+            accept="application/pdf"
+            hidden
+            onChange={(e) => {
+              void elegirCopia(e.target.files?.[0]);
+              e.target.value = '';
+            }}
+          />
+        </div>
+        {copias.length === 0 && !copiaPendiente && (
+          <p className="mini tenue">Todavía no se subió la copia firmada. Se puede leer acá mismo o descargar cuando haga falta.</p>
+        )}
+        {copiaPendiente && (
+          <div className="fila copia-contrato__fila">
+            <span className="crece mini">{copiaPendiente.name} · {formatearTamano(copiaPendiente.size)} · se sube al guardar</span>
+            <button className="btn btn--fantasma btn--chico" onClick={() => setCopiaPendiente(null)}>Quitar</button>
+          </div>
+        )}
+        {copias.map((a) => (
+          <div className="fila copia-contrato__fila" key={a.id}>
+            <span className="crece mini">{a.nombre} · {formatearTamano(a.tamano)} · subido el {formatearFecha(a.fecha)}</span>
+            <button className="btn btn--chico" onClick={() => setViendo(a)}>Ver</button>
+            <button className="btn btn--chico" onClick={() => void descargarArchivo(a.id, a.nombre)}>Descargar</button>
+            <button className="btn btn--fantasma btn--chico" onClick={() => eliminarAdjunto(a.id)}>Quitar</button>
+          </div>
+        ))}
+        {errorCopia && <p className="mini" style={{ color: 'var(--critico)' }}>{errorCopia}</p>}
+      </div>
+
       <Campo etiqueta="Notas">
         <textarea value={f.notas ?? ''} onChange={(e) => set('notas', e.target.value)} />
       </Campo>
+      {viendo && <VisorArchivo adjunto={viendo} onCerrar={() => setViendo(null)} />}
     </Modal>
   );
 }

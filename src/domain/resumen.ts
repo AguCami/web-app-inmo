@@ -1,7 +1,7 @@
 import type { BaseDatos, Contrato, ID, Periodo } from './types';
 import { cobradoDeCuota, resumenCobranza, saldoDeCuota } from './cobranzas';
-import { proximoAjuste, vigenciaContrato, type ProximoAjuste } from './contratos';
-import { diasEntre, hoy, redondear, sumar } from './util';
+import { cronogramaAjustes, proximoAjuste, vigenciaContrato, type ProximoAjuste } from './contratos';
+import { diasEntre, hoy, periodoDe, redondear, sumar } from './util';
 
 /* ─────────────────────── Números del mes ─────────────────────────── */
 
@@ -65,6 +65,11 @@ export interface Alertas {
   contratosPorVencer: Contrato[];
   /** Contratos con una actualización en el mes en curso o el siguiente. */
   ajustesProximos: { contrato: Contrato; ajuste: ProximoAjuste }[];
+  /**
+   * Los que ajustan en el mes en curso. A diferencia de los próximos, estos
+   * ya tienen el índice para calcularse: se le puede avisar al inquilino.
+   */
+  ajustesDelMes: { contrato: Contrato; ajuste: ProximoAjuste }[];
   propiedadesVacias: number;
   liquidacionesSinPagar: number;
   montoSinRendir: number;
@@ -84,7 +89,27 @@ export function alertas(db: BaseDatos): Alertas {
     .filter((x) => x.ajuste.diasRestantes <= 60)
     .sort((a, b) => a.ajuste.diasRestantes - b.ajuste.diasRestantes);
 
+  const mes = periodoDe(hoy());
+  const ajustesDelMes = activos
+    .filter((c) => c.indiceAjuste !== 'SIN_AJUSTE')
+    .map((contrato) => {
+      const tramos = cronogramaAjustes(contrato, db.indices);
+      const i = tramos.findIndex((t, n) => n > 0 && t.periodoDesde === mes);
+      if (i <= 0) return null;
+      const ajuste: ProximoAjuste = {
+        periodo: mes,
+        montoAnterior: tramos[i - 1].monto,
+        montoNuevo: tramos[i].monto,
+        variacionPct: tramos[i].variacionPct,
+        diasRestantes: 0,
+      };
+      return { contrato, ajuste };
+    })
+    .filter((x): x is { contrato: Contrato; ajuste: ProximoAjuste } => x !== null)
+    .sort((a, b) => b.ajuste.montoNuevo - a.ajuste.montoNuevo);
+
   return {
+    ajustesDelMes,
     cuotasVencidas: conSaldo.length,
     deudaTotal: redondear(sumar(conSaldo, (c) => saldoDeCuota(c, db.pagos))),
     contratosPorVencer: activos

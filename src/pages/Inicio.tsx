@@ -121,14 +121,14 @@ export default function Inicio() {
           </Panel>
 
           <Panel
-            titulo="Actualizaciones que vienen"
-            subtitulo="Contratos que ajustan en los próximos 60 días"
+            titulo="Aumentos de este mes"
+            subtitulo="Ya calculados: avisale a cada inquilino cuánto paga desde ahora"
             comoLista
           >
-            {alerta.ajustesProximos.length === 0 ? (
-              <Vacio titulo="Ningún contrato ajusta pronto" detalle="Te avisamos con 60 días de anticipación." />
+            {alerta.ajustesDelMes.length === 0 ? (
+              <Vacio titulo="Este mes no aumenta ningún contrato" />
             ) : (
-              alerta.ajustesProximos.slice(0, 4).map(({ contrato, ajuste }) => {
+              alerta.ajustesDelMes.map(({ contrato, ajuste }) => {
                 const prop = propiedadDe(contrato.propiedadId);
                 return (
                   <Item
@@ -141,7 +141,7 @@ export default function Inicio() {
                         <Pastilla tono="acento">+{ajuste.variacionPct.toFixed(1).replace('.', ',')} %</Pastilla>
                       </>
                     }
-                    sub={`${prop?.codigo} · desde ${formatearPeriodo(ajuste.periodo, true)}`}
+                    sub={`${prop?.codigo} · cada ${contrato.mesesAjuste} meses`}
                     monto={formatearMoneda(ajuste.montoNuevo, contrato.moneda)}
                     montoPie={`antes ${formatearMoneda(ajuste.montoAnterior, contrato.moneda)}`}
                   />

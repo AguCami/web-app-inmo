@@ -1,7 +1,7 @@
 {
   "name": "gestion-alquileres",
   "private": true,
-  "version": "0.9.0",
+  "version": "0.10.0",
   "type": "module",
   "description": "Web app para administrar alquileres: contratos, actualizaciones por índice, cobranzas y liquidaciones.",
   "scripts": {

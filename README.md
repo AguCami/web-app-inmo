@@ -86,9 +86,17 @@ en un subdominio aparte y pide a los buscadores no indexarla (`robots.txt` y
 ### La web pública (carpeta `web/`)
 
 La web de la inmobiliaria, para el dominio principal, vive en `web/` y es un
-sitio aparte de la app. Por ahora es solo la portada «Próximamente»: la misma
-credencial colgada del ingreso (espiral, cinta, se puede revolear), sin
-formulario. Toma el logo, la espiral y la física de `src/`, así que si la
+sitio aparte de la app. Lo que ve el público es solo la portada
+«Próximamente»: la misma credencial colgada del ingreso (espiral, cinta, se
+puede revolear), sin formulario.
+
+La web nueva se arma detrás, en **`/#/adelanto`**: inicio con buscador,
+listado con filtros (tipo, localidad, texto, precio) y la ficha de cada
+propiedad con su galería. Va con el mismo vidrio y la misma espiral que la
+app. Las propiedades son una copia del CMS del sitio Wix actual
+(`web/src/datos/propiedades.json`, 122 publicadas al 6/11/2026); las fotos se
+siguen sirviendo desde Wix. Los datos de contacto están en `CONTACTO`
+(`web/src/datos.ts`): lo que está vacío no se muestra. Toma el logo, la espiral y la física de `src/`, así que si la
 credencial cambia en la app, cambia también acá. Pide no ser indexada hasta
 que se lance.
 

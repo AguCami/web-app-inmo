@@ -105,6 +105,10 @@ que se lance.
 | `npm run web` | La web en modo desarrollo |
 | `npm run build:web` | La compila a `dist-web/` |
 
+La web lleva su propia versión, `versionWeb` en `package.json`, aparte de la
+de la app. Se ve en la esquina de abajo a la derecha; sube con cada cambio
+publicado.
+
 Todavía no se publica sola: GitHub Pages da un solo sitio por repositorio y
 ese ya es la app. Para ponerla en el dominio principal, lo más simple es
 Cloudflare Pages conectado a este repositorio, con comando de build

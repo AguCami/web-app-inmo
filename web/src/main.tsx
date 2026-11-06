@@ -2,6 +2,7 @@ import { StrictMode, Suspense, lazy } from 'react';
 import { createRoot } from 'react-dom/client';
 import { HashRouter, Route, Routes } from 'react-router-dom';
 import { Proximamente } from './Proximamente';
+import { Version } from '../../src/components/Version';
 import '../../src/styles/app.css';
 import './web.css';
 
@@ -21,5 +22,7 @@ createRoot(document.getElementById('root')!).render(
         <Route path="*" element={<Proximamente />} />
       </Routes>
     </HashRouter>
+    {/* La versión en la esquina: para saber si lo que se ve es lo último publicado. */}
+    <Version />
   </StrictMode>,
 );

@@ -201,7 +201,7 @@ export type EstadoLiquidacion = 'borrador' | 'aprobada' | 'pagada';
 
 export interface ItemLiquidacion {
   descripcion: string;
-  tipo: 'alquiler_cobrado' | 'comision_admin' | 'gasto' | 'ajuste';
+  tipo: 'alquiler_cobrado' | 'cobrado_propietario' | 'comision_admin' | 'gasto' | 'ajuste';
   /** Positivo suma al propietario, negativo le descuenta. */
   monto: number;
   referenciaId?: ID;

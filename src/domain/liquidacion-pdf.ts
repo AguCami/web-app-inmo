@@ -96,18 +96,25 @@ export function construirLiquidacion(d: DatosLiquidacion): Uint8Array {
 
   /* ── Los subtotales y el neto ── */
   const cobrado = totalDe(liq.items, 'alquiler_cobrado');
+  const directo = totalDe(liq.items, 'cobrado_propietario');
+  const cobrar = liq.neto < 0;
   const honorarios = totalDe(liq.items, 'comision_admin');
   const gastos = totalDe(liq.items, 'gasto');
   const ajustes = totalDe(liq.items, 'ajuste');
 
+  // Lo que le corresponde al dueño es siempre lo mismo, cobre quien cobre:
+  // alquiler y extras cobrados, menos honorarios y gastos. Aparte, cómo se
+  // salda: si el inquilino le transfirió a él, eso ya lo tiene.
   const resumen: [string, number][] = [
-    ['Alquileres cobrados en el período', cobrado],
+    ['Alquiler y extras cobrados en el período', cobrado],
     ['Honorarios de administración', honorarios],
     ['Gastos reintegrados', gastos],
     ['Ajustes', ajustes],
   ].filter(([, monto]) => monto !== 0) as [string, number][];
+  const liquidado = redondear(cobrado + honorarios + gastos + ajustes);
+  const conSaldo = directo !== 0;
 
-  const altoPanel = 22 + resumen.length * 17 + 44;
+  const altoPanel = 22 + resumen.length * 17 + 44 + (conSaldo ? 17 + 40 : 0);
   if (y + altoPanel > PIE) {
     doc.nuevaPagina();
     y = MARGEN + 10;
@@ -117,24 +124,33 @@ export function construirLiquidacion(d: DatosLiquidacion): Uint8Array {
 
   doc.rect(MARGEN, y, DERECHA - MARGEN, altoPanel, PANEL);
   let fy = y + 22;
-  for (const [etiqueta, monto] of resumen) {
+  const fila = (etiqueta: string, monto: number) => {
     doc.texto(etiqueta, MARGEN + 16, fy, { tam: 10, color: TENUE });
     doc.texto(formatearMoneda(monto, moneda), DERECHA - 16, fy, {
       tam: 10, color: monto < 0 ? NEGATIVO : TINTA, alinear: 'der',
     });
     fy += 17;
+  };
+  const total = (etiqueta: string, monto: number) => {
+    doc.linea(MARGEN + 16, fy - 4, DERECHA - 16, fy - 4, RAYA);
+    fy += 16;
+    doc.texto(etiqueta, MARGEN + 16, fy, { tam: 11, negrita: true, color: TINTA });
+    doc.texto(formatearMoneda(monto, moneda), DERECHA - 16, fy, {
+      tam: 15, negrita: true, color: TINTA, alinear: 'der',
+    });
+  };
+  for (const [etiqueta, monto] of resumen) fila(etiqueta, monto);
+  total('LIQUIDACIÓN AL PROPIETARIO', liquidado);
+  if (conSaldo) {
+    fy += 22;
+    fila('Ya recibido directamente del inquilino', directo);
+    total(cobrar ? 'A PAGAR POR EL PROPIETARIO' : 'SALDO A TRANSFERIR', Math.abs(liq.neto));
   }
-  doc.linea(MARGEN + 16, fy - 4, DERECHA - 16, fy - 4, RAYA);
-  fy += 16;
-  doc.texto('NETO A TRANSFERIR', MARGEN + 16, fy, { tam: 11, negrita: true, color: TINTA });
-  doc.texto(formatearMoneda(liq.neto, moneda), DERECHA - 16, fy, {
-    tam: 15, negrita: true, color: TINTA, alinear: 'der',
-  });
 
   y += altoPanel + 20;
 
-  // El neto también en letras, igual que en el recibo.
-  const enLetras = montoEnLetras(liq.neto, moneda);
+  // La liquidación también en letras, igual que en el recibo.
+  const enLetras = montoEnLetras(Math.abs(liquidado), moneda);
   for (const renglon of envolver(
     enLetras.charAt(0).toUpperCase() + enLetras.slice(1),
     DERECHA - MARGEN,
@@ -146,9 +162,12 @@ export function construirLiquidacion(d: DatosLiquidacion): Uint8Array {
 
   /* ── Estado y criterio ── */
   y += 12;
-  doc.texto(ESTADOS[liq.estado], MARGEN, y, { tam: 10, negrita: true, color: TINTA });
+  const estado = cobrar
+    ? { borrador: ESTADOS.borrador, aprobada: 'Aprobada — pendiente de cobro', pagada: 'Cobrada' }[liq.estado]
+    : ESTADOS[liq.estado];
+  doc.texto(estado, MARGEN, y, { tam: 10, negrita: true, color: TINTA });
   if (liq.estado === 'pagada' && liq.fechaPago) {
-    doc.texto(`Transferida el ${formatearFecha(liq.fechaPago)}`, DERECHA, y, {
+    doc.texto(`${cobrar ? 'Cobrada' : 'Transferida'} el ${formatearFecha(liq.fechaPago)}`, DERECHA, y, {
       tam: 10, color: TENUE, alinear: 'der',
     });
   }

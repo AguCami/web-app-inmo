@@ -52,6 +52,23 @@ export function proporcionPendiente(
 }
 
 /**
+ * Qué parte de lo cobrado de una cuota fue directo al propietario. En
+ * efectivo cobra la inmobiliaria; por transferencia (o cualquier otro medio)
+ * el inquilino le paga al dueño, y lo que queda es cobrarle los honorarios.
+ */
+export function fraccionCobradaPorPropietario(cuotaId: ID, pagos: Pago[]): number {
+  const deLaCuota = pagos.filter((p) => p.cuotaId === cuotaId);
+  const total = sumar(deLaCuota, (p) => p.monto);
+  if (total <= 0) return 0;
+  return sumar(deLaCuota.filter((p) => p.medio !== 'efectivo'), (p) => p.monto) / total;
+}
+
+/** Sentido del neto: positivo se le transfiere al dueño, negativo se le cobra. */
+export function sentidoLiquidacion(neto: number): 'transferir' | 'cobrar' {
+  return neto < 0 ? 'cobrar' : 'transferir';
+}
+
+/**
  * Arma la liquidación de un propietario para un período.
  *
  * Criterio: se liquida lo efectivamente cobrado (no lo devengado). Sobre el
@@ -125,6 +142,19 @@ export function armarLiquidacion(
       proporcion,
     });
 
+    // Lo que el inquilino le transfirió al dueño ya está en manos del dueño:
+    // se descuenta, y si fue todo así el neto queda negativo (los honorarios
+    // se le cobran a él).
+    const directo = redondear((baseAlquiler + baseOtros) * fraccionCobradaPorPropietario(cuota.id, ctx.pagos));
+    if (directo > 0) {
+      items.push({
+        descripcion: `${propiedad?.codigo ?? 'Propiedad'} · se lo transfirió el inquilino`,
+        tipo: 'cobrado_propietario',
+        monto: -directo,
+        referenciaId: cuota.id,
+      });
+    }
+
     const comision = redondear((baseAlquiler * contrato.comisionAdminPct) / 100);
     comisionTotal = redondear(comisionTotal + comision);
     items.push({
@@ -178,6 +208,7 @@ export function propietariosConMovimiento(periodo: Periodo, ctx: ContextoLiquida
 
 export const ETIQUETA_ITEM_LIQUIDACION: Record<ItemLiquidacion['tipo'], string> = {
   alquiler_cobrado: 'Alquiler cobrado',
+  cobrado_propietario: 'Lo cobró directamente el propietario',
   comision_admin: 'Honorarios de administración',
   gasto: 'Gasto de la unidad',
   ajuste: 'Ajuste',

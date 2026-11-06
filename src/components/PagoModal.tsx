@@ -220,7 +220,14 @@ export function PagoModal({
             onChange={(e) => setPunitorios(e.target.value)}
           />
         </Campo>
-        <Campo etiqueta="Medio">
+        <Campo
+          etiqueta="Medio"
+          ayuda={
+            medio === 'efectivo'
+              ? 'Lo cobra la inmobiliaria: al dueño se le transfiere menos los honorarios.'
+              : 'Va directo al dueño: después se le cobran los honorarios.'
+          }
+        >
           <select value={medio} onChange={(e) => setMedio(e.target.value as MedioPago)}>
             {MEDIOS.map((m) => (
               <option key={m.id} value={m.id}>{m.texto}</option>

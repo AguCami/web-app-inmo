@@ -31,6 +31,7 @@ const ipc = await empaquetar('src/domain/ipcCordoba.ts', 'ipc.mjs');
 const nac = await empaquetar('src/domain/indicesNacionales.ts', 'nacionales.mjs');
 const { valorIndice, cronogramaAjustes } = await empaquetar('src/domain/contratos.ts', 'contratos-indice.mjs');
 const cobranzas = await empaquetar('src/domain/cobranzas.ts', 'cobranzas.mjs');
+const liqs = await empaquetar('src/domain/liquidaciones.ts', 'liquidaciones.mjs');
 
 let fallos = 0;
 const ok = (n, c, d = '') => { if (!c) fallos += 1; console.log(`${c ? '✓' : '✗'} ${n}${d ? ` — ${d}` : ''}`); };
@@ -300,6 +301,21 @@ const serieCompleta = [...serieMeses,
   { periodo: '2026-10', ICL: 0, IPC: 0, IPC_CBA: 114 }, { periodo: '2026-11', ICL: 0, IPC: 0, IPC_CBA: 116 }];
 ok('con todo publicado no cambia nada (nov sobre jul)',
   Math.abs(cronogramaAjustes(cada4, serieCompleta)[1].coeficiente - 116 / 108) < 0.0001);
+
+/* ── Liquidación según quién cobró ── */
+const ctxLiq = (medio) => ({
+  propiedades: [{ id: 'p1', codigo: 'MM-1', propietarioId: 'd1' }],
+  contratos: [{ ...viejo, id: 'c1', propiedadId: 'p1', comisionAdminPct: 10, conceptosFijos: [] }],
+  cuotas: [{ id: 'q1', contratoId: 'c1', periodo: '2026-10', vencimiento: '2026-10-10', moneda: 'ARS',
+    items: [{ descripcion: 'Alquiler', monto: 100000, tipo: 'alquiler' }], total: 100000, estado: 'pagada' }],
+  pagos: [{ id: 'pa1', cuotaId: 'q1', fecha: '2026-10-05', monto: 100000, moneda: 'ARS', medio }],
+  gastos: [], liquidaciones: [],
+});
+const enEfectivo = liqs.armarLiquidacion('d1', '2026-10', ctxLiq('efectivo'), 'L1');
+ok('en efectivo se le transfiere al dueño el alquiler menos honorarios', enEfectivo.neto === 90000, String(enEfectivo.neto));
+const porTransf = liqs.armarLiquidacion('d1', '2026-10', ctxLiq('transferencia'), 'L2');
+ok('por transferencia al dueño queda a cobrarle los honorarios', porTransf.neto === -10000, String(porTransf.neto));
+ok('y dice que lo cobró él', porTransf.items.some((i) => i.tipo === 'cobrado_propietario' && i.monto === -100000));
 
 /* ── Los servicios se completan al cobrar ── */
 const cuotaServ = cobranzas.armarCuota(

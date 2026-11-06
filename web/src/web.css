@@ -190,15 +190,45 @@ body:has(.sitio) { background: #f1f4f7; color-scheme: light; }
   height: 100%;
   object-fit: cover;
   display: block;
-  border-radius: inherit;
-  border: 4px solid #fff;
+  border-radius: 16px;
   pointer-events: none;
 }
-.carta-p--activa { box-shadow: 0 4px 10px rgba(10, 30, 60, 0.12), 0 34px 60px -18px rgba(10, 30, 60, 0.5); }
+/* El canto de cristal: la foto va dentro de un marco del mismo vidrio que la
+   credencial del ingreso. Deja pasar lo que hay detrás, borroso, con un
+   borde de luz arriba y un reflejo en diagonal por encima de la foto. */
+.carta-p {
+  padding: 7px;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.62), rgba(220, 230, 242, 0.38));
+  -webkit-backdrop-filter: blur(18px) saturate(1.6);
+  backdrop-filter: blur(18px) saturate(1.6);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    inset 0 -1px 0 rgba(11, 87, 181, 0.08),
+    0 2px 6px rgba(10, 30, 60, 0.08),
+    0 22px 44px -16px rgba(10, 30, 60, 0.36);
+}
+.carta-p--activa {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    inset 0 -1px 0 rgba(11, 87, 181, 0.08),
+    0 4px 10px rgba(10, 30, 60, 0.1),
+    0 34px 60px -18px rgba(10, 30, 60, 0.48);
+}
+.carta-p::after {
+  content: '';
+  position: absolute;
+  inset: 7px;
+  border-radius: 16px;
+  pointer-events: none;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+  background: linear-gradient(125deg, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0.06) 28%, transparent 42%);
+}
 .carta-p__chip {
   position: absolute;
-  top: 14px;
-  left: 14px;
+  top: 17px;
+  left: 17px;
+  z-index: 1;
   padding: 4px 11px;
   border-radius: var(--r-pill);
   background: rgba(255, 255, 255, 0.86);

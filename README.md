@@ -83,6 +83,25 @@ en un subdominio aparte y pide a los buscadores no indexarla (`robots.txt` y
   nueva. Cada navegador pide iniciar sesión otra vez, porque para él es otro
   sitio; los datos siguen en Supabase.
 
+### La web pública (carpeta `web/`)
+
+La web de la inmobiliaria, para el dominio principal, vive en `web/` y es un
+sitio aparte de la app. Por ahora es solo la portada «Próximamente»: la misma
+credencial colgada del ingreso (espiral, cinta, se puede revolear), sin
+formulario. Toma el logo, la espiral y la física de `src/`, así que si la
+credencial cambia en la app, cambia también acá. Pide no ser indexada hasta
+que se lance.
+
+| Comando | Para qué |
+|---|---|
+| `npm run web` | La web en modo desarrollo |
+| `npm run build:web` | La compila a `dist-web/` |
+
+Todavía no se publica sola: GitHub Pages da un solo sitio por repositorio y
+ese ya es la app. Para ponerla en el dominio principal, lo más simple es
+Cloudflare Pages conectado a este repositorio, con comando de build
+`npm run build:web` y carpeta de salida `dist-web`.
+
 ## Las pantallas
 
 | Pantalla | Para qué |

@@ -1342,6 +1342,21 @@ select.suelto { width: auto; border-radius: var(--r-pill); background: var(--pan
 }
 .ingreso__nombre .ingreso__mym { margin-right: -0.06em; }
 
+/* La portada de la web pública (web/): la misma credencial, sin formulario. */
+.proximamente {
+  margin: 4px 0 8px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(11, 87, 181, 0.14);
+  text-align: center;
+  font-family: var(--fuente-titulo);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.32em;
+  text-indent: 0.32em;
+  text-transform: uppercase;
+  color: var(--acento-fuerte);
+}
+
 /* ── La salida ──
  * Un tirón de la cinta: la tarjeta baja un poco, como cuando alguien la
  * agarra, y sale disparada para arriba. El ingreso queda fijo encima del

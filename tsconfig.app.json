@@ -18,5 +18,5 @@
     "noFallthroughCasesInSwitch": true,
     "exactOptionalPropertyTypes": false
   },
-  "include": ["src"]
+  "include": ["src", "web/src"]
 }

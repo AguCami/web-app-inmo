@@ -8,6 +8,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview --port 4173 --host 127.0.0.1",
+    "web": "vite --config vite.web.config.ts",
+    "build:web": "tsc -b && vite build --config vite.web.config.ts",
     "smoke": "node scripts/smoke.mjs",
     "typecheck": "tsc -b",
     "indices": "node scripts/actualizar-indices.mjs",

@@ -88,7 +88,7 @@ export function Listado() {
             <IcoBuscar />
             <input
               type="search"
-              placeholder="Buscar por barrio, calle o código"
+              placeholder="Buscar por barrio o calle"
               value={texto}
               onChange={(e) => cambiar('q', e.target.value)}
               aria-label="Buscar"

@@ -39,7 +39,7 @@ export function Ficha() {
           <Galeria p={p} />
 
           <aside className="ficha__lado vidrio">
-            <span className="ficha__tipo">{p.tipo} en {p.operacion.toLowerCase()} · {p.codigo}</span>
+            <span className="ficha__tipo">{p.tipo} en {p.operacion.toLowerCase()}</span>
             <h1 className="ficha__titulo">{p.titulo}</h1>
             <p className="ficha__loc"><IcoUbicacion /> {p.localidad}</p>
             <p className="ficha__precio">{p.precio}</p>

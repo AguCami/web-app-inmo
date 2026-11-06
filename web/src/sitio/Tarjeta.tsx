@@ -27,7 +27,6 @@ export function Tarjeta({ p }: { p: Propiedad }) {
         )}
         <div className="tarjeta__pie">
           <strong className="tarjeta__precio">{p.precio}</strong>
-          <span className="tarjeta__cod">{p.codigo}</span>
         </div>
       </div>
     </Link>

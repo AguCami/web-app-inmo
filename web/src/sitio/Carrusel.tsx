@@ -183,7 +183,7 @@ export function Carrusel() {
 
         {actual && (
           <div className="carrusel__info" key={actual.codigo} aria-live="polite">
-            <span className="carrusel__loc"><IcoUbicacion /> {actual.localidad} · {actual.codigo}</span>
+            <span className="carrusel__loc"><IcoUbicacion /> {actual.localidad}</span>
             <h2>{actual.titulo}</h2>
             <div className="carrusel__fila">
               <strong>{actual.precio}</strong>

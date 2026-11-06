@@ -437,7 +437,6 @@ body:has(.sitio) { background: #f1f4f7; color-scheme: light; }
   color: var(--acento-fuerte);
   font-variant-numeric: tabular-nums;
 }
-.tarjeta__cod { font-size: 11.5px; font-weight: 600; letter-spacing: 0.06em; color: var(--tinta-3); }
 
 /* ── Explorar por tipo ── */
 .tipos {

@@ -42,9 +42,9 @@ body:has(.sitio) { background: #f1f4f7; color-scheme: light; }
 .sitio__main { flex: 1; }
 
 /* ── La barra ── */
+/* Va arriba de todo y se va con el scroll: no acompaña al bajar. */
 .barra {
-  position: sticky;
-  top: 12px;
+  position: relative;
   z-index: 10;
   display: flex;
   align-items: center;
@@ -518,7 +518,7 @@ body:has(.sitio) { background: #f1f4f7; color-scheme: light; }
   border-radius: var(--r-lg);
   margin-bottom: 16px;
   position: sticky;
-  top: 78px;
+  top: 12px;
   z-index: 5;
 }
 .filtros__tipos { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
@@ -694,7 +694,7 @@ body:has(.sitio) { background: #f1f4f7; color-scheme: light; }
 
 .ficha__lado {
   position: sticky;
-  top: 84px;
+  top: 16px;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -751,7 +751,7 @@ body:has(.sitio) { background: #f1f4f7; color-scheme: light; }
   backdrop-filter: blur(28px) saturate(1.6);
   border: 1px solid var(--vidrio-borde);
   box-shadow: var(--vidrio-canto), var(--vidrio-sombra);
-  scroll-margin-top: 90px;
+  scroll-margin-top: 16px;
 }
 .pie__marca { display: flex; align-items: center; gap: 12px; }
 .pie__marca div { display: flex; flex-direction: column; }

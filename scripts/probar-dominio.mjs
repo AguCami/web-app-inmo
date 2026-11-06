@@ -29,7 +29,7 @@ const { contratoRenovado, mesesDeContrato, periodosDelContrato, siguienteNumeroC
 const { saludDeLosDatos, DIAS_TOLERADOS } = await empaquetar('src/domain/salud.ts', 'salud.mjs');
 const ipc = await empaquetar('src/domain/ipcCordoba.ts', 'ipc.mjs');
 const nac = await empaquetar('src/domain/indicesNacionales.ts', 'nacionales.mjs');
-const { valorIndice } = await empaquetar('src/domain/contratos.ts', 'contratos-indice.mjs');
+const { valorIndice, cronogramaAjustes } = await empaquetar('src/domain/contratos.ts', 'contratos-indice.mjs');
 const cobranzas = await empaquetar('src/domain/cobranzas.ts', 'cobranzas.mjs');
 
 let fallos = 0;
@@ -284,6 +284,22 @@ const aMano = ipc.aplicarSerie(
   new Map([['2026-08', 140.5], ['2026-09', 142.4]]), 'IPC_CBA').indices;
 ok('un valor cargado a mano que encaja con la serie se respeta',
   aMano.find((i) => i.periodo === '2026-10')?.IPC_CBA === 144.1);
+
+/* ── Sin el último mes publicado, la ventana se corre hacia atrás ── */
+const serieMeses = ['2026-03','2026-04','2026-05','2026-06','2026-07','2026-08','2026-09']
+  .map((periodo, n) => ({ periodo, ICL: 0, IPC: 0, IPC_CBA: 100 + n * 2 }));
+const cada4 = { ...viejo, fechaInicio: '2026-07-01', fechaFin: '2028-06-30', montoInicial: 100000,
+  indiceAjuste: 'IPC_CBA', mesesAjuste: 4 };
+const tramoNov = cronogramaAjustes(cada4, serieMeses)[1];
+// Noviembre se ajusta con 4 meses: sin octubre ni noviembre publicados, van
+// jun, jul, ago y sep → septiembre (112) sobre mayo (104).
+ok('con el mes sin publicar usa los últimos 4 publicados (jun a sep)',
+  tramoNov.periodoDesde === '2026-11' && Math.abs(tramoNov.coeficiente - 112 / 104) < 0.0001,
+  String(tramoNov.coeficiente));
+const serieCompleta = [...serieMeses,
+  { periodo: '2026-10', ICL: 0, IPC: 0, IPC_CBA: 114 }, { periodo: '2026-11', ICL: 0, IPC: 0, IPC_CBA: 116 }];
+ok('con todo publicado no cambia nada (nov sobre jul)',
+  Math.abs(cronogramaAjustes(cada4, serieCompleta)[1].coeficiente - 116 / 108) < 0.0001);
 
 /* ── Los servicios se completan al cobrar ── */
 const cuotaServ = cobranzas.armarCuota(

@@ -35,6 +35,19 @@ export function valorIndice(
   return { valor: valorMasCercano(conDato, periodo, (i) => i[tipo]), estimado: true };
 }
 
+/** El último período con dato publicado que no pase de `hasta`. */
+function ultimoPublicadoHasta(
+  indices: ValorIndice[],
+  hasta: Periodo,
+  tipo: Exclude<IndiceAjuste, 'PORCENTAJE_FIJO' | 'SIN_AJUSTE'>,
+): Periodo | null {
+  let mejor: Periodo | null = null;
+  for (const i of indices) {
+    if (i.periodo <= hasta && publicado(i[tipo]) && (!mejor || i.periodo > mejor)) mejor = i.periodo;
+  }
+  return mejor;
+}
+
 const publicado = (v: number | null | undefined): v is number =>
   typeof v === 'number' && Number.isFinite(v) && v > 0;
 
@@ -88,8 +101,13 @@ export function cronogramaAjustes(c: Contrato, indices: ValorIndice[]): TramoAju
       if (c.indiceAjuste === 'PORCENTAJE_FIJO') {
         coeficiente = 1 + (c.porcentajeFijo ?? 0) / 100;
       } else if (c.indiceAjuste !== 'SIN_AJUSTE') {
-        const anterior = valorIndice(indices, sumarPeriodos(inicio, offset - paso), c.indiceAjuste);
-        const actual = valorIndice(indices, periodoDesde, c.indiceAjuste);
+        // Se toman siempre `paso` meses de inflación. Si el mes del ajuste
+        // todavía no se publicó, la ventana se corre hacia atrás hasta el
+        // último publicado: con ajuste cada 4 meses y octubre sin dato, se
+        // usan junio, julio, agosto y septiembre.
+        const fin = ultimoPublicadoHasta(indices, periodoDesde, c.indiceAjuste) ?? periodoDesde;
+        const anterior = valorIndice(indices, sumarPeriodos(fin, -paso), c.indiceAjuste);
+        const actual = valorIndice(indices, fin, c.indiceAjuste);
         coeficiente = anterior.valor > 0 ? actual.valor / anterior.valor : 1;
       }
       monto = redondear(monto * coeficiente, 2);

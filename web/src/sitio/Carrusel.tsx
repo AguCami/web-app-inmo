@@ -170,7 +170,6 @@ export function Carrusel() {
               aria-label={i === activo ? `${p.titulo}, ${p.precio}` : `Ver ${p.titulo}`}
             >
               <img src={foto(p.portada, 520, 650)} alt="" draggable={false} decoding="async" />
-              <span className="carta-p__chip">{p.tipo}</span>
             </Link>
           );
         })}

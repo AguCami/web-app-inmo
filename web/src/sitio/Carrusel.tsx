@@ -150,13 +150,15 @@ export function Carrusel() {
                 transform: `translateX(${d * paso}px) translateY(${a * a * 7 + a * 6}px) rotate(${d * 6}deg) scale(${1 - Math.min(a, 3) * 0.09})`,
                 opacity: a > 2.6 ? 0 : 1,
                 zIndex: 100 - Math.round(a * 10),
-              }
+                '--brillo': d,
+              } as React.CSSProperties
             : {
                 // Afuera, abajo a la derecha, cada una un poco más lejos.
                 transform: `translate(${60 + i * 8}vw, ${50 + i * 4}vh) rotate(${28 + i * 4}deg) scale(0.9)`,
                 opacity: 0,
                 zIndex: 100 - i,
-              };
+                '--brillo': 2,
+              } as React.CSSProperties;
           if (!acomodadas) estilo.transitionDelay = `${i * 90}ms`;
           return (
             <Link

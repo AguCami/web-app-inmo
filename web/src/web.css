@@ -26,7 +26,10 @@ a.btn { text-decoration: none; }
   }
 }
 
+/* Fondo claro liso, sin la espiral. */
+body:has(.sitio) { background: #f1f4f7; color-scheme: light; }
 .sitio {
+  background: var(--fondo);
   position: relative;
   max-width: 1200px;
   margin: 0 auto;

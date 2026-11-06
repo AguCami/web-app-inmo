@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 import { Link, NavLink, Route, Routes, useLocation } from 'react-router-dom';
 import { Logo } from '../../../src/components/Logo';
-import fondo from '../../../src/assets/ingreso-fondo.webp';
 import { CONTACTO, PROPIEDADES } from '../datos';
 import { Inicio } from './Inicio';
 import { Listado } from './Listado';
@@ -11,9 +10,9 @@ import { Ficha } from './Ficha';
 export const BASE = '/adelanto';
 
 /**
- * La web pública, sobre la misma espiral y con el mismo vidrio que la app de
- * gestión: una barra de vidrio arriba, el contenido en tarjetas de vidrio y
- * el pie con los datos de contacto.
+ * La web pública: fondo claro liso, siempre en claro aunque el sistema esté
+ * en oscuro. Una barra arriba, el contenido en tarjetas y el pie con los
+ * datos de contacto.
  */
 export function Sitio() {
   const { pathname } = useLocation();
@@ -24,11 +23,7 @@ export function Sitio() {
 
   return (
     <>
-      <div className="fondo-app" aria-hidden="true">
-        <img src={fondo} alt="" decoding="async" />
-      </div>
-
-      <div className="sitio">
+      <div className="sitio tema-claro">
         <header className="barra">
           <Link to={BASE} className="barra__marca" aria-label="Inicio">
             <Logo tam={34} />

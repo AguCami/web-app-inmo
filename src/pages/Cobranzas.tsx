@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Encabezado } from '../components/Encabezado';
+import { SelectorPeriodo } from '../components/SelectorPeriodo';
 import {
   Avatar,
   Dato,
@@ -115,18 +116,9 @@ export default function Cobranzas() {
   return (
     <>
       <Encabezado titulo="Cobranzas" bajada={`Cuotas de ${formatearPeriodo(periodo, true)}`}>
-        <select
-          className="suelto no-imprimir"
-          value={periodo}
-          onChange={(e) => setPeriodo(e.target.value)}
-          aria-label="Período"
-        >
-          {periodos.map((p) => (
-            <option key={p} value={p}>{formatearPeriodo(p, true)}</option>
-          ))}
-        </select>
+        <SelectorPeriodo valor={periodo} opciones={periodos} onCambio={setPeriodo} />
         <button
-          className="btn no-imprimir"
+          className="btn btn--primario no-imprimir"
           onClick={() => {
             const n = emitir(periodo);
             setAviso(

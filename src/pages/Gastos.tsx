@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Encabezado } from '../components/Encabezado';
+import { SelectorPeriodo } from '../components/SelectorPeriodo';
 import { Avatar, Campo, Dato, Item, Modal, Panel, Pastilla, Segmentos, Vacio } from '../components/ui';
 import { IconoGastos, IconoMas } from '../components/iconos';
 import { ConfirmarBorrado } from '../components/Confirmar';
@@ -9,7 +10,6 @@ import type { CategoriaGasto, Gasto } from '../domain/types';
 import {
   formatearFecha,
   formatearMoneda,
-  formatearPeriodo,
   hoy,
   nuevoId,
   periodoActual,
@@ -71,18 +71,7 @@ export default function Gastos() {
         titulo="Gastos"
         bajada="Arreglos y servicios de las unidades, para descontarlos de la liquidación"
       >
-        <select
-          className="suelto no-imprimir"
-          value={periodo}
-          onChange={(e) => setPeriodo(e.target.value)}
-          aria-label="Período"
-        >
-          {ultimosPeriodos(periodoActual(), 18)
-            .reverse()
-            .map((p) => (
-              <option key={p} value={p}>{formatearPeriodo(p, true)}</option>
-            ))}
-        </select>
+        <SelectorPeriodo valor={periodo} opciones={ultimosPeriodos(periodoActual(), 18).reverse()} onCambio={setPeriodo} />
         <button className="btn btn--primario no-imprimir" onClick={() => setEditando(gastoNuevo())}>
           <IconoMas tam={17} />
           Nuevo gasto

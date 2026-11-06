@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Encabezado } from '../components/Encabezado';
+import { SelectorPeriodo } from '../components/SelectorPeriodo';
 import { Avatar, Dato, Item, Modal, Panel, Pastilla, Segmentos, Vacio } from '../components/ui';
 import { emitirLiquidacion } from '../data/documentos';
 import { IconoLiquidaciones } from '../components/iconos';
@@ -66,18 +67,7 @@ export default function Liquidaciones() {
         titulo="Liquidaciones"
         bajada="Lo que hay que rendirle a cada propietario de lo que se cobró"
       >
-        <select
-          className="suelto no-imprimir"
-          value={periodo}
-          onChange={(e) => setPeriodo(e.target.value)}
-          aria-label="Período"
-        >
-          {ultimosPeriodos(periodoActual(), 18)
-            .reverse()
-            .map((p) => (
-              <option key={p} value={p}>{formatearPeriodo(p, true)}</option>
-            ))}
-        </select>
+        <SelectorPeriodo valor={periodo} opciones={ultimosPeriodos(periodoActual(), 18).reverse()} onCambio={setPeriodo} />
         <button
           className="btn btn--primario no-imprimir"
           onClick={() => {

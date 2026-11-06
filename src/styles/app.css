@@ -1567,3 +1567,80 @@ select.suelto { width: auto; border-radius: var(--r-pill); background: var(--pan
   background: var(--velo);
   margin-top: 6px;
 }
+
+/* ── El tiro al aro, en la zona para soltar archivos ──
+ * El archivo sale de abajo a la izquierda, hace un arco y entra al aro: el
+ * eje X avanza parejo y el Y sube y baja (dos animaciones encimadas, una por
+ * eje, que es como se dibuja una parábola con CSS). Al entrar, la red se
+ * sacude. Con las animaciones apagadas en el sistema no hay tiro. */
+.soltar--aro { display: flex; flex-direction: column; align-items: center; gap: 2px; padding-bottom: 14px; }
+.soltar--aro:disabled { cursor: default; }
+.soltar__cancha { position: relative; width: 100%; height: 72px; margin-top: 10px; }
+.soltar__aro {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  translate: -50% 0;
+  overflow: visible;
+}
+.soltar__tablero { fill: var(--panel); stroke: var(--borde-fuerte); stroke-width: 1.5; }
+.soltar__cuadro { fill: none; stroke: var(--acento); stroke-width: 1.5; opacity: 0.6; }
+.soltar__llanta { fill: none; stroke: var(--acento); stroke-width: 3; }
+.soltar__red path { fill: none; stroke: var(--tinta-3); stroke-width: 1; stroke-linecap: round; opacity: 0.7; }
+.soltar__red { transform-origin: 32px 32px; transform-box: view-box; }
+.soltar--encima .soltar__llanta { stroke-width: 3.5; }
+.soltar--encima .soltar__aro { animation: aro-espera 900ms ease-in-out infinite; }
+@keyframes aro-espera { 50% { translate: -50% -3px; } }
+
+/* La pelota: el archivo, con el ícono de documento. */
+.soltar__pelota {
+  position: absolute;
+  left: calc(50% - 150px);
+  top: 46px;
+  z-index: 1;
+  animation: tiro-x 800ms linear forwards;
+}
+.soltar__pelota > span {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: linear-gradient(140deg, var(--acento), var(--acento-fuerte));
+  box-shadow: 0 4px 10px rgba(10, 40, 90, 0.25);
+  animation: tiro-y 800ms forwards;
+}
+@keyframes tiro-x { to { transform: translateX(135px); } }
+@keyframes tiro-y {
+  0% { transform: translateY(0) rotate(0) scale(1); animation-timing-function: cubic-bezier(0.2, 0.6, 0.4, 1); }
+  55% { transform: translateY(-78px) rotate(200deg) scale(0.9); animation-timing-function: cubic-bezier(0.6, 0, 0.8, 0.4); }
+  85% { transform: translateY(-22px) rotate(330deg) scale(0.7); opacity: 1; }
+  100% { transform: translateY(6px) rotate(360deg) scale(0.55); opacity: 0; }
+}
+/* Entra: la red se sacude una vez. */
+.soltar--tiro .soltar__red { animation: red-swish 380ms 640ms ease-out; }
+@keyframes red-swish {
+  40% { transform: scaleY(1.18) scaleX(0.92); }
+  70% { transform: scaleY(0.95); }
+}
+
+/* La barra de subida, en el lugar del texto. */
+.soltar__barra { display: flex; flex-direction: column; gap: 6px; width: min(360px, 100%); text-align: left; }
+.soltar__barra-cab { display: flex; justify-content: space-between; gap: 10px; font-size: 12.5px; color: var(--tinta-2); }
+.soltar__barra-nombre { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; color: var(--tinta); }
+.soltar__barra-pista { height: 6px; border-radius: 99px; background: var(--velo); overflow: hidden; }
+.soltar__barra-pista > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--acento);
+  transition: width 200ms ease, background 200ms ease;
+}
+.soltar__barra--lista .soltar__barra-pista > span { background: var(--ok); }
+.soltar__barra-pie { font-size: 12px; color: var(--tinta-3); }
+.soltar__barra--lista .soltar__barra-pie { color: var(--ok); }
+
+@media (prefers-reduced-motion: reduce) {
+  .soltar__pelota, .soltar__pelota > span, .soltar__red, .soltar--encima .soltar__aro { animation: none; }
+}

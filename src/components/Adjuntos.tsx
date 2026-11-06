@@ -1,4 +1,5 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { usePrefiereCalma } from './animacion';
 import { Item, Nota } from './ui';
 import { IconoCerrar, IconoLiquidaciones } from './iconos';
 import { useApp, useDb } from '../data/store';
@@ -35,17 +36,60 @@ export function SubirArchivos({
   const [encima, setEncima] = useState(false);
   const [subiendo, setSubiendo] = useState(false);
   const [error, setError] = useState('');
+  const calma = usePrefiereCalma();
+
+  // El tiro al aro: el archivo vuela en arco hasta el aro, entra, y queda la
+  // barra de subida hasta que termina. La subida arranca enseguida; el tiro
+  // es solo lo que se ve mientras tanto.
+  const [fase, setFase] = useState<'quieto' | 'tiro' | 'subiendo' | 'listo'>('quieto');
+  const [progreso, setProgreso] = useState(0);
+  const [nombre, setNombre] = useState('');
+  const terminado = useRef(false);
+
+  // La subida no informa su avance: la barra camina sola hasta el 90 % y el
+  // último tramo lo completa cuando de verdad terminó.
+  useEffect(() => {
+    if (fase !== 'subiendo') return;
+    const t = window.setInterval(() => {
+      setProgreso((p) => (terminado.current ? 100 : Math.min(90, p + Math.max(1, (90 - p) * 0.12))));
+    }, 120);
+    return () => window.clearInterval(t);
+  }, [fase]);
+
+  useEffect(() => {
+    if (fase === 'subiendo' && progreso >= 100) {
+      const t = window.setTimeout(() => setFase('listo'), 250);
+      return () => window.clearTimeout(t);
+    }
+    if (fase === 'listo') {
+      const t = window.setTimeout(() => setFase('quieto'), 1800);
+      return () => window.clearTimeout(t);
+    }
+  }, [fase, progreso]);
 
   const subir = async (archivos: FileList | null) => {
     if (!archivos?.length) return;
+    const lista = Array.from(archivos);
     setError('');
     setSubiendo(true);
+    setNombre(lista.length > 1 ? `${lista.length} archivos` : lista[0].name);
+    setProgreso(0);
+    terminado.current = false;
+    if (compacto || calma) {
+      setFase('subiendo');
+    } else {
+      setFase('tiro');
+      window.setTimeout(() => setFase((f) => (f === 'tiro' ? 'subiendo' : f)), 900);
+    }
     try {
       // De a uno y en orden: así el primero que falle corta y se puede avisar cuál.
-      for (const archivo of Array.from(archivos)) {
+      for (const archivo of lista) {
         await adjuntar(contratoId, archivo, { novedadId });
       }
+      terminado.current = true;
+      if (compacto) setFase('quieto');
     } catch (e) {
+      setFase('quieto');
       setError(e instanceof Error ? e.message : 'No pudimos guardar el archivo.');
     } finally {
       setSubiendo(false);
@@ -70,8 +114,8 @@ export function SubirArchivos({
       ) : (
         <button
           type="button"
-          className={`soltar${encima ? ' soltar--encima' : ''}`}
-          disabled={subiendo}
+          className={`soltar soltar--aro soltar--${fase}${encima ? ' soltar--encima' : ''}`}
+          disabled={subiendo || fase !== 'quieto'}
           onClick={() => entrada.current?.click()}
           onDragOver={(e) => {
             e.preventDefault();
@@ -84,11 +128,45 @@ export function SubirArchivos({
             void subir(e.dataTransfer.files);
           }}
         >
-          <span className="soltar__icono" aria-hidden="true">
-            <IconoLiquidaciones tam={20} />
+          {fase === 'quieto' || fase === 'tiro' ? (
+            <>
+              <strong>{encima ? '¡Soltalo, al aro!' : 'Soltá acá el contrato firmado'}</strong>
+              <span>o hacé clic para elegir · PDF, fotos o documentos, hasta 20 MB cada uno</span>
+            </>
+          ) : (
+            <span className={`soltar__barra${fase === 'listo' ? ' soltar__barra--lista' : ''}`} role="status">
+              <span className="soltar__barra-cab">
+                <span className="soltar__barra-nombre">{nombre}</span>
+                <span>{fase === 'listo' ? 'Listo' : `${Math.round(progreso)} %`}</span>
+              </span>
+              <span className="soltar__barra-pista">
+                <span style={{ width: `${fase === 'listo' ? 100 : progreso}%` }} />
+              </span>
+              <span className="soltar__barra-pie">
+                {fase === 'listo' ? '✓ Archivo guardado en el legajo' : 'Subiendo…'}
+              </span>
+            </span>
+          )}
+
+          {/* El aro: tablero, aro y red. La pelota es el archivo. */}
+          <span className="soltar__cancha" aria-hidden="true">
+            {fase === 'tiro' && (
+              <span className="soltar__pelota">
+                <span>
+                  <IconoLiquidaciones tam={16} />
+                </span>
+              </span>
+            )}
+            <svg className="soltar__aro" viewBox="0 0 64 60" width="64" height="60">
+              <rect x="10" y="2" width="44" height="26" rx="5" className="soltar__tablero" />
+              <rect x="24" y="12" width="16" height="11" rx="2" className="soltar__cuadro" />
+              <g className="soltar__red">
+                <path d="M17 32 L22 54 M25 32 L28 54 M32 32 L32 54 M39 32 L36 54 M47 32 L42 54" />
+                <path d="M18 38 H46 M20 45 H44 M22 52 H42" />
+              </g>
+              <ellipse cx="32" cy="32" rx="16" ry="3.5" className="soltar__llanta" />
+            </svg>
           </span>
-          <strong>{subiendo ? 'Guardando…' : 'Soltá acá el contrato firmado'}</strong>
-          <span>o hacé clic para elegir · PDF, fotos o documentos, hasta 20 MB cada uno</span>
         </button>
       )}
 

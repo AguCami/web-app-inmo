@@ -153,9 +153,6 @@ body:has(.sitio) { background: #f1f4f7; color-scheme: light; }
 @media (max-width: 760px) {
   .barra { gap: 6px; padding-left: 12px; }
   .barra__nombre small { display: none; }
-  /* En el celular el logo ya lleva al inicio, y «Contacto» está en el pie. */
-  .barra__nav .barra__enlace:first-child,
-  .barra__enlace--contacto { display: none; }
   .barra__enlace { padding: 8px 7px; font-size: 13px; }
   .barra__enlace::after { left: 7px; right: 7px; }
   .barra__nombre strong { font-size: 16px; }
@@ -849,8 +846,8 @@ body:has(.sitio) { background: #f1f4f7; color-scheme: light; }
 .nosotros p svg { width: 16px; height: 16px; vertical-align: -3px; color: var(--acento); }
 .nosotros__botones { display: flex; gap: 8px; flex-wrap: wrap; }
 .tipos--servicios { grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); }
-/* Los celulares más angostos: queda el logo solo, para que entren las secciones. */
-@media (max-width: 400px) {
+/* En el celular queda el logo solo, para que entren las secciones. */
+@media (max-width: 600px) {
   .barra__nombre { display: none; }
   .barra__nav { margin-left: auto; }
 }
@@ -956,3 +953,37 @@ body:has(.sitio) { background: #f1f4f7; color-scheme: light; }
 .despl__opcion--resaltada { background: var(--velo-hover); }
 .despl__opcion[aria-selected='true'] { color: var(--acento-fuerte); font-weight: 600; }
 .despl__opcion svg { color: var(--acento); flex: none; }
+
+/* En pantallas medianas no entran todas: el logo ya lleva al inicio y
+   «Consultar» (o el pie) al contacto. */
+@media (max-width: 1000px) {
+  .barra__nav .barra__enlace:first-child,
+  .barra__enlace--contacto { display: none; }
+}
+@media (max-width: 360px) {
+  .barra__enlace { padding: 8px 5px; font-size: 12.5px; }
+  .barra__enlace::after { left: 5px; right: 5px; }
+}
+
+/* El nombre con serifa al lado de la espiral (NOMBRE = 'serif' en Barra.tsx):
+   «Inversiones Generales» como en el logotipo y, abajo, «M&M · INMOBILIARIA»
+   en el azul de la marca. Alineado a la izquierda, pegado al logo. */
+.barra__nombre--serif { align-items: flex-start; gap: 1px; line-height: 1; }
+.barra__nombre--serif strong {
+  font-family: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+  font-size: 23px;
+  font-weight: 700;
+  letter-spacing: 0;
+  margin-right: 0;
+  color: var(--tinta);
+}
+.barra__nombre--serif small {
+  font-family: var(--fuente-titulo);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  margin-right: 0;
+  margin-left: 1px;
+  text-transform: uppercase;
+  color: var(--acento);
+}

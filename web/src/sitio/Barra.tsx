@@ -10,18 +10,28 @@ import { BASE } from './Sitio';
  * la sección en la que uno está la tiene fija.
  */
 /**
- * El nombre al lado del logo (Inversiones Generales / M & M / Inmobiliaria).
- * Por ahora va solo la espiral; el nombre queda armado, con sus estilos en
- * web.css (.barra__nombre), por si se vuelve a usar: alcanza con poner true.
+ * Cómo va el nombre al lado de la espiral. Se elige acá; las tres quedan
+ * armadas, con sus estilos en web.css:
+ * - 'serif':    «Inversiones Generales» con serifa y «M&M · INMOBILIARIA»
+ *               en azul abajo, alineado a la izquierda.
+ * - 'centrado': Inversiones Generales / M & M / Inmobiliaria, centrado,
+ *               como en la credencial del ingreso.
+ * - 'ninguno':  solo la espiral.
  */
-const CON_NOMBRE = false;
+const NOMBRE: 'serif' | 'centrado' | 'ninguno' = 'serif';
 
 export function Barra() {
   return (
     <header className="barra">
       <Link to={BASE} className="barra__marca" aria-label="Inversiones Generales M & M, inicio">
-        <Logo tam={44} />
-        {CON_NOMBRE && (
+        <Logo tam={NOMBRE === 'serif' ? 42 : 44} />
+        {NOMBRE === 'serif' && (
+          <span className="barra__nombre barra__nombre--serif">
+            <strong>Inversiones Generales</strong>
+            <small>M&amp;M · Inmobiliaria</small>
+          </span>
+        )}
+        {NOMBRE === 'centrado' && (
           <span className="barra__nombre">
             <small>Inversiones Generales</small>
             <strong>M&nbsp;&amp;&nbsp;M</strong>

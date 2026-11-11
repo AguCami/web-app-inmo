@@ -51,6 +51,7 @@ export function Carrusel() {
   const n = TARJETAS.length;
   const [activo, setActivo] = useState(0);
   const [tocado, setTocado] = useState(false);
+  // Con el mouse encima o el foco del teclado adentro, deja de pasar sola.
   const [encima, setEncima] = useState(false);
   const escenario = useRef<HTMLDivElement>(null);
   const tarjetas = useRef<(HTMLAnchorElement | null)[]>([]);
@@ -216,6 +217,8 @@ export function Carrusel() {
         onWheel={alRodar}
         onMouseEnter={() => setEncima(true)}
         onMouseLeave={() => setEncima(false)}
+        onFocus={() => setEncima(true)}
+        onBlur={(e) => !e.currentTarget.contains(e.relatedTarget as Node) && setEncima(false)}
         onKeyDown={(e) => {
           if (e.key === 'ArrowRight') tomar(() => ir(1));
           if (e.key === 'ArrowLeft') tomar(() => ir(-1));

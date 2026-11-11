@@ -987,3 +987,34 @@ body:has(.sitio) { background: #f1f4f7; color-scheme: light; }
   text-transform: uppercase;
   color: var(--acento);
 }
+
+/* ── Accesibilidad y uso con el dedo ──
+ * Revisión con las reglas de UI/UX: en pantallas táctiles, todo lo que se
+ * toca mide al menos 44 px de alto (Apple HIG / Material), y las etiquetas
+ * chicas no bajan de 12 px. */
+.despl__et,
+.pie__et { font-size: 12px; }
+
+/* Los puntos del carrusel se ven chicos, pero el área que se toca es de 44 px. */
+.carrusel__puntos { gap: 0; }
+.carrusel__punto { position: relative; margin: 0 3px; }
+.carrusel__punto::before { content: ''; position: absolute; inset: -18px -3px; }
+
+@media (pointer: coarse) {
+  .barra__enlace,
+  .barra__marca { min-height: 44px; min-width: 44px; display: inline-flex; align-items: center; }
+  .barra__enlace::after { bottom: 6px; }
+  .btn,
+  .barra__boton,
+  .filtro,
+  .despl--filtro .despl__boton,
+  .filtros__buscar input,
+  .formulario input,
+  .formulario select { min-height: 44px; }
+  .btn--chico { min-height: 44px; padding: 0 16px; }
+  .carrusel__flecha { width: 44px; height: 44px; }
+  .volver,
+  .pie__datos a { display: inline-flex; align-items: center; min-height: 44px; }
+  .despl__opcion { min-height: 44px; }
+}
+.sitio__main:focus { outline: none; }

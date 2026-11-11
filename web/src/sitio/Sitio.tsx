@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Route, Routes, useLocation } from 'react-router-dom';
 import { Barra } from './Barra';
 import { Logo } from '../../../src/components/Logo';
@@ -19,9 +19,18 @@ export const BASE = '/adelanto';
  */
 export function Sitio() {
   const { pathname } = useLocation();
-  // Al cambiar de página se arranca desde arriba, como en un sitio de siempre.
+  const principal = useRef<HTMLElement>(null);
+  const primera = useRef(true);
+  // Al cambiar de página se arranca desde arriba, como en un sitio de siempre,
+  // y el foco pasa al contenido nuevo: quien usa lector de pantalla escucha
+  // la página a la que llegó. Al abrir por primera vez no se toca el foco.
   useEffect(() => {
     window.scrollTo(0, 0);
+    if (primera.current) {
+      primera.current = false;
+      return;
+    }
+    principal.current?.focus({ preventScroll: true });
   }, [pathname]);
 
   return (
@@ -29,7 +38,7 @@ export function Sitio() {
       <div className="sitio tema-claro">
         <Barra />
 
-        <main className="sitio__main">
+        <main className="sitio__main" ref={principal} tabIndex={-1}>
           <Routes>
             <Route index element={<Inicio />} />
             <Route path="propiedades" element={<Listado />} />

@@ -1,6 +1,7 @@
 import { Link, NavLink } from 'react-router-dom';
 import { Logo } from '../../../src/components/Logo';
 import { BASE } from './Sitio';
+import { MENSAJE_GENERAL, enlaceWhatsapp } from '../datos';
 
 /**
  * La barra de arriba: una pieza de vidrio con el logo, las secciones y el
@@ -49,7 +50,11 @@ export function Barra() {
       </nav>
 
       <div className="barra__acciones">
-        <button type="button" className="barra__boton" onClick={irAContacto}>Consultar</button>
+        {enlaceWhatsapp(MENSAJE_GENERAL) ? (
+          <a className="barra__boton" href={enlaceWhatsapp(MENSAJE_GENERAL)!} target="_blank" rel="noreferrer">Consultar</a>
+        ) : (
+          <button type="button" className="barra__boton" onClick={irAContacto}>Consultar</button>
+        )}
       </div>
     </header>
   );

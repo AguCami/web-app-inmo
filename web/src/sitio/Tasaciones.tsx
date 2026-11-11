@@ -24,7 +24,7 @@ export function Tasaciones() {
   const enviar = (e: React.FormEvent) => {
     e.preventDefault();
     const mensaje = [
-      'Hola, quiero tasar una propiedad para venderla.',
+      'Hola, les escribo desde la web. Quiero tasar una propiedad para venderla.',
       `Tipo: ${d.tipo}`,
       `Localidad: ${d.localidad || '-'}`,
       d.direccion && `Dirección o barrio: ${d.direccion}`,

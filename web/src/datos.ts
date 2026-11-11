@@ -40,9 +40,14 @@ export const CONTACTO = {
   direccion: 'Italia 677',
   localidad: 'Jesús María, Córdoba',
   mapa: 'https://www.google.com/maps/search/?api=1&query=Italia+677,+Jes%C3%BAs+Mar%C3%ADa,+C%C3%B3rdoba',
-  /** Con código de país y sin signos, para el enlace de WhatsApp. Ej.: 5493525000000. */
-  whatsapp: '',
-  telefono: '',
+  /**
+   * Con código de país y sin signos, para el enlace de WhatsApp. Ej.: 5493525000000.
+   * También se puede cargar sin tocar el código, con la variable VITE_WHATSAPP
+   * al compilar (en Cloudflare Pages: Settings → Environment variables).
+   */
+  // DE PRUEBA (pedido el 11/11): cambiar por el de la inmobiliaria antes de lanzar.
+  whatsapp: (import.meta.env.VITE_WHATSAPP as string | undefined)?.replace(/\D/g, '') || '5493525538227',
+  telefono: '3525 538227',
   email: '',
   instagram: '',
 };
@@ -84,6 +89,22 @@ export const LOCALIDADES = (() => {
 /** Las más recientes primero; a igual fecha, la de más prioridad. */
 export function recientes(lista: Propiedad[]): Propiedad[] {
   return [...lista].sort((a, b) => b.alta.localeCompare(a.alta) || a.prioridad - b.prioridad);
+}
+
+/** El mensaje de una consulta general (el botón «Consultar» y el pie). */
+export const MENSAJE_GENERAL = 'Hola, les escribo desde la web de Inversiones Generales M & M. Quería hacer una consulta.';
+
+/**
+ * El mensaje de consulta por una propiedad: qué es, dónde, el precio, el
+ * código (para saber de cuál hablan) y el enlace a su ficha.
+ */
+export function mensajePropiedad(p: Propiedad, enlace: string): string {
+  return [
+    `Hola, quería consultar por esta propiedad que vi en la web:`,
+    `${p.titulo} — ${p.precio}`,
+    `Código: ${p.codigo}`,
+    enlace,
+  ].join('\n');
 }
 
 export function enlaceWhatsapp(texto: string): string | null {

@@ -147,6 +147,7 @@ body:has(.sitio) { background: #f1f4f7; color-scheme: light; }
   white-space: nowrap;
   transition: border-color 160ms ease, color 160ms ease, background 160ms ease, transform 120ms ease;
 }
+.barra__boton { display: inline-flex; align-items: center; text-decoration: none; }
 .barra__boton:hover { border-color: var(--acento); color: var(--acento-fuerte); background: #fff; }
 .barra__boton:active { transform: scale(0.97); }
 

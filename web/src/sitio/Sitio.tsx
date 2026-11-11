@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { Route, Routes, useLocation } from 'react-router-dom';
 import { Barra } from './Barra';
 import { Logo } from '../../../src/components/Logo';
-import { CONTACTO, PROPIEDADES } from '../datos';
+import { CONTACTO, MENSAJE_GENERAL, PROPIEDADES, enlaceWhatsapp } from '../datos';
 import { Inicio } from './Inicio';
 import { Listado } from './Listado';
 import { Ficha } from './Ficha';
@@ -76,7 +76,7 @@ function Pie() {
         {CONTACTO.whatsapp && (
           <div>
             <span className="pie__et">WhatsApp</span>
-            <a href={`https://wa.me/${CONTACTO.whatsapp}`} target="_blank" rel="noreferrer">{CONTACTO.telefono || CONTACTO.whatsapp}</a>
+            <a href={enlaceWhatsapp(MENSAJE_GENERAL)!} target="_blank" rel="noreferrer">{CONTACTO.telefono || CONTACTO.whatsapp}</a>
           </div>
         )}
         {CONTACTO.email && (

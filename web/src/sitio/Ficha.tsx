@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { CONTACTO, PROPIEDADES, buscarPorSlug, enlaceWhatsapp, foto, recientes, type Propiedad } from '../datos';
+import { CONTACTO, PROPIEDADES, buscarPorSlug, enlaceWhatsapp, foto, mensajePropiedad, recientes, type Propiedad } from '../datos';
 import { BASE } from './Sitio';
 import { Tarjeta } from './Tarjeta';
 import { IcoEscritura, IcoFlecha, IcoMail, IcoSuperficie, IcoTerreno, IcoUbicacion, IcoWhatsapp } from './iconos';
@@ -25,7 +25,7 @@ export function Ficha() {
     PROPIEDADES.filter((o) => o !== p && o.tipo === p.tipo && o.localidad === p.localidad),
   ).slice(0, 3);
 
-  const mensaje = `Hola, quería consultar por la propiedad ${p.codigo}: ${p.titulo}.`;
+  const mensaje = mensajePropiedad(p, window.location.href);
   const whatsapp = enlaceWhatsapp(mensaje);
 
   return (

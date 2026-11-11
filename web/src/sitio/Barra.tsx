@@ -13,10 +13,11 @@ export function Barra() {
   return (
     <header className="barra">
       <Link to={BASE} className="barra__marca" aria-label="Inicio">
-        <Logo tam={30} />
+        <Logo tam={44} />
         <span className="barra__nombre">
           <small>Inversiones Generales</small>
           <strong>M&nbsp;&amp;&nbsp;M</strong>
+          <small>Inmobiliaria</small>
         </span>
       </Link>
 

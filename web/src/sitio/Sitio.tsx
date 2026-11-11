@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
-import { Link, NavLink, Route, Routes, useLocation } from 'react-router-dom';
+import { Route, Routes, useLocation } from 'react-router-dom';
+import { Barra } from './Barra';
 import { Logo } from '../../../src/components/Logo';
 import { CONTACTO, PROPIEDADES } from '../datos';
 import { Inicio } from './Inicio';
@@ -24,20 +25,7 @@ export function Sitio() {
   return (
     <>
       <div className="sitio tema-claro">
-        <header className="barra">
-          <Link to={BASE} className="barra__marca" aria-label="Inicio">
-            <Logo tam={34} />
-            <span className="barra__nombre">
-              <small>Inversiones Generales</small>
-              <strong>M&nbsp;&amp;&nbsp;M</strong>
-            </span>
-          </Link>
-          <nav className="barra__nav" aria-label="Secciones">
-            <NavLink to={BASE} end>Inicio</NavLink>
-            <NavLink to={`${BASE}/propiedades`}>Propiedades</NavLink>
-            <button type="button" className="barra__contacto" onClick={irAContacto}>Contacto</button>
-          </nav>
-        </header>
+        <Barra />
 
         <main className="sitio__main">
           <Routes>
@@ -52,11 +40,6 @@ export function Sitio() {
       </div>
     </>
   );
-}
-
-/** «Contacto» baja al pie, que está en todas las páginas. */
-function irAContacto() {
-  document.getElementById('contacto')?.scrollIntoView({ behavior: 'smooth' });
 }
 
 function Pie() {

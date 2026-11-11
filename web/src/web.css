@@ -41,16 +41,19 @@ body:has(.sitio) { background: #f1f4f7; color-scheme: light; }
 }
 .sitio__main { flex: 1; }
 
-/* ── La barra ── */
-/* Va arriba de todo y se va con el scroll: no acompaña al bajar. */
+/* ── La barra (Barra.tsx) ──
+ * Una pieza de vidrio arriba de todo, que se va con el scroll. Tres partes:
+ * la marca a la izquierda, las secciones al medio y, a la derecha, la lupa
+ * que se abre en buscador y el botón de consulta. */
 .barra {
   position: relative;
   z-index: 10;
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 8px 10px 8px 12px;
-  border-radius: var(--r-pill);
+  gap: 12px;
+  min-height: 60px;
+  padding: 8px 10px 8px 14px;
+  border-radius: 18px;
   background: var(--vidrio);
   -webkit-backdrop-filter: blur(28px) saturate(1.6);
   backdrop-filter: blur(28px) saturate(1.6);
@@ -60,15 +63,16 @@ body:has(.sitio) { background: #f1f4f7; color-scheme: light; }
 .barra__marca {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 9px;
   color: var(--tinta);
   text-decoration: none;
-  margin-right: auto;
+  flex: 1 1 0;
+  min-width: max-content;
 }
 .barra__nombre { display: flex; flex-direction: column; line-height: 1.05; }
 .barra__nombre small {
   font-family: var(--fuente-titulo);
-  font-size: 9.5px;
+  font-size: 9px;
   font-weight: 600;
   letter-spacing: 0.2em;
   text-transform: uppercase;
@@ -76,37 +80,159 @@ body:has(.sitio) { background: #f1f4f7; color-scheme: light; }
 }
 .barra__nombre strong {
   font-family: var(--fuente-titulo);
-  font-size: 20px;
+  font-size: 19px;
   font-weight: 800;
   letter-spacing: 0.04em;
   color: var(--acento-fuerte);
 }
-.barra__nav { display: flex; align-items: center; gap: 4px; }
-.barra__nav a,
-.barra__contacto {
+
+/* Las secciones: al pasar el mouse se oscurecen, crecen un pelo y les nace
+   una línea de izquierda a derecha. La de la página actual la tiene fija. */
+.barra__nav { display: flex; align-items: center; gap: 2px; }
+.barra__enlace {
+  position: relative;
   font: inherit;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--tinta-2);
   text-decoration: none;
   padding: 8px 14px;
-  border-radius: var(--r-pill);
   border: 0;
   background: transparent;
   cursor: pointer;
-  transition: background 140ms ease, color 140ms ease;
+  transition: color 200ms ease, transform 250ms cubic-bezier(0.22, 1, 0.36, 1);
 }
-.barra__nav a:hover,
-.barra__contacto:hover { background: var(--velo-hover); color: var(--tinta); }
-.barra__nav a.active { background: var(--acento-suave); color: var(--acento-tinta); }
-.barra__contacto { background: var(--acento); color: var(--tinta-sobre-acento); }
-.barra__contacto:hover { background: var(--acento-fuerte); color: var(--tinta-sobre-acento); }
-@media (max-width: 560px) {
-  /* En el celular el logo ya lleva al inicio. */
-  .barra__nav a:first-child { display: none; }
-  .barra { gap: 8px; }
-  .barra__nav a, .barra__contacto { padding: 8px 11px; font-size: 13.5px; }
+.barra__enlace::after {
+  content: '';
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 4px;
+  height: 1.5px;
+  border-radius: 2px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.barra__enlace:hover { color: var(--tinta); transform: translateY(-1px) scale(1.04); }
+.barra__enlace:hover::after { transform: scaleX(1); }
+.barra__enlace.active { color: var(--acento-fuerte); font-weight: 600; }
+.barra__enlace.active::after { transform: scaleX(1); }
+
+.barra__acciones {
+  flex: 1 1 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.barra__lupa {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--tinta-2);
+  cursor: pointer;
+  transition: background 160ms ease, color 160ms ease, border-color 160ms ease, transform 120ms ease;
+}
+.barra__lupa:hover { background: rgba(255, 255, 255, 0.6); border-color: var(--vidrio-borde); color: var(--tinta); }
+.barra__lupa:active { transform: scale(0.94); }
+
+/* El buscador: la lupa se estira en un campo. */
+.barra__campo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 38px;
+  width: min(300px, 40vw);
+  padding: 0 6px 0 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(11, 87, 181, 0.25);
+  box-shadow: 0 0 0 3px rgba(11, 87, 181, 0.08);
+  color: var(--tinta-3);
+  animation: barra-abre 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  transform-origin: right center;
+}
+@keyframes barra-abre {
+  from { width: 38px; opacity: 0.4; }
+}
+.barra__campo input {
+  flex: 1;
+  min-width: 0;
+  width: auto;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  font-size: 14px;
+  color: var(--tinta);
+}
+.barra__campo input::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; }
+.barra__campo input:hover,
+.barra__campo input:focus { border: 0; background: transparent; outline: none; }
+.barra__campo kbd {
+  font-family: var(--fuente);
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 6px;
+  border: 1px solid var(--borde-fuerte);
+  color: var(--tinta-3);
+}
+.barra__cerrar {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  border: 0;
+  background: transparent;
+  color: var(--tinta-3);
+  cursor: pointer;
+}
+.barra__cerrar:hover { background: var(--velo-hover); color: var(--tinta); }
+
+.barra__boton {
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  height: 38px;
+  padding: 0 16px;
+  border-radius: 12px;
+  border: 1px solid var(--borde-fuerte);
+  background: rgba(255, 255, 255, 0.55);
+  color: var(--tinta);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 160ms ease, color 160ms ease, background 160ms ease, transform 120ms ease;
+}
+.barra__boton:hover { border-color: var(--acento); color: var(--acento-fuerte); background: #fff; }
+.barra__boton:active { transform: scale(0.97); }
+
+@media (max-width: 860px) {
+  .barra__campo kbd { display: none; }
+}
+@media (max-width: 760px) {
+  .barra { gap: 6px; padding-left: 12px; }
   .barra__nombre small { display: none; }
+  /* En el celular el logo ya lleva al inicio. */
+  .barra__nav .barra__enlace:first-child { display: none; }
+  .barra__enlace { padding: 8px 9px; font-size: 13.5px; }
+  .barra__enlace::after { left: 9px; right: 9px; }
+  .barra__boton { display: none; }
+  .barra__marca, .barra__acciones { flex: 0 0 auto; }
+  .barra__nav { margin-left: auto; }
+  /* Buscando, el campo ocupa el lugar de las secciones. */
+  .barra--buscando .barra__nav { display: none; }
+  .barra--buscando .barra__acciones { flex: 1; }
+  .barra--buscando .barra__busca { flex: 1; }
+  .barra--buscando .barra__campo { width: 100%; }
 }
 
 /* ── El carrusel del inicio (Carrusel.tsx) ──

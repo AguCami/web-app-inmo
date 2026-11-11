@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { Logo } from '../../../src/components/Logo';
 import { CONTACTO, LOCALIDADES, PROPIEDADES } from '../datos';
 import { BASE } from './Sitio';
-import { IcoCasa, IcoEscritura, IcoSuperficie, IcoTerreno, IcoUbicacion } from './iconos';
+import { IcoCasa, IcoSuperficie, IcoTerreno, IcoUbicacion } from './iconos';
 
 /**
  * Nosotros: quiénes son, qué hacen y dónde. Solo lleva lo que se sabe de
@@ -11,7 +11,6 @@ import { IcoCasa, IcoEscritura, IcoSuperficie, IcoTerreno, IcoUbicacion } from '
  */
 const SERVICIOS = [
   { ico: <IcoCasa />, titulo: 'Venta', texto: 'Casas, departamentos, lotes, locales y campos. Te acompañamos desde la publicación hasta la escritura.' },
-  { ico: <IcoEscritura />, titulo: 'Alquileres', texto: 'Buscamos inquilino, armamos el contrato y administramos el alquiler: aumentos, cobranza y liquidación al propietario todos los meses.' },
   { ico: <IcoSuperficie />, titulo: 'Tasaciones', texto: 'Te decimos cuánto vale tu propiedad según el mercado de la zona.' },
   { ico: <IcoTerreno />, titulo: 'Campos', texto: 'Campos ganaderos y agrícolas en el norte de Córdoba y provincias vecinas.' },
 ];
@@ -26,8 +25,8 @@ export function Nosotros() {
             <p className="pagina__pre">Nosotros</p>
             <h1>Inversiones Generales M &amp; M</h1>
             <p>
-              Somos una inmobiliaria de Jesús María, Córdoba. Vendemos, alquilamos y administramos
-              propiedades en Jesús María, Colonia Caroya y toda la región.
+              Somos una inmobiliaria de Jesús María, Córdoba. Vendemos propiedades en Jesús María, Colonia
+              Caroya y toda la región, y tasamos la tuya si la querés vender.
             </p>
           </div>
         </div>

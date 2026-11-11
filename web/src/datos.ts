@@ -29,7 +29,11 @@ export interface Propiedad {
   alta: string;
 }
 
-export const PROPIEDADES = crudas as Propiedad[];
+/**
+ * La web se centra en la venta: las que están en alquiler no se publican.
+ * (Hoy es una sola; siguen en el archivo por si algún día se muestran.)
+ */
+export const PROPIEDADES = (crudas as Propiedad[]).filter((p) => p.operacion !== 'Alquiler');
 
 /** Los datos de contacto que se muestran en la web. Lo que esté vacío no se muestra. */
 export const CONTACTO = {

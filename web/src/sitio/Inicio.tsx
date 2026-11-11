@@ -55,19 +55,15 @@ export function Inicio() {
       <section className="seccion">
         <div className="nosotros vidrio">
           <div>
-            <h2>¿Querés vender o alquilar?</h2>
+            <h2>¿Querés vender tu propiedad?</h2>
             <p>
-              Tasamos tu propiedad, la publicamos y la mostramos. Y si la alquilás con nosotros,
-              administramos el contrato, los aumentos y la cobranza todos los meses.
+              Te la tasamos según el mercado de la zona, la publicamos y la mostramos a compradores hasta
+              concretar la venta.
             </p>
           </div>
-          <button
-            type="button"
-            className="btn btn--primario"
-            onClick={() => document.getElementById('contacto')?.scrollIntoView({ behavior: 'smooth' })}
-          >
-            Hablemos
-          </button>
+          <Link className="btn btn--primario" to={`${BASE}/tasaciones`}>
+            Pedí tu tasación
+          </Link>
         </div>
       </section>
     </>

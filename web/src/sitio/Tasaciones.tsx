@@ -3,7 +3,7 @@ import { CONTACTO, LOCALIDADES, TIPOS, enlaceWhatsapp } from '../datos';
 import { IcoEscritura, IcoSuperficie, IcoUbicacion, IcoWhatsapp, IcoMail } from './iconos';
 
 /**
- * Tasaciones: para quien quiere vender o alquilar y saber cuánto vale su
+ * Tasaciones: para quien quiere vender y saber cuánto vale su
  * propiedad. Explica cómo es y tiene un formulario que arma el pedido y lo
  * manda por WhatsApp o email (los de CONTACTO en datos.ts). Mientras esos
  * datos no estén cargados, el pedido se muestra armado y se invita a pasar
@@ -12,11 +12,11 @@ import { IcoEscritura, IcoSuperficie, IcoUbicacion, IcoWhatsapp, IcoMail } from 
 const PASOS = [
   { titulo: 'Nos contás de tu propiedad', texto: 'Dónde está, qué es y cómo es. Con eso ya podemos darte una primera idea.' },
   { titulo: 'La visitamos', texto: 'Coordinamos un día para verla en persona y revisar la documentación.' },
-  { titulo: 'Te damos el valor', texto: 'Comparamos con lo que se vende y se alquila en la zona y te pasamos un valor real de mercado.' },
+  { titulo: 'Te damos el valor', texto: 'Comparamos con lo que se vende en la zona y te pasamos un valor real de mercado.' },
 ];
 
 export function Tasaciones() {
-  const [d, setD] = useState({ nombre: '', telefono: '', operacion: 'Venta', tipo: 'Casa', localidad: '', direccion: '', superficie: '', comentario: '' });
+  const [d, setD] = useState({ nombre: '', telefono: '', tipo: 'Casa', localidad: '', direccion: '', superficie: '', comentario: '' });
   const [listo, setListo] = useState<string | null>(null);
   const cambiar = (k: keyof typeof d) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
     setD({ ...d, [k]: e.target.value });
@@ -24,7 +24,7 @@ export function Tasaciones() {
   const enviar = (e: React.FormEvent) => {
     e.preventDefault();
     const mensaje = [
-      `Hola, quiero tasar una propiedad para ${d.operacion.toLowerCase()}.`,
+      'Hola, quiero tasar una propiedad para venderla.',
       `Tipo: ${d.tipo}`,
       `Localidad: ${d.localidad || '-'}`,
       d.direccion && `Dirección o barrio: ${d.direccion}`,
@@ -52,7 +52,7 @@ export function Tasaciones() {
           <p className="pagina__pre">Tasaciones</p>
           <h1>¿Cuánto vale tu propiedad?</h1>
           <p>
-            Si estás pensando en vender o alquilar, el primer paso es saber su valor real. Te la tasamos
+            Si estás pensando en vender, el primer paso es saber su valor real. Te la tasamos
             según el mercado de la zona.
           </p>
         </div>
@@ -75,7 +75,7 @@ export function Tasaciones() {
             <p>Completá lo que sepas y te contactamos para coordinar la visita.</p>
             <ul className="tasar__lista">
               <li><IcoUbicacion /> Casas, departamentos, lotes, locales y campos</li>
-              <li><IcoSuperficie /> Valor según lo que se vende y alquila en la zona</li>
+              <li><IcoSuperficie /> Valor según lo que se vende en la zona</li>
               <li><IcoEscritura /> Revisamos la documentación con vos</li>
             </ul>
           </div>
@@ -99,13 +99,6 @@ export function Tasaciones() {
               <label className="campo">
                 <span className="campo__et">Teléfono</span>
                 <input required type="tel" value={d.telefono} onChange={cambiar('telefono')} autoComplete="tel" />
-              </label>
-              <label className="campo">
-                <span className="campo__et">Para</span>
-                <select value={d.operacion} onChange={cambiar('operacion')}>
-                  <option>Venta</option>
-                  <option>Alquiler</option>
-                </select>
               </label>
               <label className="campo">
                 <span className="campo__et">Tipo</span>

@@ -1019,3 +1019,21 @@ body:has(.sitio) { background: #f1f4f7; color-scheme: light; }
   .despl__opcion { min-height: 44px; }
 }
 .sitio__main:focus { outline: none; }
+
+/* Formulario de tasación: lo obligatorio con asterisco, y el aviso de lo que falta. */
+.obligatorio { color: var(--acento); }
+.opcional { font-weight: 500; color: var(--tinta-3); }
+.formulario__nota { grid-column: 1 / -1; font-size: 13.5px; color: var(--tinta-2); margin-bottom: -4px; }
+.formulario__enviar:disabled { opacity: 0.4; cursor: not-allowed; }
+/* El desplegable con forma de campo, como los demás del formulario. */
+.despl--campo .despl__boton {
+  grid-template-areas: 'valor flecha';
+  min-height: 42px;
+  padding: 0 12px;
+  border-radius: var(--r-sm);
+  background: rgba(255, 255, 255, 0.65);
+  border: 1px solid rgba(11, 87, 181, 0.12);
+}
+.despl--campo .despl__valor { font-size: 14.5px; font-weight: 400; }
+.despl--campo.despl--abierto .despl__boton { background: #fff; border-color: var(--acento); }
+@media (pointer: coarse) { .despl--campo .despl__boton { min-height: 44px; } }

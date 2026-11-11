@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { CONTACTO, LOCALIDADES, TIPOS, enlaceWhatsapp } from '../datos';
 import { IcoEscritura, IcoSuperficie, IcoUbicacion, IcoWhatsapp, IcoMail } from './iconos';
+import { Desplegable } from './Desplegable';
 
 /**
  * Tasaciones: para quien quiere vender y saber cuánto vale su
@@ -21,14 +22,26 @@ export function Tasaciones() {
   const cambiar = (k: keyof typeof d) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
     setD({ ...d, [k]: e.target.value });
 
+  // Todo es obligatorio menos el comentario. Hasta que esté completo, el botón
+  // no se puede apretar. El teléfono tiene que tener al menos 8 números.
+  const faltan = [
+    !d.nombre.trim() && 'nombre',
+    d.telefono.replace(/\D/g, '').length < 8 && 'teléfono',
+    !d.localidad.trim() && 'localidad',
+    !d.superficie.trim() && 'superficie',
+    !d.direccion.trim() && 'dirección o barrio',
+  ].filter(Boolean) as string[];
+  const completo = faltan.length === 0;
+
   const enviar = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!completo) return;
     const mensaje = [
       'Hola, les escribo desde la web. Quiero tasar una propiedad para venderla.',
       `Tipo: ${d.tipo}`,
-      `Localidad: ${d.localidad || '-'}`,
-      d.direccion && `Dirección o barrio: ${d.direccion}`,
-      d.superficie && `Superficie aproximada: ${d.superficie}`,
+      `Localidad: ${d.localidad}`,
+      `Dirección o barrio: ${d.direccion}`,
+      `Superficie aproximada: ${d.superficie}`,
       d.comentario && `Comentario: ${d.comentario}`,
       `Nombre: ${d.nombre}`,
       `Teléfono: ${d.telefono}`,
@@ -93,39 +106,46 @@ export function Tasaciones() {
           ) : (
             <form className="formulario" onSubmit={enviar}>
               <label className="campo">
-                <span className="campo__et">Nombre</span>
+                <span className="campo__et">Nombre <span className="obligatorio" aria-hidden="true">*</span></span>
                 <input required value={d.nombre} onChange={cambiar('nombre')} autoComplete="name" />
               </label>
               <label className="campo">
-                <span className="campo__et">Teléfono</span>
-                <input required type="tel" value={d.telefono} onChange={cambiar('telefono')} autoComplete="tel" />
+                <span className="campo__et">Teléfono <span className="obligatorio" aria-hidden="true">*</span></span>
+                <input required type="tel" inputMode="tel" value={d.telefono} onChange={cambiar('telefono')} autoComplete="tel" placeholder="Ej.: 3525 123456" />
               </label>
+              <div className="campo">
+                <span className="campo__et">Tipo <span className="obligatorio" aria-hidden="true">*</span></span>
+                <Desplegable
+                  clase="despl--campo"
+                  ariaLabel="Tipo de propiedad"
+                  valor={d.tipo}
+                  opciones={[...TIPOS, 'Local', 'Galpón', 'Otro'].map((t) => ({ valor: t, texto: t }))}
+                  alCambiar={(v) => setD({ ...d, tipo: v })}
+                />
+              </div>
               <label className="campo">
-                <span className="campo__et">Tipo</span>
-                <select value={d.tipo} onChange={cambiar('tipo')}>
-                  {[...TIPOS, 'Local', 'Galpón', 'Otro'].map((t) => <option key={t}>{t}</option>)}
-                </select>
-              </label>
-              <label className="campo">
-                <span className="campo__et">Localidad</span>
-                <input list="tasar-localidades" value={d.localidad} onChange={cambiar('localidad')} />
+                <span className="campo__et">Localidad <span className="obligatorio" aria-hidden="true">*</span></span>
+                <input required list="tasar-localidades" value={d.localidad} onChange={cambiar('localidad')} />
                 <datalist id="tasar-localidades">
                   {LOCALIDADES.map((l) => <option key={l} value={l} />)}
                 </datalist>
               </label>
               <label className="campo">
-                <span className="campo__et">Superficie aproximada</span>
-                <input value={d.superficie} onChange={cambiar('superficie')} placeholder="Ej.: 300 m² de terreno" />
+                <span className="campo__et">Superficie aproximada <span className="obligatorio" aria-hidden="true">*</span></span>
+                <input required value={d.superficie} onChange={cambiar('superficie')} placeholder="Ej.: 300 m² de terreno" />
               </label>
               <label className="campo campo--entero">
-                <span className="campo__et">Dirección o barrio</span>
-                <input value={d.direccion} onChange={cambiar('direccion')} />
+                <span className="campo__et">Dirección o barrio <span className="obligatorio" aria-hidden="true">*</span></span>
+                <input required value={d.direccion} onChange={cambiar('direccion')} />
               </label>
               <label className="campo campo--entero">
-                <span className="campo__et">Algo más que quieras contarnos</span>
+                <span className="campo__et">Algo más que quieras contarnos <span className="opcional">(opcional)</span></span>
                 <textarea value={d.comentario} onChange={cambiar('comentario')} rows={3} />
               </label>
-              <button className="btn btn--primario formulario__enviar" type="submit">
+              <p className="formulario__nota" aria-live="polite">
+                {completo ? 'Listo, ya podés enviarlo.' : `Para enviar falta completar: ${faltan.join(', ')}.`}
+              </p>
+              <button className="btn btn--primario formulario__enviar" type="submit" disabled={!completo}>
                 {CONTACTO.whatsapp ? <><IcoWhatsapp /> Enviar por WhatsApp</> : CONTACTO.email ? <><IcoMail /> Enviar por email</> : 'Pedir tasación'}
               </button>
             </form>

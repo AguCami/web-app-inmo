@@ -6,6 +6,8 @@ import { CONTACTO, PROPIEDADES } from '../datos';
 import { Inicio } from './Inicio';
 import { Listado } from './Listado';
 import { Ficha } from './Ficha';
+import { Nosotros } from './Nosotros';
+import { Tasaciones } from './Tasaciones';
 
 /** Donde vive la web nueva mientras es un adelanto. Al lanzarla pasa a ser la raíz. */
 export const BASE = '/adelanto';
@@ -32,6 +34,8 @@ export function Sitio() {
             <Route index element={<Inicio />} />
             <Route path="propiedades" element={<Listado />} />
             <Route path="propiedades/:codigo" element={<Ficha />} />
+            <Route path="tasaciones" element={<Tasaciones />} />
+            <Route path="nosotros" element={<Nosotros />} />
             <Route path="*" element={<Inicio />} />
           </Routes>
         </main>

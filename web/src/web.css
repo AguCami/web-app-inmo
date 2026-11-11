@@ -43,8 +43,8 @@ body:has(.sitio) { background: #f1f4f7; color-scheme: light; }
 
 /* ── La barra (Barra.tsx) ──
  * Una pieza de vidrio arriba de todo, que se va con el scroll. Tres partes:
- * la marca a la izquierda, las secciones al medio y, a la derecha, la lupa
- * que se abre en buscador y el botón de consulta. */
+ * la marca a la izquierda, las secciones al medio y, a la derecha, el botón
+ * de consulta. */
 .barra {
   position: relative;
   z-index: 10;
@@ -127,77 +127,6 @@ body:has(.sitio) { background: #f1f4f7; color-scheme: light; }
   justify-content: flex-end;
   gap: 8px;
 }
-.barra__lupa {
-  display: grid;
-  place-items: center;
-  width: 38px;
-  height: 38px;
-  border-radius: 12px;
-  border: 1px solid transparent;
-  background: transparent;
-  color: var(--tinta-2);
-  cursor: pointer;
-  transition: background 160ms ease, color 160ms ease, border-color 160ms ease, transform 120ms ease;
-}
-.barra__lupa:hover { background: rgba(255, 255, 255, 0.6); border-color: var(--vidrio-borde); color: var(--tinta); }
-.barra__lupa:active { transform: scale(0.94); }
-
-/* El buscador: la lupa se estira en un campo. */
-.barra__campo {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  height: 38px;
-  width: min(300px, 40vw);
-  padding: 0 6px 0 12px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.7);
-  border: 1px solid rgba(11, 87, 181, 0.25);
-  box-shadow: 0 0 0 3px rgba(11, 87, 181, 0.08);
-  color: var(--tinta-3);
-  animation: barra-abre 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  transform-origin: right center;
-}
-@keyframes barra-abre {
-  from { width: 38px; opacity: 0.4; }
-}
-.barra__campo input {
-  flex: 1;
-  min-width: 0;
-  width: auto;
-  min-height: 0;
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  font-size: 14px;
-  color: var(--tinta);
-}
-.barra__campo input::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; }
-.barra__campo input:hover,
-.barra__campo input:focus { border: 0; background: transparent; outline: none; }
-.barra__campo kbd {
-  font-family: var(--fuente);
-  font-size: 10.5px;
-  font-weight: 600;
-  padding: 2px 6px;
-  border-radius: 6px;
-  border: 1px solid var(--borde-fuerte);
-  color: var(--tinta-3);
-}
-.barra__cerrar {
-  display: grid;
-  place-items: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 8px;
-  border: 0;
-  background: transparent;
-  color: var(--tinta-3);
-  cursor: pointer;
-}
-.barra__cerrar:hover { background: var(--velo-hover); color: var(--tinta); }
-
 .barra__boton {
   font: inherit;
   font-size: 14px;
@@ -215,24 +144,19 @@ body:has(.sitio) { background: #f1f4f7; color-scheme: light; }
 .barra__boton:hover { border-color: var(--acento); color: var(--acento-fuerte); background: #fff; }
 .barra__boton:active { transform: scale(0.97); }
 
-@media (max-width: 860px) {
-  .barra__campo kbd { display: none; }
-}
 @media (max-width: 760px) {
   .barra { gap: 6px; padding-left: 12px; }
   .barra__nombre small { display: none; }
-  /* En el celular el logo ya lleva al inicio. */
-  .barra__nav .barra__enlace:first-child { display: none; }
-  .barra__enlace { padding: 8px 9px; font-size: 13.5px; }
-  .barra__enlace::after { left: 9px; right: 9px; }
-  .barra__boton { display: none; }
-  .barra__marca, .barra__acciones { flex: 0 0 auto; }
+  /* En el celular el logo ya lleva al inicio, y «Contacto» está en el pie. */
+  .barra__nav .barra__enlace:first-child,
+  .barra__enlace--contacto { display: none; }
+  .barra__enlace { padding: 8px 7px; font-size: 13px; }
+  .barra__enlace::after { left: 7px; right: 7px; }
+  .barra__nombre strong { font-size: 16px; }
+  .barra .marca__logo { width: 26px !important; height: 26px !important; }
+  .barra__acciones { display: none; }
+  .barra__marca { flex: 0 0 auto; }
   .barra__nav { margin-left: auto; }
-  /* Buscando, el campo ocupa el lugar de las secciones. */
-  .barra--buscando .barra__nav { display: none; }
-  .barra--buscando .barra__acciones { flex: 1; }
-  .barra--buscando .barra__busca { flex: 1; }
-  .barra--buscando .barra__campo { width: 100%; }
 }
 
 /* ── El carrusel del inicio (Carrusel.tsx) ──
@@ -892,4 +816,93 @@ body:has(.sitio) { background: #f1f4f7; color-scheme: light; }
 @media (max-width: 700px) {
   .pie { grid-template-columns: 1fr; }
   .pie__datos { justify-content: flex-start; }
+}
+
+/* ── Páginas de contenido: Tasaciones y Nosotros ── */
+.pagina__cab { max-width: 640px; margin: 8px 0 24px; }
+.pagina__cab h1 { font-size: clamp(30px, 4.4vw, 46px); line-height: 1.08; letter-spacing: -0.02em; margin: 6px 0 12px; }
+.pagina__cab p:last-child { font-size: 16.5px; color: var(--tinta-2); max-width: 54ch; }
+.pagina__pre {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--acento);
+}
+
+.pasos { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 14px; }
+.paso { padding: 22px; border-radius: var(--r-lg); display: flex; flex-direction: column; gap: 6px; }
+.paso__num {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  margin-bottom: 8px;
+  border-radius: var(--r-pill);
+  background: var(--acento);
+  color: #fff;
+  font-family: var(--fuente-titulo);
+  font-weight: 700;
+}
+.paso h3 { font-size: 16.5px; }
+.paso p { color: var(--tinta-2); font-size: 14.5px; }
+
+.tasar {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  gap: 32px;
+  padding: 30px;
+  border-radius: var(--r-xl);
+}
+@media (max-width: 800px) { .tasar { grid-template-columns: 1fr; padding: 22px; gap: 20px; } }
+.tasar__lado h2 { font-size: 24px; margin-bottom: 6px; }
+.tasar__lado > p { color: var(--tinta-2); }
+.tasar__lista { list-style: none; padding: 0; margin: 20px 0 0; display: flex; flex-direction: column; gap: 12px; font-size: 14.5px; }
+.tasar__lista li { display: flex; align-items: center; gap: 10px; }
+.tasar__lista svg { color: var(--acento); flex: none; }
+.tasar__listo { display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
+.tasar__listo pre {
+  width: 100%;
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: var(--r);
+  background: rgba(255, 255, 255, 0.6);
+  font: inherit;
+  font-size: 14px;
+  white-space: pre-wrap;
+}
+.tasar__listo p { color: var(--tinta-2); }
+
+.formulario { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 520px) { .formulario { grid-template-columns: 1fr; } }
+.formulario input,
+.formulario select,
+.formulario textarea { background: rgba(255, 255, 255, 0.65); border-color: rgba(11, 87, 181, 0.12); }
+.formulario input:focus,
+.formulario select:focus,
+.formulario textarea:focus { background: #fff; border-color: var(--acento); }
+.formulario__enviar { grid-column: 1 / -1; min-height: 46px; justify-self: start; padding: 0 26px; }
+
+.nos-portada {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  padding: 34px;
+  border-radius: var(--r-xl);
+}
+.nos-portada h1 { font-size: clamp(28px, 4vw, 42px); line-height: 1.1; margin: 6px 0 10px; }
+.nos-portada p:last-child { font-size: 16.5px; color: var(--tinta-2); max-width: 56ch; }
+@media (max-width: 600px) { .nos-portada { flex-direction: column; align-items: flex-start; padding: 24px; gap: 16px; } }
+.cifras { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 14px; }
+@media (max-width: 520px) { .cifras { grid-template-columns: 1fr; } }
+.cifra { display: flex; flex-direction: column; padding: 20px 22px; border-radius: var(--r-lg); }
+.cifra strong { font-family: var(--fuente-titulo); font-size: 34px; font-weight: 700; color: var(--acento-fuerte); line-height: 1.1; }
+.cifra span { color: var(--tinta-2); font-size: 14px; }
+.nosotros p svg { width: 16px; height: 16px; vertical-align: -3px; color: var(--acento); }
+.nosotros__botones { display: flex; gap: 8px; flex-wrap: wrap; }
+.tipos--servicios { grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); }
+/* Los celulares más angostos: queda el logo solo, para que entren las secciones. */
+@media (max-width: 400px) {
+  .barra__nombre { display: none; }
+  .barra__nav { margin-left: auto; }
 }

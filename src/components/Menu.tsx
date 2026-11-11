@@ -21,18 +21,6 @@ import { periodoActual } from '../domain/util';
 
 type Enlace = { a: string; Icono: ComponentType<{ tam?: number }>; texto: string; conteo?: number };
 
-const CLAVE_COLAPSADO = 'gestion-alquileres/menu-colapsado';
-const leerColapsado = () => {
-  try {
-    return localStorage.getItem(CLAVE_COLAPSADO) === '1';
-  } catch {
-    return false;
-  }
-};
-
-const esMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform);
-const TECLA = esMac ? '⌘' : 'Ctrl';
-
 /** Las iniciales para el avatar: «ana.perez@…» → AP. */
 function iniciales(texto: string) {
   const partes = texto.split(/[.\s_-]+/).filter(Boolean);
@@ -71,18 +59,9 @@ export function Menu({ pendientes }: { pendientes: { vencidas: number; sinPagar:
   const { oscuro, fijar } = useTema();
   const { pathname } = useLocation();
 
-  const [colapsado, setColapsado] = useState(leerColapsado);
   const [perfilAbierto, setPerfilAbierto] = useState(false);
   const [editandoPerfil, setEditandoPerfil] = useState(false);
   const cerrarPerfil = useCallback(() => setEditandoPerfil(false), []);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(CLAVE_COLAPSADO, colapsado ? '1' : '0');
-    } catch {
-      /* sin almacenamiento: se acuerda solo mientras dure la pestaña */
-    }
-  }, [colapsado]);
 
   const secciones: { titulo: string; enlaces: Enlace[] }[] = [
     {
@@ -104,20 +83,6 @@ export function Menu({ pendientes }: { pendientes: { vencidas: number; sinPagar:
     },
     { titulo: 'Sistema', enlaces: [{ a: '/ajustes', Icono: IconoAjustes, texto: 'Ajustes' }] },
   ];
-
-  // ⌘B pliega y despliega.
-  useEffect(() => {
-    const tecla = (e: KeyboardEvent) => {
-      if (!(e.metaKey || e.ctrlKey)) return;
-      const k = e.key.toLowerCase();
-      if (k === 'b') {
-        e.preventDefault();
-        setColapsado((c) => !c);
-      }
-    };
-    window.addEventListener('keydown', tecla);
-    return () => window.removeEventListener('keydown', tecla);
-  }, []);
 
   /* ── La pastilla de vidrio que se desliza ──
    * Una sola pieza, posicionada sobre el ítem señalado (o el activo cuando
@@ -147,7 +112,7 @@ export function Menu({ pendientes }: { pendientes: { vencidas: number; sinPagar:
     );
   }, [destino]);
 
-  useLayoutEffect(medir, [medir, colapsado]);
+  useLayoutEffect(medir, [medir]);
   useEffect(() => {
     // Al plegar o desplegar los ítems cambian de alto durante la transición:
     // se vuelve a medir cuando el tamaño se asienta.
@@ -184,38 +149,13 @@ export function Menu({ pendientes }: { pendientes: { vencidas: number; sinPagar:
 
   return (
     <nav
-      className={`rail no-imprimir${colapsado ? ' rail--colapsado' : ''}`}
+      className="rail no-imprimir"
       aria-label="Navegación principal"
     >
-      <button
-        className="rail__plegar"
-        onClick={() => setColapsado((c) => !c)}
-        aria-label={colapsado ? 'Desplegar el menú' : 'Plegar el menú'}
-        aria-expanded={!colapsado}
-        data-etiqueta={colapsado ? 'Desplegar' : 'Plegar'}
-        data-tecla={`${TECLA} B`}
-      >
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="M14.5 6 8.5 12l6 6" />
-        </svg>
-      </button>
-
       <div className="marca">
         <Logo tam={36} />
         <NombreMarca nombre={db.configuracion.nombre} />
       </div>
-
-      {/* Plegado, el nombre aparece en un globo al costado. Es uno solo y
-          viaja junto con la pastilla. */}
-      {colapsado && (
-        <span
-          className={`rail__globo${señalado && lente ? ' rail__globo--visible' : ''}`}
-          aria-hidden="true"
-          style={{ top: lente?.yRail ?? 0 }}
-        >
-          {lente?.etiqueta}
-        </span>
-      )}
 
       <div
         className="rail__lista"

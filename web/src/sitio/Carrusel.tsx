@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { usePrefiereCalma } from '../../../src/components/animacion';
 import { SELECCION, foto, porCodigo, slug, type Propiedad } from '../datos';
@@ -10,12 +10,17 @@ import { IcoFlecha, IcoUbicacion } from './iconos';
  *
  * Al abrir, las tarjetas llegan volando de a una y se acomodan en abanico,
  * con la del medio adelante. Después se pasan como un carrusel: con las
- * flechas, arrastrando (o deslizando en el celular), con el teclado o
- * tocando una de los costados. Tocar la del medio abre la propiedad.
+ * flechas, arrastrando (o deslizando en el celular), con la rueda o el
+ * trackpad de costado, con el teclado o tocando una de los costados. Tocar
+ * la del medio abre la propiedad.
  *
- * Es un carrusel circular: después de la última vuelve la primera. Las que
- * quedan lejos del medio se esconden, así el salto de una punta a la otra
- * no se ve.
+ * Para que se sienta fluido, las tarjetas no pasan por React al moverse:
+ * su lugar se escribe directo en el estilo. Al arrastrar siguen al puntero
+ * cuadro a cuadro, y al soltar se tiene en cuenta la velocidad: un tirón
+ * rápido pasa varias, uno lento vuelve o avanza una.
+ *
+ * Es circular: después de la última vuelve la primera. Las que quedan lejos
+ * del medio se esconden, así el salto de una punta a la otra no se ve.
  */
 
 const TARJETAS = SELECCION.map(porCodigo).filter((p): p is Propiedad => !!p);
@@ -30,87 +35,157 @@ function distancia(i: number, activo: number, n: number) {
   return d;
 }
 
+/** Dónde va una tarjeta que está a d lugares del medio. */
+function pose(d: number, paso: number) {
+  const a = Math.abs(d);
+  return {
+    transform: `translate3d(${d * paso}px, ${a * a * 7 + a * 6}px, 0) rotate(${d * 6}deg) scale(${1 - Math.min(a, 3) * 0.09})`,
+    opacity: a > 2.6 ? '0' : '1',
+    zIndex: String(100 - Math.round(a * 10)),
+  };
+}
+
 export function Carrusel() {
   const calma = usePrefiereCalma();
   const navegar = useNavigate();
   const n = TARJETAS.length;
   const [activo, setActivo] = useState(0);
-  // Antes de llegar, las tarjetas esperan afuera de la pantalla.
-  const [llegaron, setLlegaron] = useState(calma);
-  // Mientras llegan, cada una sale con su demora; después se mueven todas juntas.
-  const [acomodadas, setAcomodadas] = useState(calma);
-  const [arrastre, setArrastre] = useState(0);
   const [tocado, setTocado] = useState(false);
+  const [encima, setEncima] = useState(false);
   const escenario = useRef<HTMLDivElement>(null);
-  const toque = useRef<{ id: number; x: number; movio: boolean } | null>(null);
-  const [paso, setPaso] = useState(200);
+  const tarjetas = useRef<(HTMLAnchorElement | null)[]>([]);
+  const paso = useRef(200);
+  const activoRef = useRef(0);
+  const llegaron = useRef(calma);
+  const arrastre = useRef<{ id: number; x0: number; dx: number; movio: boolean; muestras: { t: number; x: number }[] } | null>(null);
+  const cuadro = useRef(0);
+  const ultimaRueda = useRef(0);
 
-  const ir = (d: number) => setActivo((a) => (a + d + n) % n);
+  /** Pone cada tarjeta en su lugar, corrida `desfase` lugares (al arrastrar). */
+  const colocar = useCallback((desfase = 0) => {
+    tarjetas.current.forEach((t, i) => {
+      if (!t) return;
+      const d = distancia(i, activoRef.current, n) + desfase;
+      Object.assign(t.style, pose(d, paso.current));
+    });
+  }, [n]);
 
-  // La llegada: un cuadro con las tarjetas afuera y al siguiente se sueltan.
-  useEffect(() => {
-    if (calma) return;
-    const c = requestAnimationFrame(() => requestAnimationFrame(() => setLlegaron(true)));
-    const t = window.setTimeout(() => setAcomodadas(true), 1200 + n * 90);
-    return () => {
-      cancelAnimationFrame(c);
-      window.clearTimeout(t);
-    };
-  }, [calma, n]);
-
-  // La separación entre tarjetas sale del ancho real de una tarjeta.
-  useEffect(() => {
+  // La separación sale del ancho real de una tarjeta.
+  useLayoutEffect(() => {
     const medir = () => {
-      const t = escenario.current?.querySelector<HTMLElement>('.carta-p');
-      if (t) setPaso(t.offsetWidth * (window.innerWidth < 760 ? 0.42 : 0.58));
+      const t = tarjetas.current[0];
+      if (t) paso.current = t.offsetWidth * (window.innerWidth < 760 ? 0.42 : 0.58);
+      if (llegaron.current) colocar();
     };
     medir();
     window.addEventListener('resize', medir);
     return () => window.removeEventListener('resize', medir);
-  }, []);
+  }, [colocar]);
 
-  // Pasa sola hasta que alguien la toca.
-  useEffect(() => {
-    if (calma || tocado || !acomodadas) return;
-    const t = window.setInterval(() => ir(1), CADA_MS);
-    return () => window.clearInterval(t);
-  }, [calma, tocado, acomodadas]);
+  // La llegada: arrancan afuera, abajo a la derecha, y se sueltan de a una.
+  useLayoutEffect(() => {
+    if (calma) {
+      llegaron.current = true;
+      colocar();
+      return;
+    }
+    const el = escenario.current;
+    tarjetas.current.forEach((t, i) => {
+      if (!t) return;
+      t.style.transform = `translate3d(${60 + i * 8}vw, ${50 + i * 4}vh, 0) rotate(${28 + i * 4}deg) scale(0.9)`;
+      t.style.opacity = '0';
+      t.style.transitionDelay = `${i * 80}ms`;
+    });
+    el?.classList.add('es-llegando');
+    const c = requestAnimationFrame(() => requestAnimationFrame(() => {
+      llegaron.current = true;
+      colocar();
+    }));
+    const fin = window.setTimeout(() => {
+      el?.classList.remove('es-llegando');
+      tarjetas.current.forEach((t) => t && (t.style.transitionDelay = ''));
+    }, 1100 + n * 80);
+    return () => {
+      cancelAnimationFrame(c);
+      window.clearTimeout(fin);
+    };
+  }, [calma, colocar, n]);
 
+  // Cada cambio de la del medio las lleva a su lugar (con la transición del CSS).
+  useLayoutEffect(() => {
+    activoRef.current = activo;
+    if (llegaron.current) colocar();
+  }, [activo, colocar]);
+
+  const ir = useCallback((d: number) => setActivo((a) => (((a + d) % n) + n) % n), [n]);
   const tomar = (cb: () => void) => {
     setTocado(true);
     cb();
   };
 
+  // Pasa sola hasta que alguien la toca; con el mouse encima, espera.
+  useEffect(() => {
+    if (calma || tocado || encima) return;
+    const t = window.setInterval(() => ir(1), CADA_MS);
+    return () => window.clearInterval(t);
+  }, [calma, tocado, encima, ir]);
+
+  // ── Arrastrar ──
   const alApretar = (e: React.PointerEvent) => {
     if (e.button !== 0) return;
-    toque.current = { id: e.pointerId, x: e.clientX, movio: false };
+    arrastre.current = { id: e.pointerId, x0: e.clientX, dx: 0, movio: false, muestras: [{ t: e.timeStamp, x: e.clientX }] };
   };
   const alMover = (e: React.PointerEvent) => {
-    const t = toque.current;
-    if (!t || t.id !== e.pointerId) return;
-    const dx = e.clientX - t.x;
-    if (!t.movio && Math.abs(dx) > 6) {
-      t.movio = true;
+    const a = arrastre.current;
+    if (!a || a.id !== e.pointerId) return;
+    a.dx = e.clientX - a.x0;
+    a.muestras.push({ t: e.timeStamp, x: e.clientX });
+    if (a.muestras.length > 6) a.muestras.shift();
+    if (!a.movio && Math.abs(a.dx) > 5) {
+      a.movio = true;
       setTocado(true);
       escenario.current?.setPointerCapture(e.pointerId);
+      escenario.current?.classList.add('es-arrastrado');
     }
-    if (t.movio) setArrastre(dx);
+    if (a.movio && !cuadro.current) {
+      cuadro.current = requestAnimationFrame(() => {
+        cuadro.current = 0;
+        if (arrastre.current) colocar(arrastre.current.dx / paso.current);
+      });
+    }
   };
   const alSoltar = (e: React.PointerEvent) => {
-    const t = toque.current;
-    if (!t || t.id !== e.pointerId) return;
-    if (t.movio) {
-      const dx = e.clientX - t.x;
-      const pasos = Math.abs(dx) < 40 ? 0 : -Math.sign(dx) * Math.max(1, Math.round(Math.abs(dx) / paso));
+    const a = arrastre.current;
+    if (!a || a.id !== e.pointerId) return;
+    cancelAnimationFrame(cuadro.current);
+    cuadro.current = 0;
+    escenario.current?.classList.remove('es-arrastrado');
+    if (a.movio) {
+      // La velocidad de los últimos ~100 ms: un tirón rápido sigue de largo.
+      const m = a.muestras;
+      const primera = m.find((s) => e.timeStamp - s.t < 100) ?? m[0];
+      const dt = Math.max(1, e.timeStamp - primera.t);
+      const v = (e.clientX - primera.x) / dt; // px por ms
+      const proyectado = a.dx + v * 180;
+      const pasos = Math.max(-3, Math.min(3, -Math.round(proyectado / paso.current)));
       if (pasos) ir(pasos);
+      else colocar();
     }
-    setArrastre(0);
     // El click que viene después de arrastrar no tiene que abrir nada.
-    window.setTimeout(() => (toque.current = null), 0);
+    window.setTimeout(() => (arrastre.current = null), 0);
+  };
+
+  // La rueda o el trackpad de costado: una tarjeta por gesto.
+  const alRodar = (e: React.WheelEvent) => {
+    if (Math.abs(e.deltaX) < Math.abs(e.deltaY) || Math.abs(e.deltaX) < 12) return;
+    const ahora = performance.now();
+    if (ahora - ultimaRueda.current < 380) return;
+    ultimaRueda.current = ahora;
+    tomar(() => ir(e.deltaX > 0 ? 1 : -1));
   };
 
   const alTocarTarjeta = (e: React.MouseEvent, i: number) => {
-    if (toque.current?.movio) {
+    if (arrastre.current?.movio) {
       e.preventDefault();
       return;
     }
@@ -121,58 +196,43 @@ export function Carrusel() {
   };
 
   const actual = TARJETAS[activo];
-  const desplazado = arrastre / paso;
 
   return (
     <section className="carrusel" aria-roledescription="carrusel" aria-label="Propiedades seleccionadas">
       <div className="carrusel__cab">
-        <p className="carrusel__pre">Inversiones Generales M &amp; M · Inmobiliaria</p>
+        <p className="carrusel__pre">Inversiones Generales <span className="carrusel__mym">M &amp; M</span> · Inmobiliaria</p>
         <h1 className="carrusel__titulo">Un lugar para encontrar tu próxima propiedad.</h1>
       </div>
 
       <div
         ref={escenario}
-        className={arrastre ? 'carrusel__escenario es-arrastrado' : 'carrusel__escenario'}
+        className="carrusel__escenario"
         onPointerDown={alApretar}
         onPointerMove={alMover}
         onPointerUp={alSoltar}
         onPointerCancel={alSoltar}
+        onWheel={alRodar}
+        onMouseEnter={() => setEncima(true)}
+        onMouseLeave={() => setEncima(false)}
         onKeyDown={(e) => {
           if (e.key === 'ArrowRight') tomar(() => ir(1));
           if (e.key === 'ArrowLeft') tomar(() => ir(-1));
         }}
       >
-        {TARJETAS.map((p, i) => {
-          const d = distancia(i, activo, n) + desplazado;
-          const a = Math.abs(d);
-          const estilo: React.CSSProperties = llegaron
-            ? {
-                transform: `translateX(${d * paso}px) translateY(${a * a * 7 + a * 6}px) rotate(${d * 6}deg) scale(${1 - Math.min(a, 3) * 0.09})`,
-                opacity: a > 2.6 ? 0 : 1,
-                zIndex: 100 - Math.round(a * 10),
-              }
-            : {
-                // Afuera, abajo a la derecha, cada una un poco más lejos.
-                transform: `translate(${60 + i * 8}vw, ${50 + i * 4}vh) rotate(${28 + i * 4}deg) scale(0.9)`,
-                opacity: 0,
-                zIndex: 100 - i,
-              };
-          if (!acomodadas) estilo.transitionDelay = `${i * 90}ms`;
-          return (
-            <Link
-              key={p.codigo}
-              to={`${BASE}/propiedades/${slug(p)}`}
-              className={i === activo ? 'carta-p carta-p--activa' : 'carta-p'}
-              style={estilo}
-              onClick={(e) => alTocarTarjeta(e, i)}
-              draggable={false}
-              tabIndex={i === activo ? 0 : -1}
-              aria-label={i === activo ? `${p.titulo}, ${p.precio}` : `Ver ${p.titulo}`}
-            >
-              <img src={foto(p.portada, 520, 650)} alt="" draggable={false} decoding="async" />
-            </Link>
-          );
-        })}
+        {TARJETAS.map((p, i) => (
+          <Link
+            key={p.codigo}
+            ref={(el) => { tarjetas.current[i] = el; }}
+            to={`${BASE}/propiedades/${slug(p)}`}
+            className={i === activo ? 'carta-p carta-p--activa' : 'carta-p'}
+            onClick={(e) => alTocarTarjeta(e, i)}
+            draggable={false}
+            tabIndex={i === activo ? 0 : -1}
+            aria-label={i === activo ? `${p.titulo}, ${p.precio}` : `Ver ${p.titulo}`}
+          >
+            <img src={foto(p.portada, 520, 650)} alt="" draggable={false} decoding="async" />
+          </Link>
+        ))}
       </div>
 
       <div className="carrusel__pie">

@@ -9,16 +9,25 @@ import { BASE } from './Sitio';
  * Al pasar el mouse por una sección, se oscurece y le crece una línea abajo;
  * la sección en la que uno está la tiene fija.
  */
+/**
+ * El nombre al lado del logo (Inversiones Generales / M & M / Inmobiliaria).
+ * Por ahora va solo la espiral; el nombre queda armado, con sus estilos en
+ * web.css (.barra__nombre), por si se vuelve a usar: alcanza con poner true.
+ */
+const CON_NOMBRE = false;
+
 export function Barra() {
   return (
     <header className="barra">
-      <Link to={BASE} className="barra__marca" aria-label="Inicio">
+      <Link to={BASE} className="barra__marca" aria-label="Inversiones Generales M & M, inicio">
         <Logo tam={44} />
-        <span className="barra__nombre">
-          <small>Inversiones Generales</small>
-          <strong>M&nbsp;&amp;&nbsp;M</strong>
-          <small>Inmobiliaria</small>
-        </span>
+        {CON_NOMBRE && (
+          <span className="barra__nombre">
+            <small>Inversiones Generales</small>
+            <strong>M&nbsp;&amp;&nbsp;M</strong>
+            <small>Inmobiliaria</small>
+          </span>
+        )}
       </Link>
 
       <nav className="barra__nav" aria-label="Secciones">

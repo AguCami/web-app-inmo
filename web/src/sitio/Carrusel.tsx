@@ -9,13 +9,13 @@ import { IcoFlecha, IcoUbicacion } from './iconos';
  * La portada del inicio: una selección de propiedades en tarjetas.
  *
  * Al abrir, las tarjetas llegan volando de a una y se acomodan en abanico,
- * con la del medio adelante. Después se pasan como un carrusel: con las
- * flechas, arrastrando (o deslizando en el celular), con la rueda o el
- * trackpad de costado, con el teclado o tocando una de los costados. Tocar
- * la del medio abre la propiedad.
+ * con la del medio adelante. Después se pasan con las flechas, tocando una
+ * de los costados, con los puntos, el teclado o el trackpad de costado; en
+ * el celular, también deslizando con el dedo. Con el mouse no se arrastra.
+ * Tocar la del medio abre la propiedad.
  *
  * Para que se sienta fluido, las tarjetas no pasan por React al moverse:
- * su lugar se escribe directo en el estilo. Al arrastrar siguen al puntero
+ * su lugar se escribe directo en el estilo. Al deslizar siguen al dedo
  * cuadro a cuadro, y al soltar se tiene en cuenta la velocidad: un tirón
  * rápido pasa varias, uno lento vuelve o avanza una.
  *
@@ -130,9 +130,11 @@ export function Carrusel() {
     return () => window.clearInterval(t);
   }, [calma, tocado, encima, ir]);
 
-  // ── Arrastrar ──
+  // ── Deslizar con el dedo ──
   const alApretar = (e: React.PointerEvent) => {
-    if (e.button !== 0) return;
+    // Con el mouse no se agarra: se pasa con las flechas o tocando una tarjeta.
+    // Con el dedo sí se desliza, como cualquier carrusel en el celular.
+    if (e.pointerType === 'mouse' || e.button !== 0) return;
     arrastre.current = { id: e.pointerId, x0: e.clientX, dx: 0, movio: false, muestras: [{ t: e.timeStamp, x: e.clientX }] };
   };
   const alMover = (e: React.PointerEvent) => {

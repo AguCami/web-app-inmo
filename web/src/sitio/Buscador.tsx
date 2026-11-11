@@ -2,7 +2,21 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LOCALIDADES, TIPOS } from '../datos';
 import { BASE } from './Sitio';
+import { Desplegable } from './Desplegable';
 import { IcoBuscar } from './iconos';
+
+export const OPCIONES_TIPO = [
+  { valor: '', texto: 'Todo' },
+  ...[...TIPOS, 'Otros'].map((t) => ({
+    valor: t,
+    texto: t === 'Lote' ? 'Lotes y terrenos' : t === 'Otros' ? 'Otros' : `${t}s`,
+  })),
+];
+
+export const OPCIONES_LOCALIDAD = [
+  { valor: '', texto: 'Todas las localidades' },
+  ...LOCALIDADES.map((l) => ({ valor: l, texto: l })),
+];
 
 /** Qué y dónde: lleva al listado con esos filtros puestos. */
 export function Buscador() {
@@ -21,22 +35,8 @@ export function Buscador() {
 
   return (
     <form className="busqueda vidrio" onSubmit={buscar}>
-      <label className="busqueda__campo">
-        <span>Qué buscás</span>
-        <select value={tipo} onChange={(e) => setTipo(e.target.value)}>
-          <option value="">Todo</option>
-          {[...TIPOS, 'Otros'].map((t) => (
-            <option key={t} value={t}>{t === 'Lote' ? 'Lotes y terrenos' : t === 'Otros' ? 'Otros' : `${t}s`}</option>
-          ))}
-        </select>
-      </label>
-      <label className="busqueda__campo">
-        <span>Dónde</span>
-        <select value={loc} onChange={(e) => setLoc(e.target.value)}>
-          <option value="">Todas las localidades</option>
-          {LOCALIDADES.map((l) => <option key={l} value={l}>{l}</option>)}
-        </select>
-      </label>
+      <Desplegable clase="busqueda__campo" etiqueta="Qué buscás" valor={tipo} opciones={OPCIONES_TIPO} alCambiar={setTipo} />
+      <Desplegable clase="busqueda__campo" etiqueta="Dónde" valor={loc} opciones={OPCIONES_LOCALIDAD} alCambiar={setLoc} />
       <button className="btn btn--primario busqueda__boton" type="submit">
         <IcoBuscar /> Buscar
       </button>

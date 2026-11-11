@@ -1,7 +1,9 @@
 import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { LOCALIDADES, PROPIEDADES, TIPOS, precioOrdenable, recientes, tipoDeFiltro, type Propiedad } from '../datos';
+import { PROPIEDADES, TIPOS, precioOrdenable, recientes, tipoDeFiltro, type Propiedad } from '../datos';
 import { Tarjeta } from './Tarjeta';
+import { Desplegable } from './Desplegable';
+import { OPCIONES_LOCALIDAD } from './Buscador';
 import { IcoBuscar } from './iconos';
 
 const DE_A = 24;
@@ -94,15 +96,18 @@ export function Listado() {
               aria-label="Buscar"
             />
           </label>
-          <select value={loc} onChange={(e) => cambiar('loc', e.target.value)} aria-label="Localidad">
-            <option value="">Todas las localidades</option>
-            {LOCALIDADES.map((l) => <option key={l} value={l}>{l}</option>)}
-          </select>
-          <select value={orden} onChange={(e) => cambiar('orden', e.target.value === 'recientes' ? '' : e.target.value)} aria-label="Orden">
-            <option value="recientes">Más recientes</option>
-            <option value="menor">Menor precio</option>
-            <option value="mayor">Mayor precio</option>
-          </select>
+          <Desplegable clase="despl--filtro" ariaLabel="Localidad" valor={loc} opciones={OPCIONES_LOCALIDAD} alCambiar={(v) => cambiar('loc', v)} />
+          <Desplegable
+            clase="despl--filtro"
+            ariaLabel="Orden"
+            valor={orden}
+            opciones={[
+              { valor: 'recientes', texto: 'Más recientes' },
+              { valor: 'menor', texto: 'Menor precio' },
+              { valor: 'mayor', texto: 'Mayor precio' },
+            ]}
+            alCambiar={(v) => cambiar('orden', v === 'recientes' ? '' : v)}
+          />
         </div>
       </div>
 

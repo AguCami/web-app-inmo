@@ -69,20 +69,25 @@ body:has(.sitio) { background: #f1f4f7; color-scheme: light; }
   flex: 1 1 0;
   min-width: max-content;
 }
-.barra__nombre { display: flex; flex-direction: column; line-height: 1.05; }
+/* Las dos líneas centradas una sobre otra, como en la credencial. */
+.barra__nombre { display: flex; flex-direction: column; align-items: center; line-height: 1.1; }
 .barra__nombre small {
   font-family: var(--fuente-titulo);
-  font-size: 9px;
+  font-size: 10.5px;
   font-weight: 600;
   letter-spacing: 0.2em;
+  /* El espaciado suma también después de la última letra: se compensa para
+     que quede centrado de verdad. */
+  margin-right: -0.2em;
   text-transform: uppercase;
   color: var(--tinta-2);
 }
 .barra__nombre strong {
   font-family: var(--fuente-titulo);
-  font-size: 19px;
+  font-size: 16px;
   font-weight: 800;
   letter-spacing: 0.04em;
+  margin-right: -0.04em;
   color: var(--acento-fuerte);
 }
 

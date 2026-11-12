@@ -958,8 +958,9 @@ body:has(.sitio) { background: #f1f4f7; color-scheme: light; }
 /* En pantallas medianas no entran todas: el logo ya lleva al inicio y
    «Consultar» (o el pie) al contacto. */
 @media (max-width: 1000px) {
+  /* Con más peso que la regla táctil (que les pone display: inline-flex). */
   .barra__nav .barra__enlace:first-child,
-  .barra__enlace--contacto { display: none; }
+  .barra__nav .barra__enlace--contacto { display: none; }
 }
 @media (max-width: 360px) {
   .barra__enlace { padding: 8px 5px; font-size: 12.5px; }
@@ -1194,3 +1195,147 @@ body:has(.sitio) { background: #f1f4f7; color-scheme: light; }
 @media (prefers-reduced-motion: reduce) {
   .mazo__nivel--sube, .mazo__carta--2 { animation: none; }
 }
+
+/* ── La galería de la computadora: la carta que se da vuelta (Volteo.tsx) ──
+ * Una carta horizontal con dos caras; Volteo.tsx le suma ±180° de giro y la
+ * transición la hace girar con un pequeño rebote al llegar. Abajo, las
+ * demás fotos como cartas chicas boca abajo con el dorso de la marca. */
+.volteo { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.volteo__escena { position: relative; perspective: 1800px; width: min(100%, 460px); margin: 0 auto; }
+/* Vertical, como un naipe. */
+.volteo__carta {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  transform-style: preserve-3d;
+  transition-property: transform;
+  transition-timing-function: cubic-bezier(0.34, 1.25, 0.5, 1);
+  cursor: pointer;
+  will-change: transform;
+}
+.volteo__cara {
+  position: absolute;
+  inset: 0;
+  padding: 8px;
+  border-radius: var(--r-xl);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.95), rgba(226, 234, 244, 0.85));
+  border: 1px solid #fff;
+  box-shadow: inset 0 1px 0 #fff, 0 2px 6px rgba(10, 30, 60, 0.08), 0 30px 60px -28px rgba(10, 30, 60, 0.45);
+}
+.volteo__cara--1 { transform: rotateY(180deg); }
+.volteo__cara img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border-radius: calc(var(--r-xl) - 8px);
+  background: var(--velo-hover);
+  pointer-events: none;
+}
+.volteo__flecha {
+  position: absolute;
+  top: 50%;
+  translate: 0 -50%;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: var(--r-pill);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.82);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  color: #151b22;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(10, 30, 60, 0.18);
+  transition: transform 120ms ease, background 140ms ease;
+}
+.volteo__flecha:hover { background: #fff; }
+.volteo__flecha:active { transform: scale(0.94); }
+.volteo__flecha--izq { left: -64px; }
+.volteo__flecha--der { right: -64px; }
+.volteo__cuenta {
+  position: absolute;
+  right: 22px;
+  bottom: 22px;
+  z-index: 2;
+  padding: 4px 11px;
+  border-radius: var(--r-pill);
+  background: rgba(10, 20, 35, 0.55);
+  color: #fff;
+  font-size: 12.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+/* Los naipes en abanico: todos parten del mismo lugar, al medio, y giran
+   (--r, lo pone Volteo.tsx) alrededor de un punto muy por debajo, así se
+   abren en arco como cartas en la mano. Al pasar el mouse, el naipe sube
+   por su propio eje y se da vuelta; el de la foto actual queda arriba. */
+.abanico {
+  position: relative;
+  height: 250px;
+  margin-top: 6px;
+}
+.naipe-m {
+  --alto: 96px;
+  position: absolute;
+  left: 50%;
+  top: 34px;
+  width: calc(var(--alto) * 2 / 3);
+  height: var(--alto);
+  margin-left: calc(var(--alto) / -3);
+  padding: 0;
+  border: 0;
+  background: none;
+  perspective: 500px;
+  cursor: pointer;
+  transform-origin: 50% 600%;
+  transform: rotate(var(--r)) translateY(var(--sube, 0px));
+  transition: transform 320ms cubic-bezier(0.34, 1.3, 0.5, 1);
+}
+.naipe-m:hover,
+.naipe-m:focus-visible { --sube: -22px; z-index: 60 !important; }
+.naipe-m--arriba { --sube: -26px; z-index: 50 !important; }
+.naipe-m__giro {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 520ms cubic-bezier(0.34, 1.3, 0.5, 1);
+}
+.naipe-m:hover .naipe-m__giro,
+.naipe-m:focus-visible .naipe-m__giro,
+.naipe-m--arriba .naipe-m__giro { transform: rotateY(180deg); }
+.naipe-m__dorso,
+.naipe-m__frente {
+  position: absolute;
+  inset: 0;
+  border-radius: 10px;
+  overflow: hidden;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  box-shadow: 0 4px 10px -4px rgba(10, 30, 60, 0.35);
+}
+/* El dorso: el azul de la marca con un marco fino y la espiral al medio. */
+.naipe-m__dorso {
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.18), transparent 60%),
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.06) 0 4px, transparent 4px 8px),
+    linear-gradient(160deg, var(--acento), var(--acento-fuerte));
+  border: 2px solid #fff;
+  outline: 1px solid rgba(11, 87, 181, 0.25);
+  outline-offset: -5px;
+}
+.naipe-m__dorso img { width: 30px; height: 30px; border-radius: 50%; background: #fff; padding: 2px; }
+.naipe-m__frente { transform: rotateY(180deg); border: 2px solid #fff; }
+.naipe-m__frente img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.naipe-m--arriba .naipe-m__frente { border-color: var(--acento); box-shadow: 0 0 0 2px var(--acento), 0 6px 14px -4px rgba(11, 87, 181, 0.45); }
+.naipe-m:focus-visible { outline: none; }
+.naipe-m:focus-visible .naipe-m__frente { box-shadow: 0 0 0 2px var(--acento); }

@@ -4,12 +4,29 @@ import { CONTACTO, PROPIEDADES, buscarPorSlug, enlaceWhatsapp, foto, mensajeProp
 import { BASE } from './Sitio';
 import { Tarjeta } from './Tarjeta';
 import { Mazo } from './Mazo';
+import { Volteo } from './Volteo';
 
 /**
- * Qué galería usa la ficha: 'mazo' (las fotos como cartas apiladas, prueba)
- * o 'clasica' (foto grande con flechas y tira de miniaturas). Las dos quedan.
+ * Qué galería usa la ficha:
+ * - 'auto':    el mazo de cartas en el celular y la carta que se da vuelta
+ *              en la computadora (pantallas de 900 px o más).
+ * - 'mazo', 'volteo' o 'clasica': la misma en todos lados. La clásica es la
+ *              foto grande con flechas y la tira de miniaturas.
  */
-const GALERIA: 'mazo' | 'clasica' = 'mazo';
+const GALERIA: 'auto' | 'mazo' | 'volteo' | 'clasica' = 'auto';
+
+/** ¿Pantalla de computadora? Se consulta en vivo: cambia si se agranda la ventana. */
+function useEsAncho() {
+  const consulta = '(min-width: 900px)';
+  const [ancho, setAncho] = useState(() => typeof window !== 'undefined' && window.matchMedia(consulta).matches);
+  useEffect(() => {
+    const mq = window.matchMedia(consulta);
+    const alCambiar = () => setAncho(mq.matches);
+    mq.addEventListener('change', alCambiar);
+    return () => mq.removeEventListener('change', alCambiar);
+  }, []);
+  return ancho;
+}
 import { IcoEscritura, IcoFlecha, IcoMail, IcoSuperficie, IcoTerreno, IcoUbicacion, IcoWhatsapp } from './iconos';
 
 /** La ficha de una propiedad: las fotos, los datos, la descripción y cómo consultar. */
@@ -38,12 +55,9 @@ export function Ficha() {
   return (
     <>
       <section className="seccion">
-        <Link className="volver" to={`${BASE}/propiedades`}>
-          <IcoFlecha izq /> Todas las propiedades
-        </Link>
 
         <div className="ficha">
-          {GALERIA === 'mazo' ? <Mazo p={p} /> : <Galeria p={p} />}
+          <GaleriaElegida p={p} />
 
           <aside className="ficha__lado vidrio">
             <span className="ficha__tipo">{p.tipo} en {p.operacion.toLowerCase()}</span>
@@ -112,6 +126,14 @@ export function Ficha() {
       )}
     </>
   );
+}
+
+function GaleriaElegida({ p }: { p: Propiedad }) {
+  const ancho = useEsAncho();
+  const cual = GALERIA === 'auto' ? (ancho ? 'volteo' : 'mazo') : GALERIA;
+  if (cual === 'mazo') return <Mazo p={p} />;
+  if (cual === 'volteo') return <Volteo p={p} />;
+  return <Galeria p={p} />;
 }
 
 /** La foto grande con flechas, y debajo la tira de miniaturas. También se pasa con el teclado. */

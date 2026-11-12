@@ -1037,3 +1037,160 @@ body:has(.sitio) { background: #f1f4f7; color-scheme: light; }
 .despl--campo .despl__valor { font-size: 14.5px; font-weight: 400; }
 .despl--campo.despl--abierto .despl__boton { background: #fff; border-color: var(--acento); }
 @media (pointer: coarse) { .despl--campo .despl__boton { min-height: 44px; } }
+
+/* ── La galería como mazo de cartas (Mazo.tsx) ──
+ * Cartas verticales 4:5 apiladas. Las dos de atrás asoman abajo, más chicas
+ * y un poco giradas; la de arriba la mueve Mazo.tsx con un resorte (solo
+ * transform). El giro 3D necesita perspectiva en la pila y las dos caras
+ * con backface-visibility hidden. */
+.mazo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  padding: 8px 0 4px;
+}
+.mazo__pildora {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 14px;
+  border-radius: var(--r-pill);
+  background: var(--vidrio);
+  -webkit-backdrop-filter: blur(20px) saturate(1.5);
+  backdrop-filter: blur(20px) saturate(1.5);
+  border: 1px solid var(--vidrio-borde);
+  box-shadow: var(--vidrio-canto), 0 6px 16px -8px rgba(10, 40, 90, 0.25);
+  font-size: 13.5px;
+  font-weight: 600;
+}
+.mazo__cuenta { color: var(--tinta-3); font-weight: 500; font-variant-numeric: tabular-nums; }
+
+.mazo__pila {
+  position: relative;
+  width: min(100%, 440px);
+  aspect-ratio: 4 / 5;
+  margin-bottom: 26px; /* lugar para los cantos que asoman */
+  perspective: 1400px;
+  /* El gesto vertical sigue siendo el scroll de la página; el de costado es del mazo. */
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.mazo__pila:focus-visible { outline: 2px solid var(--acento); outline-offset: 6px; border-radius: 28px; }
+.mazo__nivel { position: absolute; inset: 0; transform-style: preserve-3d; z-index: 3; }
+.mazo__nivel--sube { animation: mazo-sube 420ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+@keyframes mazo-sube {
+  from { transform: translateY(14px) scale(0.94); }
+  to { transform: none; }
+}
+.mazo__carta {
+  position: absolute;
+  inset: 0;
+  border-radius: 24px;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+.mazo__carta img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border-radius: inherit;
+  pointer-events: none;
+  -webkit-user-drag: none;
+}
+/* Las de atrás: asoman abajo, más chicas, con un giro chiquito. */
+.mazo__carta--atras {
+  background: #dfe5ec;
+  box-shadow: 0 10px 26px -14px rgba(10, 30, 60, 0.4);
+  transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1), filter 420ms ease;
+}
+.mazo__carta--1 { z-index: 2; transform: translateY(14px) scale(0.94) rotate(-1.6deg); filter: brightness(0.94); }
+.mazo__carta--2 { z-index: 1; transform: translateY(27px) scale(0.88) rotate(2deg); filter: brightness(0.88); animation: mazo-aparece 420ms ease both; }
+@keyframes mazo-aparece { from { opacity: 0; } to { opacity: 1; } }
+
+/* La de arriba: dos caras, la foto y el dorso con los datos. */
+.mazo__cara {
+  position: absolute;
+  inset: 0;
+  border-radius: 24px;
+  overflow: hidden;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  box-shadow: 0 2px 6px rgba(10, 30, 60, 0.1), 0 26px 50px -20px rgba(10, 30, 60, 0.5);
+}
+.mazo__cara--frente { background: #dfe5ec; }
+.mazo__cara--dorso {
+  transform: rotateY(180deg);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 28px 26px;
+  background: linear-gradient(160deg, #ffffff, #e8eef6);
+  border: 1px solid #fff;
+  color: var(--tinta);
+}
+.mazo__dorso-pre { font-size: 12px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--acento); }
+.mazo__cara--dorso h3 { font-size: 22px; line-height: 1.2; text-wrap: balance; }
+.mazo__dorso-loc { display: flex; align-items: center; gap: 5px; color: var(--tinta-2); font-size: 14px; }
+.mazo__dorso-loc svg { width: 16px; height: 16px; }
+.mazo__cara--dorso ul { list-style: none; padding: 0; margin: 14px 0 0; display: flex; flex-direction: column; }
+.mazo__cara--dorso li {
+  display: grid;
+  grid-template-columns: 22px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 0;
+  border-top: 1px solid rgba(11, 87, 181, 0.1);
+  font-size: 14.5px;
+}
+.mazo__cara--dorso li svg { color: var(--acento); }
+.mazo__cara--dorso li span { color: var(--tinta-2); }
+.mazo__dorso-precio { margin-top: auto; font-family: var(--fuente-titulo); font-size: 28px; font-weight: 800; color: var(--acento-fuerte); }
+.mazo__dorso-ayuda { font-size: 12.5px; color: var(--tinta-3); }
+
+.mazo__controles { display: flex; align-items: center; gap: 12px; }
+.mazo__boton {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--borde-fuerte);
+  background: #fff;
+  color: var(--tinta);
+  cursor: pointer;
+  box-shadow: var(--sombra-suave);
+  transition: transform 120ms ease, border-color 140ms ease, color 140ms ease;
+}
+.mazo__boton:hover { border-color: var(--acento); color: var(--acento); }
+.mazo__boton:active { transform: scale(0.94); }
+.mazo__boton:disabled { opacity: 0.4; cursor: default; }
+.mazo__voltear {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 46px;
+  padding: 0 18px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--borde-fuerte);
+  background: rgba(255, 255, 255, 0.7);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--tinta);
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease, border-color 140ms ease, transform 120ms ease;
+}
+.mazo__voltear:hover { border-color: var(--acento); color: var(--acento-fuerte); }
+.mazo__voltear:active { transform: scale(0.97); }
+.mazo__voltear--activo { background: var(--acento); border-color: var(--acento); color: #fff; }
+.mazo__voltear--activo:hover { color: #fff; }
+
+@media (prefers-reduced-motion: reduce) {
+  .mazo__nivel--sube, .mazo__carta--2 { animation: none; }
+}

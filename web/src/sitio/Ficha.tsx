@@ -3,6 +3,13 @@ import { Link, useParams } from 'react-router-dom';
 import { CONTACTO, PROPIEDADES, buscarPorSlug, enlaceWhatsapp, foto, mensajePropiedad, recientes, type Propiedad } from '../datos';
 import { BASE } from './Sitio';
 import { Tarjeta } from './Tarjeta';
+import { Mazo } from './Mazo';
+
+/**
+ * Qué galería usa la ficha: 'mazo' (las fotos como cartas apiladas, prueba)
+ * o 'clasica' (foto grande con flechas y tira de miniaturas). Las dos quedan.
+ */
+const GALERIA: 'mazo' | 'clasica' = 'mazo';
 import { IcoEscritura, IcoFlecha, IcoMail, IcoSuperficie, IcoTerreno, IcoUbicacion, IcoWhatsapp } from './iconos';
 
 /** La ficha de una propiedad: las fotos, los datos, la descripción y cómo consultar. */
@@ -36,7 +43,7 @@ export function Ficha() {
         </Link>
 
         <div className="ficha">
-          <Galeria p={p} />
+          {GALERIA === 'mazo' ? <Mazo p={p} /> : <Galeria p={p} />}
 
           <aside className="ficha__lado vidrio">
             <span className="ficha__tipo">{p.tipo} en {p.operacion.toLowerCase()}</span>

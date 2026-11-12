@@ -9,10 +9,8 @@ import { IcoFlecha } from './iconos';
  *
  * - Una carta grande y vertical (4:5), como un naipe. Cada vez que se pasa de foto, la carta gira 180° sobre su
  *   eje vertical y del otro lado está la foto nueva.
- * - Abajo, todas las fotos como naipes boca abajo abiertos en abanico, con
- *   el dorso de la marca. Al pasar el mouse un naipe sube y se da vuelta (se
- *   espía la foto); el de la foto actual queda arriba y boca arriba. Tocando
- *   uno, la grande gira hasta esa foto.
+ * - Detrás, a cada lado, asoma una carta de cristal con la foto anterior y
+ *   la siguiente apenas adivinadas. Tocándolas (o con ← →) se pasa.
  *
  * Cómo gira: la carta tiene dos caras. La que no se ve recibe la foto nueva,
  * se espera a que la imagen esté lista (así no gira hacia un hueco) y se
@@ -20,6 +18,11 @@ import { IcoFlecha } from './iconos';
  * el último.
  */
 const GIRO_MS = 760;
+/**
+ * Los naipes en abanico debajo de la carta (una prueba anterior). Apagados:
+ * quedan armados, con sus estilos (.abanico, .naipe-m), por si se vuelven a usar.
+ */
+const CON_ABANICO = false;
 
 export function Volteo({ p }: { p: Propiedad }) {
   const calma = usePrefiereCalma();
@@ -123,20 +126,36 @@ export function Volteo({ p }: { p: Propiedad }) {
             </div>
           ))}
         </div>
+        {/* Las cartas de cristal que asoman detrás, a cada lado: dejan adivinar,
+            borrosa, la foto anterior y la siguiente. Tocándolas se pasa. */}
         {n > 1 && (
           <>
-            <button type="button" className="volteo__flecha volteo__flecha--izq" onClick={() => pasar(-1)} aria-label="Foto anterior">
-              <IcoFlecha izq />
+            <button
+              type="button"
+              key={`izq-${i}`}
+              className="volteo__lado volteo__lado--izq"
+              onClick={() => pasar(-1)}
+              aria-label="Foto anterior"
+            >
+              <img src={foto(fotos[(i - 1 + n) % n], 460, 575)} alt="" draggable={false} />
+              <span className="volteo__lado-flecha" aria-hidden="true"><IcoFlecha izq /></span>
             </button>
-            <button type="button" className="volteo__flecha volteo__flecha--der" onClick={() => pasar(1)} aria-label="Foto siguiente">
-              <IcoFlecha />
+            <button
+              type="button"
+              key={`der-${i}`}
+              className="volteo__lado volteo__lado--der"
+              onClick={() => pasar(1)}
+              aria-label="Foto siguiente"
+            >
+              <img src={foto(fotos[(i + 1) % n], 460, 575)} alt="" draggable={false} />
+              <span className="volteo__lado-flecha" aria-hidden="true"><IcoFlecha /></span>
             </button>
           </>
         )}
         <span className="volteo__cuenta" aria-live="polite">{i + 1} / {n}</span>
       </div>
 
-      {n > 1 && (
+      {CON_ABANICO && n > 1 && (
         <div className="abanico" ref={tira} role="tablist" aria-label="Elegir foto">
           {fotos.map((f, k) => (
             <button

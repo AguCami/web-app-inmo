@@ -1495,3 +1495,9 @@ body:has(.sitio) { background: #f1f4f7; color-scheme: light; }
 .tres--quieta .tres__carta,
 .tres--quieta .tres__carta img,
 .tres--quieta .tres__carta::after { transition: none; }
+
+/* El recuadro del precio arranca a la misma altura que la carta grande
+   (que tiene 18 px de aire arriba). */
+@media (min-width: 901px) {
+  .ficha:has(.tres) .ficha__lado { margin-top: 18px; }
+}

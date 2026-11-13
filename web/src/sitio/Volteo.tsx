@@ -9,11 +9,10 @@ import { IcoFlecha } from './iconos';
  * - Al medio, la carta grande y vertical (4:5) con la foto.
  * - A cada lado asoma una carta de cristal con la foto anterior y la
  *   siguiente, borrosas, inclinadas y giradas un poco en 3D.
- * - Las de los costados están dadas vuelta: se ve su dorso de cristal. Al
- *   pasar, la del medio cae hacia el costado del que se va dándose vuelta,
- *   y la del costado viene al medio dándose vuelta hasta mostrar la foto
- *   (card flip). Las dos giran para el mismo lado, como cartas que ruedan;
- *   por detrás entra la que sigue. Transición del CSS (~520 ms).
+ * - Al pasar, las cartas se mueven de verdad entre esos lugares: la del medio
+ *   cae hacia el costado del que se va (se vuelve de cristal), la del costado
+ *   viene al medio (se aclara) y por detrás entra la que sigue. Todo con una
+ *   transición del CSS sobre transform, opacity y filter (~480 ms).
  *
  * Se pasa tocando una carta de los costados, la del medio (siguiente) o con
  * ← → del teclado.
@@ -64,36 +63,21 @@ export function Volteo({ p }: { p: Propiedad }) {
     <div className="volteo">
       <div className={calma ? 'tres tres--quieta' : 'tres'}>
         {cartas.map(({ pos, k }) => (
-          // Un div con rol de botón y no un <button>: dentro de un botón el
-          // navegador aplana el 3D y el dorso se vería como la foto espejada.
-          <div
+          <button
             key={k}
-            role="button"
+            type="button"
             className="tres__carta"
             data-pos={pos}
             tabIndex={Math.abs(pos) === 1 ? 0 : -1}
             aria-hidden={Math.abs(pos) > 1 || undefined}
             aria-label={pos === 0 ? `${p.titulo}, foto ${i + 1} de ${n}. Siguiente` : pos < 0 ? 'Foto anterior' : 'Foto siguiente'}
             onClick={() => pasar(pos === 0 ? 1 : pos)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                pasar(pos === 0 ? 1 : pos);
-              }
-            }}
           >
-            {/* El frente: la foto. El dorso: la misma foto borrosa bajo un cristal.
-                Al medio se ve el frente; a los costados la carta está dada vuelta. */}
-            <span className="tres__cara tres__cara--frente">
-              <img src={foto(fotos[k], 920, 1150)} alt="" draggable={false} decoding="async" />
-            </span>
-            <span className="tres__cara tres__cara--dorso" aria-hidden="true">
-              <img src={foto(fotos[k], 460, 575)} alt="" draggable={false} decoding="async" />
-              {Math.abs(pos) === 1 && (
-                <span className="tres__flecha">{pos < 0 ? <IcoFlecha izq /> : <IcoFlecha />}</span>
-              )}
-            </span>
-          </div>
+            <img src={foto(fotos[k], 920, 1150)} alt="" draggable={false} decoding="async" />
+            {Math.abs(pos) === 1 && (
+              <span className="tres__flecha" aria-hidden="true">{pos < 0 ? <IcoFlecha izq /> : <IcoFlecha />}</span>
+            )}
+          </button>
         ))}
         <span className="volteo__cuenta" aria-live="polite">{i + 1} / {n}</span>
       </div>

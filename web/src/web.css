@@ -1410,47 +1410,35 @@ body:has(.sitio) { background: #f1f4f7; color-scheme: light; }
 
 /* ── Tres cartas (Volteo.tsx) ──
  * Cinco cartas en el mismo lugar; data-pos (-2 a 2) dice dónde va cada una y
- * la transición la lleva. Cada carta tiene dos caras: el frente con la foto
- * y el dorso de cristal (la foto borrosa bajo un velo blanco). Al medio se
- * ve el frente; a los costados la carta está dada vuelta (rotateY ~180°),
- * así que al cambiar de lugar se da vuelta mientras se mueve: el card flip.
- * La de la derecha está en -164° y la de la izquierda en +164°, así todas
- * giran para el mismo lado al avanzar. */
+ * la transición la lleva. Al medio, nítida y adelante; a los costados, de
+ * cristal (foto borrosa y lavada bajo un velo blanco), inclinadas y giradas
+ * en 3D; en ±2, escondidas detrás. */
 .tres {
   position: relative;
   width: min(100%, 460px);
   aspect-ratio: 4 / 5;
   margin: 18px auto 10px;
-  perspective: 1800px;
+  perspective: 1600px;
 }
 .tres__carta {
-  --t: 520ms;
-  position: absolute;
-  inset: 0;
-  padding: 0;
-  border: 0;
-  background: none;
-  cursor: pointer;
-  transform-style: preserve-3d;
-  /* Solo transform: will-change: opacity (o una opacidad < 1) aplana el 3D
-     y el dorso se vería como la foto espejada. */
-  will-change: transform;
-  transition:
-    transform var(--t) cubic-bezier(0.25, 0.9, 0.3, 1),
-    opacity calc(var(--t) * 0.7) ease;
-  -webkit-tap-highlight-color: transparent;
-}
-.tres__cara {
+  --t: 480ms;
   position: absolute;
   inset: 0;
   padding: 8px;
-  border-radius: var(--r-xl);
   border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: var(--r-xl);
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.95), rgba(226, 234, 244, 0.85));
+  box-shadow: inset 0 1px 0 #fff, 0 2px 6px rgba(10, 30, 60, 0.08), 0 30px 60px -28px rgba(10, 30, 60, 0.45);
+  cursor: pointer;
   overflow: hidden;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
+  will-change: transform, opacity;
+  transition:
+    transform var(--t) cubic-bezier(0.22, 1, 0.36, 1),
+    opacity calc(var(--t) * 0.8) ease,
+    box-shadow var(--t) ease;
+  -webkit-tap-highlight-color: transparent;
 }
-.tres__cara img {
+.tres__carta img {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -1458,38 +1446,33 @@ body:has(.sitio) { background: #f1f4f7; color-scheme: light; }
   border-radius: calc(var(--r-xl) - 8px);
   background: var(--velo-hover);
   pointer-events: none;
+  transition: filter var(--t) ease, opacity var(--t) ease;
 }
-.tres__cara--frente {
-  background: linear-gradient(160deg, rgba(255, 255, 255, 0.95), rgba(226, 234, 244, 0.85));
-  box-shadow: inset 0 1px 0 #fff, 0 2px 6px rgba(10, 30, 60, 0.08), 0 30px 60px -28px rgba(10, 30, 60, 0.45);
-}
-/* El dorso de cristal: la foto borrosa y lavada, con un velo lechoso encima. */
-.tres__cara--dorso {
-  transform: rotateY(180deg);
-  background: linear-gradient(160deg, rgba(255, 255, 255, 0.6), rgba(220, 230, 242, 0.4));
-  box-shadow: inset 0 1px 0 #fff, 0 18px 40px -20px rgba(10, 30, 60, 0.32);
-}
-.tres__cara--dorso img { filter: blur(4px) saturate(1.1); opacity: 0.6; }
-.tres__cara--dorso::after {
+/* El velo de cristal: transparente al medio, blanco lechoso a los costados. */
+.tres__carta::after {
   content: '';
   position: absolute;
   inset: 0;
+  border-radius: inherit;
   pointer-events: none;
   background: linear-gradient(115deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.15) 45%, rgba(255, 255, 255, 0.38));
+  opacity: 0;
+  transition: opacity var(--t) ease;
 }
 
 .tres__carta[data-pos='0'] { z-index: 3; transform: none; }
-.tres__carta[data-pos='1'] { z-index: 2; transform: translateX(38%) rotateY(-164deg) rotateZ(-7deg) scale(0.86); }
-.tres__carta[data-pos='-1'] { z-index: 2; transform: translateX(-38%) rotateY(164deg) rotateZ(7deg) scale(0.86); }
-.tres__carta[data-pos='2'] { z-index: 1; transform: translateX(48%) rotateY(-150deg) rotateZ(-11deg) scale(0.72); opacity: 0; pointer-events: none; }
-.tres__carta[data-pos='-2'] { z-index: 1; transform: translateX(-48%) rotateY(150deg) rotateZ(11deg) scale(0.72); opacity: 0; pointer-events: none; }
+.tres__carta[data-pos='-1'] { z-index: 2; transform: translateX(-36%) rotateY(16deg) rotateZ(-7deg) scale(0.86); transform-origin: 100% 100%; }
+.tres__carta[data-pos='1'] { z-index: 2; transform: translateX(36%) rotateY(-16deg) rotateZ(7deg) scale(0.86); transform-origin: 0% 100%; }
+.tres__carta[data-pos='-2'] { z-index: 1; transform: translateX(-46%) rotateY(24deg) rotateZ(-11deg) scale(0.72); transform-origin: 100% 100%; opacity: 0; pointer-events: none; }
+.tres__carta[data-pos='2'] { z-index: 1; transform: translateX(46%) rotateY(-24deg) rotateZ(11deg) scale(0.72); transform-origin: 0% 100%; opacity: 0; pointer-events: none; }
+.tres__carta:not([data-pos='0']) { box-shadow: inset 0 1px 0 #fff, 0 18px 40px -20px rgba(10, 30, 60, 0.32); }
+.tres__carta:not([data-pos='0']) img { filter: blur(3px) saturate(1.1); opacity: 0.6; }
+.tres__carta:not([data-pos='0'])::after { opacity: 1; }
 /* Al pasar el mouse, la del costado se abre un poco más. */
-.tres__carta[data-pos='1']:hover { transform: translateX(44%) rotateY(-162deg) rotateZ(-9deg) scale(0.87); }
-.tres__carta[data-pos='-1']:hover { transform: translateX(-44%) rotateY(162deg) rotateZ(9deg) scale(0.87); }
-.tres__carta:focus-visible { outline: none; }
-.tres__carta:focus-visible .tres__cara { box-shadow: 0 0 0 2px var(--acento); }
+.tres__carta[data-pos='-1']:hover { transform: translateX(-42%) rotateY(18deg) rotateZ(-9deg) scale(0.87); }
+.tres__carta[data-pos='1']:hover { transform: translateX(42%) rotateY(-18deg) rotateZ(9deg) scale(0.87); }
+.tres__carta:focus-visible { outline: 2px solid var(--acento); outline-offset: 3px; }
 
-/* La flechita va en el dorso, en la parte que asoma. */
 .tres__flecha {
   position: absolute;
   top: 50%;
@@ -1500,14 +1483,15 @@ body:has(.sitio) { background: #f1f4f7; color-scheme: light; }
   height: 40px;
   margin-top: -20px;
   border-radius: var(--r-pill);
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.88);
   color: var(--tinta);
   box-shadow: 0 4px 12px rgba(10, 30, 60, 0.18);
   transition: background 140ms ease, color 140ms ease;
 }
-.tres__carta[data-pos='1'] .tres__flecha { right: 12%; }
 .tres__carta[data-pos='-1'] .tres__flecha { left: 12%; }
+.tres__carta[data-pos='1'] .tres__flecha { right: 12%; }
 .tres__carta:hover .tres__flecha { background: #fff; color: var(--acento); }
 
-.tres--quieta .tres__carta { transition: none; }
-.volteo__cuenta { z-index: 4; }
+.tres--quieta .tres__carta,
+.tres--quieta .tres__carta img,
+.tres--quieta .tres__carta::after { transition: none; }

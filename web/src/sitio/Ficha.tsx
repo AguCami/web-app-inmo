@@ -106,9 +106,8 @@ export function Ficha() {
           </aside>
         </div>
 
-        <article className="descripcion vidrio">
-          <h2>Descripción</h2>
-          <Descripcion texto={p.descripcion} />
+        <article className="descripcion vidrio" aria-label="Descripción">
+          <Descripcion p={p} />
         </article>
       </section>
 
@@ -198,34 +197,83 @@ function Galeria({ p }: { p: Propiedad }) {
   );
 }
 
-const VINETA = /^\s*(?:[*•\-–✅✔️▪️🔹🔸]+)\s*/u;
+/** Viñetas de texto y emojis que en las descripciones hacen de viñeta. */
+const VINETA = /^\s*[•*\-–▪◦·✓✔✅🔷🔹🔸🔶🔵▪️]+\s*/u;
+const EMOJI = /[\p{Extended_Pictographic}\u{FE0F}\u{200D}\u{1F3FB}-\u{1F3FF}]/gu;
+const EMPIEZA_CON_EMOJI = /^\s*\p{Extended_Pictographic}/u;
+
+const sinTildes = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
 
 /**
- * El texto tal como se cargó en Wix, con algo de forma: los renglones que
- * empiezan con viñeta se juntan en una lista y el resto van como párrafos.
+ * Ordena el texto que se cargó en Wix, que viene con emojis, renglones
+ * sueltos y datos repetidos, en dos partes:
+ * - párrafos: el texto corrido («Sobre la propiedad»);
+ * - características: lo que es lista o un dato corto («3 habitaciones»,
+ *   «Escritura», «Terreno 760 m²»).
+ * Se saca lo que la ficha ya muestra en otro lado o sobra: el título en
+ * mayúsculas o con «en venta», la localidad sola, el precio, los «consultanos»
+ * y los encabezados tipo «Características:». No se reescribe nada.
  */
-function Descripcion({ texto }: { texto: string }) {
-  const bloques: ({ tipo: 'p'; texto: string } | { tipo: 'ul'; items: string[] })[] = [];
-  for (const crudo of texto.split('\n')) {
-    const linea = crudo.trim();
-    if (!linea) continue;
-    if (VINETA.test(linea)) {
-      const item = linea.replace(VINETA, '');
-      const ultimo = bloques[bloques.length - 1];
-      if (ultimo?.tipo === 'ul') ultimo.items.push(item);
-      else bloques.push({ tipo: 'ul', items: [item] });
+export function ordenarDescripcion(texto: string, p: Propiedad) {
+  const parrafos: string[] = [];
+  const items: string[] = [];
+  const vistos = new Set<string>();
+  texto.split('\n').forEach((crudo, idx) => {
+    const conVineta = VINETA.test(crudo);
+    const conEmoji = EMPIEZA_CON_EMOJI.test(crudo);
+    const t = crudo.replace(EMOJI, '').replace(VINETA, '').replace(/\s+/g, ' ').trim();
+    if (!t) return;
+    const letras = t.replace(/[^A-Za-zÁÉÍÓÚÑÜáéíóúñü]/g, '');
+    const palabras = t.split(' ').length;
+    if (letras.length > 3 && letras === letras.toUpperCase()) return; // títulos en mayúscula
+    if (idx < 3 && /\ben venta\b/i.test(t)) return; // «Casa en venta – …»
+    if (sinTildes(t) === sinTildes(p.localidad)) return;
+    if (/^(valor|precio)\b/i.test(t) || /^(u\$d|usd)\s*[\d.]/i.test(t)) return;
+    if (/(consult|contact|llama|escrib|coordin|whats)/.test(sinTildes(t)) && palabras < 16) return;
+    if (/:$/.test(t) && t.length < 45) return; // encabezados
+    const clave = sinTildes(t);
+    if (vistos.has(clave)) return;
+    vistos.add(clave);
+    if (conVineta || (conEmoji && palabras <= 10) || palabras <= 4) {
+      const item = t.replace(/[.;,]+$/, '');
+      items.push(item.charAt(0).toUpperCase() + item.slice(1));
     } else {
-      bloques.push({ tipo: 'p', texto: linea });
+      parrafos.push(t);
     }
+  });
+  return { parrafos, items };
+}
+
+function Descripcion({ p }: { p: Propiedad }) {
+  const { parrafos, items } = ordenarDescripcion(p.descripcion, p);
+  // Si no quedó nada (una descripción rara), se muestra tal cual.
+  if (!parrafos.length && !items.length) {
+    return (
+      <div className="descripcion__texto">
+        {p.descripcion.split('\n').filter((l) => l.trim()).map((l, k) => <p key={k}>{l}</p>)}
+      </div>
+    );
   }
   return (
-    <div className="descripcion__texto">
-      {bloques.map((b, n) =>
-        b.tipo === 'p' ? (
-          <p key={n}>{b.texto}</p>
-        ) : (
-          <ul key={n}>{b.items.map((t, k) => <li key={k}>{t}</li>)}</ul>
-        ),
+    <div className={parrafos.length && items.length ? 'descripcion__grilla' : 'descripcion__grilla descripcion__grilla--una'}>
+      {parrafos.length > 0 && (
+        <div className="descripcion__texto">
+          <h2>Sobre la propiedad</h2>
+          {parrafos.map((t, k) => <p key={k}>{t}</p>)}
+        </div>
+      )}
+      {items.length > 0 && (
+        <div className="descripcion__caract">
+          <h2>Características</h2>
+          <ul className="caract">
+            {items.map((t, k) => (
+              <li key={k}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg>
+                <span>{t}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
     </div>
   );

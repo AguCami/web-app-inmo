@@ -1513,3 +1513,37 @@ body:has(.sitio) { background: #f1f4f7; color-scheme: light; }
 .descripcion__texto { max-width: none; columns: 2 340px; column-gap: 48px; display: block; }
 .descripcion__texto > * { break-inside: avoid; margin: 0 0 8px; }
 .descripcion__texto ul { columns: 1; }
+
+/* La descripción ordenada: a la izquierda el texto corrido, a la derecha las
+   características en una grilla con tildes (ver ordenarDescripcion en Ficha). */
+.descripcion__grilla {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  gap: 20px 48px;
+  align-items: start;
+}
+.descripcion__grilla--una { grid-template-columns: 1fr; }
+@media (max-width: 800px) { .descripcion__grilla { grid-template-columns: 1fr; } }
+.descripcion__grilla h2 { font-size: 17px; margin-bottom: 12px; }
+.descripcion__grilla .descripcion__texto { columns: auto; display: flex; flex-direction: column; gap: 10px; max-width: 62ch; }
+.descripcion__grilla .descripcion__texto p { margin: 0; color: var(--tinta-2); font-size: 15.5px; line-height: 1.65; }
+.caract {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr));
+  gap: 8px;
+}
+.caract li {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  font-size: 14.5px;
+  line-height: 1.35;
+}
+.caract svg { flex: none; margin-top: 1px; color: var(--acento); }

@@ -1505,3 +1505,11 @@ body:has(.sitio) { background: #f1f4f7; color-scheme: light; }
 
 /* El contador «1 / 25», arriba a la derecha de la carta grande. */
 .tres .volteo__cuenta { top: 22px; right: 22px; bottom: auto; }
+
+/* La descripción a todo el ancho de la ficha (antes quedaba un hueco a la
+   derecha, debajo del recuadro del precio), con el texto en dos columnas
+   para que los renglones no queden larguísimos. */
+.descripcion { max-width: none; }
+.descripcion__texto { max-width: none; columns: 2 340px; column-gap: 48px; display: block; }
+.descripcion__texto > * { break-inside: avoid; margin: 0 0 8px; }
+.descripcion__texto ul { columns: 1; }

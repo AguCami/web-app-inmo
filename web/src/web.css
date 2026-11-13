@@ -1502,3 +1502,6 @@ body:has(.sitio) { background: #f1f4f7; color-scheme: light; }
 @media (min-width: 901px) {
   .ficha:has(.tres) .ficha__lado { align-self: center; margin-bottom: 12px; }
 }
+
+/* El contador «1 / 25», arriba a la derecha de la carta grande. */
+.tres .volteo__cuenta { top: 22px; right: 22px; bottom: auto; }

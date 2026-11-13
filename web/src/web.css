@@ -1417,7 +1417,7 @@ body:has(.sitio) { background: #f1f4f7; color-scheme: light; }
   position: relative;
   width: min(100%, 460px);
   aspect-ratio: 4 / 5;
-  margin: 18px auto 10px;
+  margin: 18px auto 30px;
   perspective: 1600px;
 }
 .tres__carta {
@@ -1461,10 +1461,10 @@ body:has(.sitio) { background: #f1f4f7; color-scheme: light; }
 }
 
 .tres__carta[data-pos='0'] { z-index: 3; transform: none; }
-.tres__carta[data-pos='-1'] { z-index: 2; transform: translateX(-36%) rotateY(16deg) rotateZ(-7deg) scale(0.86); transform-origin: 100% 100%; }
-.tres__carta[data-pos='1'] { z-index: 2; transform: translateX(36%) rotateY(-16deg) rotateZ(7deg) scale(0.86); transform-origin: 0% 100%; }
-.tres__carta[data-pos='-2'] { z-index: 1; transform: translateX(-46%) rotateY(24deg) rotateZ(-11deg) scale(0.72); transform-origin: 100% 100%; opacity: 0; pointer-events: none; }
-.tres__carta[data-pos='2'] { z-index: 1; transform: translateX(46%) rotateY(-24deg) rotateZ(11deg) scale(0.72); transform-origin: 0% 100%; opacity: 0; pointer-events: none; }
+.tres__carta[data-pos='-1'] { z-index: 2; transform: translateX(-36%) rotateY(16deg) rotateZ(-7deg) scale(0.86); transform-origin: 50% 50%; }
+.tres__carta[data-pos='1'] { z-index: 2; transform: translateX(36%) rotateY(-16deg) rotateZ(7deg) scale(0.86); transform-origin: 50% 50%; }
+.tres__carta[data-pos='-2'] { z-index: 1; transform: translateX(-46%) rotateY(24deg) rotateZ(-11deg) scale(0.72); transform-origin: 50% 50%; opacity: 0; pointer-events: none; }
+.tres__carta[data-pos='2'] { z-index: 1; transform: translateX(46%) rotateY(-24deg) rotateZ(11deg) scale(0.72); transform-origin: 50% 50%; opacity: 0; pointer-events: none; }
 .tres__carta:not([data-pos='0']) { box-shadow: inset 0 1px 0 #fff, 0 18px 40px -20px rgba(10, 30, 60, 0.32); }
 .tres__carta:not([data-pos='0']) img { filter: blur(3px) saturate(1.1); opacity: 0.6; }
 .tres__carta:not([data-pos='0'])::after { opacity: 1; }

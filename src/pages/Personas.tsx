@@ -197,6 +197,14 @@ function FormularioPersona({
   const alternarRol = (rol: RolPersona) =>
     set('roles', f.roles.includes(rol) ? f.roles.filter((r) => r !== rol) : [...f.roles, rol]);
 
+  // Obligatorios: nombre, número de documento, teléfono y qué es.
+  const faltan = [
+    !f.nombre.trim() && 'nombre y apellido',
+    !f.documento.trim() && 'número de documento',
+    !f.telefono?.trim() && 'teléfono',
+    f.roles.length === 0 && 'qué es (propietario, inquilino o garante)',
+  ].filter(Boolean) as string[];
+
   return (
     <Modal
       titulo={persona.nombre || 'Nueva persona'}
@@ -211,7 +219,7 @@ function FormularioPersona({
           <button className="btn btn--fantasma" onClick={onCerrar}>Cancelar</button>
           <button
             className="btn btn--primario"
-            disabled={!f.nombre.trim() || f.roles.length === 0}
+            disabled={faltan.length > 0}
             onClick={() => onGuardar(f)}
           >
             Guardar
@@ -219,8 +227,12 @@ function FormularioPersona({
         </>
       }
     >
-      <Campo etiqueta="Nombre o razón social">
-        <input value={f.nombre} onChange={(e) => set('nombre', e.target.value)} />
+      {faltan.length > 0 && (
+        <p className="mini tenue">Para guardar falta: {faltan.join(', ')}.</p>
+      )}
+
+      <Campo etiqueta="Nombre y apellido o razón social *">
+        <input required value={f.nombre} onChange={(e) => set('nombre', e.target.value)} />
       </Campo>
 
       <Campo etiqueta="Qué es" ayuda="Una misma persona puede ser propietaria de una unidad e inquilina de otra.">
@@ -243,11 +255,11 @@ function FormularioPersona({
             <option value="PAS">Pasaporte</option>
           </select>
         </Campo>
-        <Campo etiqueta="Número">
-          <input value={f.documento} onChange={(e) => set('documento', e.target.value)} />
+        <Campo etiqueta="Número *">
+          <input required value={f.documento} onChange={(e) => set('documento', e.target.value)} />
         </Campo>
-        <Campo etiqueta="Teléfono">
-          <input value={f.telefono ?? ''} onChange={(e) => set('telefono', e.target.value)} />
+        <Campo etiqueta="Teléfono *">
+          <input required type="tel" value={f.telefono ?? ''} onChange={(e) => set('telefono', e.target.value)} />
         </Campo>
         <Campo etiqueta="Email">
           <input type="email" value={f.email ?? ''} onChange={(e) => set('email', e.target.value)} />
@@ -263,10 +275,6 @@ function FormularioPersona({
           <input value={f.cbu ?? ''} onChange={(e) => set('cbu', e.target.value)} />
         </Campo>
       </div>
-
-      <Campo etiqueta="Domicilio">
-        <input value={f.domicilio ?? ''} onChange={(e) => set('domicilio', e.target.value)} />
-      </Campo>
 
       <div className="campo">
         <label className="fila" style={{ gap: 8 }}>

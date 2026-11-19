@@ -202,3 +202,76 @@ export function nombreArchivoLiquidacion(numero: string, propietario?: string): 
   const limpio = nombreDeArchivo(propietario ?? '');
   return nombreDeArchivo(`Liquidacion ${numero}${limpio ? ` - ${limpio}` : ''}`) + '.pdf';
 }
+
+/**
+ * El recibo de la liquidación, aparte del detalle. Cambia según para dónde
+ * va la plata:
+ *  · se le transfiere al dueño → lo firma el dueño: «recibí de la inmobiliaria»;
+ *  · el dueño paga los honorarios (cobró él al inquilino) → lo firma la
+ *    inmobiliaria: «recibimos del propietario».
+ */
+export function construirReciboLiquidacion(d: DatosLiquidacion): Uint8Array {
+  const doc = new Documento();
+  const { liquidacion: liq } = d;
+  const moneda = liq.moneda;
+  const cobrar = liq.neto < 0;
+  const monto = Math.abs(liq.neto);
+  const dueno = d.propietario?.nombre ?? 'el propietario';
+  const fecha = liq.fechaPago ?? liq.fecha;
+
+  let y = membrete(doc, d.emisor, d.logo);
+  y += 26;
+  titulo(doc, 'RECIBO', liq.numero, y);
+  y += 16;
+  doc.texto(`Fecha ${formatearFecha(fecha)}`, MARGEN, y, { tam: 9, color: TENUE });
+  doc.texto(`Período ${formatearPeriodoLargo(liq.periodo)}`, DERECHA, y, { tam: 9, color: TENUE, alinear: 'der' });
+  y += 12;
+  doc.linea(MARGEN, y, DERECHA, y, RAYA);
+
+  y += 26;
+  campo(doc, cobrar ? 'Recibimos de' : 'Recibí de', cobrar ? dueno : d.emisor.nombre, MARGEN, y, 320);
+  const doc1 = cobrar ? documentoDe(d.propietario) : d.emisor.cuit ? `CUIT ${d.emisor.cuit}` : '';
+  if (doc1) doc.texto(doc1, DERECHA, y + 15, { tam: 10, color: TENUE, alinear: 'der' });
+
+  y += 42;
+  doc.texto('LA CANTIDAD DE', MARGEN, y, { tam: 7.5, color: TENUE });
+  doc.texto(formatearMoneda(monto, moneda), DERECHA, y + 3, { tam: 15, negrita: true, color: TINTA, alinear: 'der' });
+  y += 18;
+  const letras = montoEnLetras(monto, moneda);
+  for (const renglon of envolver(letras.charAt(0).toUpperCase() + letras.slice(1), DERECHA - MARGEN, 10).slice(0, 2)) {
+    doc.texto(renglon, MARGEN, y, { tam: 10, color: TINTA });
+    y += 13;
+  }
+
+  y += 16;
+  doc.texto('EN CONCEPTO DE', MARGEN, y, { tam: 7.5, color: TENUE });
+  y += 15;
+  const concepto = cobrar
+    ? `Honorarios de administración y gastos de ${formatearPeriodoLargo(liq.periodo)}, según liquidación ` +
+      `N° ${liq.numero}. Los alquileres de ese período los cobró directamente el propietario.`
+    : `Liquidación de los alquileres y servicios cobrados de ${formatearPeriodoLargo(liq.periodo)}, neta de ` +
+      `honorarios de administración y gastos, según liquidación N° ${liq.numero}.`;
+  for (const renglon of envolver(concepto, DERECHA - MARGEN, 10.5)) {
+    doc.texto(renglon, MARGEN, y, { tam: 10.5, color: TINTA });
+    y += 14;
+  }
+
+  const yFirma = Math.max(y + 90, 420);
+  if (cobrar) {
+    firma(doc, d.emisor, yFirma);
+  } else {
+    // Lo firma el dueño, que es quien recibe la plata.
+    doc.linea(DERECHA - 220, yFirma, DERECHA, yFirma, RAYA, 1);
+    doc.texto('Firma del propietario', DERECHA - 110, yFirma + 13, { tam: 8.5, color: TENUE, alinear: 'centro' });
+    doc.texto(`Aclaración: ${dueno}`, DERECHA - 220, yFirma + 30, { tam: 8.5, color: TENUE });
+    const dni = documentoDe(d.propietario);
+    if (dni) doc.texto(dni, DERECHA - 220, yFirma + 43, { tam: 8.5, color: TENUE });
+  }
+  return doc.aBytes();
+}
+
+/** «Recibo LIQ-202610-003 - Marta Suarez.pdf» */
+export function nombreArchivoReciboLiquidacion(numero: string, propietario?: string): string {
+  const limpio = nombreDeArchivo(propietario ?? '');
+  return nombreDeArchivo(`Recibo ${numero}${limpio ? ` - ${limpio}` : ''}`) + '.pdf';
+}

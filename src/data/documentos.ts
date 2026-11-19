@@ -8,7 +8,12 @@
  */
 import { saldoTrasPago } from '../domain/cobranzas';
 import { descargar } from '../domain/pdf';
-import { construirLiquidacion, nombreArchivoLiquidacion } from '../domain/liquidacion-pdf';
+import {
+  construirLiquidacion,
+  construirReciboLiquidacion,
+  nombreArchivoLiquidacion,
+  nombreArchivoReciboLiquidacion,
+} from '../domain/liquidacion-pdf';
 import { construirRecibo, nombreArchivoRecibo } from '../domain/recibo';
 import type { BaseDatos, Liquidacion, Pago } from '../domain/types';
 import { logoParaPdf } from './logoPdf';
@@ -49,4 +54,16 @@ export async function emitirLiquidacion(db: BaseDatos, liquidacion: Liquidacion)
   });
 
   descargar(pdf, nombreArchivoLiquidacion(liquidacion.numero, propietario?.nombre));
+}
+
+/** El recibo de la liquidación: lo firma el dueño o la inmobiliaria, según para dónde va la plata. */
+export async function emitirReciboLiquidacion(db: BaseDatos, liquidacion: Liquidacion): Promise<void> {
+  const propietario = db.personas.find((p) => p.id === liquidacion.propietarioId);
+  const pdf = construirReciboLiquidacion({
+    liquidacion,
+    emisor: db.configuracion,
+    propietario,
+    logo: await logoParaPdf(),
+  });
+  descargar(pdf, nombreArchivoReciboLiquidacion(liquidacion.numero, propietario?.nombre));
 }

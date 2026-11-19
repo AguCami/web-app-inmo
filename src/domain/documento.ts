@@ -71,15 +71,20 @@ export function membrete(doc: Documento, emisor: Configuracion, logo?: ImagenJPE
   const textoX = logo ? MARGEN + 64 : MARGEN;
   if (logo) doc.ponerImagen(logo, MARGEN, y - 4, 52, 52);
 
-  doc.texto(emisor.nombre || 'Administración de alquileres', textoX, y + 12, {
-    tam: 15, negrita: true, color: TINTA,
+  // Como en la web: «Inversiones Generales» con serifa y, abajo, «M&M ·
+  // INMOBILIARIA» en mayúsculas espaciadas y en el azul de la marca. Si el
+  // nombre no termina en «M & M», va entero en la primera línea.
+  const nombre = (emisor.nombre || 'Administración de alquileres').trim();
+  const partes = /^(.*?)\s*M\s*&\s*M$/i.exec(nombre);
+  doc.texto(partes?.[1] || nombre, textoX, y + 16, { tam: 20, serif: true, color: TINTA });
+  doc.texto(partes ? 'M&M · INMOBILIARIA' : 'INMOBILIARIA', textoX, y + 31, {
+    tam: 8.5, negrita: true, color: ACENTO, espaciado: 1.6,
   });
 
   const contacto = [emisor.cuit && `CUIT ${emisor.cuit}`, emisor.telefono, emisor.email]
     .filter(Boolean)
     .join('  ·  ');
-  if (contacto) doc.texto(contacto, textoX, y + 28, { tam: 8.5, color: TENUE });
-  doc.texto('Administración de alquileres', textoX, y + 41, { tam: 8.5, color: TENUE });
+  if (contacto) doc.texto(contacto, textoX, y + 45, { tam: 8.5, color: TENUE });
 
   const abajo = MARGEN + 62;
   doc.linea(MARGEN, abajo, DERECHA, abajo, RAYA, 1);

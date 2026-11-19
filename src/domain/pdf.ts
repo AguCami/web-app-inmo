@@ -37,6 +37,13 @@ export interface OpcionesTexto {
   color?: Color;
   /** Dónde cae la `x` que se pasa: al inicio, al final o al medio del texto. */
   alinear?: 'izq' | 'der' | 'centro';
+  /**
+   * Letra con serifa (Times), como el nombre de la marca. Sin tabla de
+   * anchos: usarla solo alineada a la izquierda.
+   */
+  serif?: boolean;
+  /** Aire entre letras, en puntos (las mayúsculas espaciadas de la marca). */
+  espaciado?: number;
 }
 
 /* ─────────────────────── Anchos de los glifos ─────────────────────── */
@@ -177,7 +184,11 @@ export class Documento {
     if (op.alinear === 'centro') xFinal = x - anchoTexto(texto, tam, negrita) / 2;
 
     const y = A4.alto - yDesdeArriba;
-    this.op(`BT /${negrita ? 'F2' : 'F1'} ${num(tam)} Tf ${col(color)} rg ${num(xFinal)} ${num(y)} Td (`);
+    const fuente = op.serif ? 'F3' : negrita ? 'F2' : 'F1';
+    // El espaciado queda en el estado gráfico y no se reinicia con ET: se
+    // fija siempre, para que no se arrastre al texto que sigue.
+    const espaciado = ` ${num(op.espaciado ?? 0)} Tc`;
+    this.op(`BT /${fuente} ${num(tam)} Tf${espaciado} ${col(color)} rg ${num(xFinal)} ${num(y)} Td (`);
     for (const b of bytesDeTexto(texto)) this.actual.contenido.push(b);
     this.op(') Tj ET\n');
   }
@@ -215,10 +226,11 @@ export class Documento {
     const idsContenido = this.paginas.map((_, i) => primeraPagina + i * 2 + 1);
     const idFuente1 = primeraPagina + this.paginas.length * 2;
     const idFuente2 = idFuente1 + 1;
-    const idImagen = idFuente2 + 1;
+    const idFuente3 = idFuente2 + 1;
+    const idImagen = idFuente3 + 1;
 
     const recursos =
-      `<< /Font << /F1 ${idFuente1} 0 R /F2 ${idFuente2} 0 R >>` +
+      `<< /Font << /F1 ${idFuente1} 0 R /F2 ${idFuente2} 0 R /F3 ${idFuente3} 0 R >>` +
       (this.imagen ? ` /XObject << /Im1 ${idImagen} 0 R >>` : '') +
       ' >>';
 
@@ -243,7 +255,7 @@ export class Documento {
       agregar(flujo);
     });
 
-    for (const fuente of ['Helvetica', 'Helvetica-Bold']) {
+    for (const fuente of ['Helvetica', 'Helvetica-Bold', 'Times-Roman']) {
       agregar(
         bytesDeASCII(
           `<< /Type /Font /Subtype /Type1 /BaseFont /${fuente} /Encoding /WinAnsiEncoding >>`,

@@ -184,14 +184,7 @@ export function construirRecibo(d: DatosRecibo): Uint8Array {
     y += 26;
   }
 
-  /* ── Pie: salvedad y firma ── */
-  doc.texto(
-    'Este recibo acredita el pago detallado arriba y no implica conformidad con deudas de otros períodos.',
-    MARGEN,
-    y + 16,
-    { tam: 8, color: TENUE },
-  );
-
+  /* ── Pie: firma ── */
   // La firma va debajo del texto, no clavada al pie: un recibo corto no tiene
   // por qué dejar media hoja en blanco. Igual nunca sube más de cierto punto.
   firma(doc, d.emisor, Math.max(y + 76, 560), d.sello);

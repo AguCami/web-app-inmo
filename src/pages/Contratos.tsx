@@ -23,6 +23,7 @@ import {
   incluyeTexto,
   nuevoId,
   periodoActual,
+  sumarDias,
   sumarMeses,
 } from '../domain/util';
 
@@ -40,6 +41,12 @@ export const TEXTO_VIGENCIA: Record<VigenciaContrato, string> = {
   no_iniciado: 'Por empezar',
 };
 
+/** El último día de un contrato de `anios` años: el día anterior al aniversario. */
+function finPorAnios(inicio: string, anios: number): string {
+  return sumarDias(sumarMeses(inicio, anios * 12), -1);
+}
+const DURACIONES = [1, 2, 3, 4, 5];
+
 export function contratoNuevo(comision: number, punitorio: number, numero: string): Contrato {
   const inicio = `${periodoActual()}-01`;
   return {
@@ -49,7 +56,7 @@ export function contratoNuevo(comision: number, punitorio: number, numero: strin
     inquilinoId: '',
     garanteIds: [],
     fechaInicio: inicio,
-    fechaFin: sumarMeses(inicio, 35),
+    fechaFin: finPorAnios(inicio, 2),
     montoInicial: 0,
     moneda: 'ARS',
     diaVencimiento: 10,
@@ -247,6 +254,25 @@ export function FormularioContrato({
   // activo: el estado solo se elige al editar uno existente.
   const esNuevo = !db.contratos.some((c) => c.id === contrato.id);
 
+  // Duración en años: con ella, la fecha de fin sale sola. «Otra» deja
+  // poner la fecha a mano (contratos que no son por años enteros).
+  const [duracion, setDuracion] = useState<number | 'otra'>(
+    () => DURACIONES.find((n) => finPorAnios(contrato.fechaInicio, n) === contrato.fechaFin) ?? 'otra',
+  );
+  const cambiarDuracion = (v: string) => {
+    if (v === 'otra') return setDuracion('otra');
+    const n = Number(v);
+    setDuracion(n);
+    set('fechaFin', finPorAnios(f.fechaInicio, n));
+  };
+  const cambiarInicio = (inicio: string) => {
+    setF((x) => ({
+      ...x,
+      fechaInicio: inicio,
+      fechaFin: duracion === 'otra' || !inicio ? x.fechaFin : finPorAnios(inicio, duracion),
+    }));
+  };
+
   // La copia firmada del contrato, en PDF. En uno nuevo se elige acá y se
   // sube recién al guardar: antes el contrato no existe y el archivo
   // quedaría colgado de nada.
@@ -351,12 +377,26 @@ export function FormularioContrato({
       </div>
 
       <div className="grid grid--form">
+        <Campo etiqueta="Duración">
+          <select value={String(duracion)} onChange={(e) => cambiarDuracion(e.target.value)}>
+            {DURACIONES.map((n) => (
+              <option key={n} value={n}>{n === 1 ? '1 año' : `${n} años`}</option>
+            ))}
+            <option value="otra">Otra (fecha a mano)</option>
+          </select>
+        </Campo>
         <Campo etiqueta="Empieza">
-          <input type="date" value={f.fechaInicio} onChange={(e) => set('fechaInicio', e.target.value)} />
+          <input type="date" value={f.fechaInicio} onChange={(e) => cambiarInicio(e.target.value)} />
         </Campo>
-        <Campo etiqueta="Termina">
-          <input type="date" value={f.fechaFin} onChange={(e) => set('fechaFin', e.target.value)} />
-        </Campo>
+        {duracion === 'otra' ? (
+          <Campo etiqueta="Termina">
+            <input type="date" value={f.fechaFin} onChange={(e) => set('fechaFin', e.target.value)} />
+          </Campo>
+        ) : (
+          <Campo etiqueta="Termina" ayuda="Sale de la duración.">
+            <input type="date" value={f.fechaFin} readOnly tabIndex={-1} className="entrada-fija" />
+          </Campo>
+        )}
         <Campo etiqueta="Alquiler inicial">
           <input
             className="entrada-num"

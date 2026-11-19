@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Campo, Modal, Nota } from './ui';
 import { emitirRecibo } from '../data/documentos';
 import { useApp, useDb } from '../data/store';
-import { cuotasAdeudadasAntes, punitoriosDeCuota, saldoDeCuota } from '../domain/cobranzas';
+import { conServiciosDelContrato, cuotasAdeudadasAntes, punitoriosDeCuota, saldoDeCuota } from '../domain/cobranzas';
 import type { Cuota, MedioPago } from '../domain/types';
 import {
   formatearFecha,
@@ -45,7 +45,8 @@ export function PagoModal({
 
   // Los servicios que se cargan al cobrar (luz, agua, expensas del mes):
   // sus importes son obligatorios y se suman a lo que hay que cobrar.
-  const aCompletar = cuota.items
+  const cuotaConServicios = conServiciosDelContrato(cuota, contrato, db.pagos);
+  const aCompletar = cuotaConServicios.items
     .map((item, indice) => ({ item, indice }))
     .filter(({ item }) => item.aCompletar);
   const [servicios, setServicios] = useState<Record<number, string>>({});
@@ -91,7 +92,7 @@ export function PagoModal({
               setEmitiendo(true);
               if (aCompletar.length) {
                 completarCuota(
-                  cuota.id,
+                  cuotaConServicios,
                   new Map(aCompletar.map(({ indice }) => [indice, Number(servicios[indice]) || 0])),
                 );
               }

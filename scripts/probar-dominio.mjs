@@ -323,6 +323,18 @@ ctxPrevio.pagos = cobranzas.pagosDeSaldoPrevio(ctxPrevio.cuotas, [], '2026-10');
 ok('saldar hasta octubre paga la cuota de octubre', ctxPrevio.pagos.length === 1 && ctxPrevio.pagos[0].monto === 100000);
 ok('y no se vuelve a liquidar', liqs.armarLiquidacion('d1', '2026-10', ctxPrevio, 'L3') === null);
 
+/* ── Servicios agregados al contrato después de emitir la cuota ── */
+const cuotaVieja = { id: 'qv', contratoId: 'c1', periodo: '2026-11', vencimiento: '2026-11-10', moneda: 'ARS',
+  items: [{ descripcion: 'Alquiler', monto: 539000, tipo: 'alquiler' }], total: 539000, estado: 'pendiente' };
+const conNuevos = { ...viejo, conceptosFijos: [
+  { id: 'e', descripcion: 'energia', monto: 0, aCuentaDelPropietario: true },
+  { id: 'a', descripcion: 'agua', monto: 0, aCuentaDelPropietario: true }] };
+const vista = cobranzas.conServiciosDelContrato(cuotaVieja, conNuevos, []);
+ok('al cobrar se suman los servicios que el contrato tiene ahora',
+  cobranzas.itemsACompletar(vista).map((i) => i.descripcion).join(',') === 'energia,agua');
+ok('pero no a una cuota que ya tiene pagos',
+  cobranzas.conServiciosDelContrato(cuotaVieja, conNuevos, [{ cuotaId: 'qv', monto: 1 }]).items.length === 1);
+
 /* ── Los servicios se completan al cobrar ── */
 const cuotaServ = cobranzas.armarCuota(
   { ...viejo, conceptosFijos: [

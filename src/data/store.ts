@@ -96,7 +96,7 @@ interface EstadoApp {
   emitirCuotas: (hasta?: Periodo) => number;
   anularCuota: (cuotaId: ID) => void;
   /** Pone los importes de los servicios que se completan al cobrar (por posición del ítem). */
-  completarCuota: (cuotaId: ID, montos: Map<number, number>) => void;
+  completarCuota: (cuota: Cuota, montos: Map<number, number>) => void;
   /** Da por pagadas todas las cuotas hasta ese mes (sin recibo ni liquidación). Devuelve cuántas. */
   saldarHasta: (periodo: Periodo) => number;
   /** Devuelve el pago ya creado, con su número de recibo, para poder emitirlo. */
@@ -386,10 +386,12 @@ export const useApp = create<EstadoApp>((set, get) => {
       return nuevos.length;
     },
 
-    completarCuota: (cuotaId, montos) =>
+    // Recibe la cuota tal como se la mostró al cobrar (con los servicios que
+    // le hayan faltado) y la guarda con los importes puestos.
+    completarCuota: (cuota, montos) =>
       mutar((db) => ({
         ...db,
-        cuotas: db.cuotas.map((c) => (c.id === cuotaId ? completarItems(c, montos) : c)),
+        cuotas: db.cuotas.map((c) => (c.id === cuota.id ? completarItems(cuota, montos) : c)),
       })),
 
     registrarPago: (pago) => {

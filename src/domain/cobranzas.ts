@@ -317,3 +317,22 @@ export function pagosDeSaldoPrevio(cuotas: Cuota[], pagos: Pago[], hasta: Period
     notas: SALDADO_PREVIO,
   }));
 }
+
+/**
+ * La cuota con los servicios que el contrato tiene ahora y a ella le faltan.
+ * Pasa cuando los servicios se agregaron al contrato después de emitir la
+ * cuota. Solo si todavía no tiene pagos: una cuota cobrada no se toca.
+ */
+export function conServiciosDelContrato(cuota: Cuota, contrato: Contrato | undefined, pagos: Pago[]): Cuota {
+  if (!contrato || pagos.some((p) => p.cuotaId === cuota.id)) return cuota;
+  const yaTiene = new Set(cuota.items.map((i) => i.descripcion.trim().toLowerCase()));
+  const faltan: ItemCuota[] = contrato.conceptosFijos
+    .filter((cf) => cf.descripcion.trim() && !yaTiene.has(cf.descripcion.trim().toLowerCase()))
+    .map((cf) => ({
+      descripcion: cf.descripcion.trim(),
+      monto: 0,
+      tipo: cf.descripcion.toLowerCase().includes('expensa') ? 'expensas' : 'servicio',
+      aCompletar: true,
+    }));
+  return faltan.length ? { ...cuota, items: [...cuota.items, ...faltan] } : cuota;
+}

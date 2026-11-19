@@ -16,12 +16,6 @@ import { montoEnLetras } from './letras';
 import type { Configuracion, ItemLiquidacion, Liquidacion, Persona } from './types';
 import { documentoDe, formatearFecha, formatearMoneda, formatearPeriodoLargo, redondear, sumar } from './util';
 
-const ESTADOS: Record<Liquidacion['estado'], string> = {
-  borrador: 'Borrador — todavía no aprobada',
-  aprobada: 'Aprobada — pendiente de transferir',
-  pagada: 'Transferida',
-};
-
 export interface DatosLiquidacion {
   liquidacion: Liquidacion;
   emisor: Configuracion;
@@ -160,31 +154,6 @@ export function construirLiquidacion(d: DatosLiquidacion): Uint8Array {
   ).slice(0, 2)) {
     doc.texto(renglon, MARGEN, y, { tam: 10, color: TENUE });
     y += 13;
-  }
-
-  /* ── Estado y criterio ── */
-  y += 12;
-  const estado = cobrar
-    ? { borrador: ESTADOS.borrador, aprobada: 'Aprobada — pendiente de cobro', pagada: 'Cobrada' }[liq.estado]
-    : ESTADOS[liq.estado];
-  doc.texto(estado, MARGEN, y, { tam: 10, negrita: true, color: TINTA });
-  if (liq.estado === 'pagada' && liq.fechaPago) {
-    doc.texto(`${cobrar ? 'Cobrada' : 'Transferida'} el ${formatearFecha(liq.fechaPago)}`, DERECHA, y, {
-      tam: 10, color: TENUE, alinear: 'der',
-    });
-  }
-
-  y += 20;
-  for (const renglon of envolver(
-    'Se liquida lo efectivamente cobrado al inquilino, no lo facturado. Si una cuota se ' +
-      'cobró en parte, acá figura solo esa parte; el resto se rinde en la liquidación ' +
-      'siguiente, cuando entre. Los honorarios se calculan sobre el alquiler cobrado, sin ' +
-      'incluir expensas ni servicios.',
-    DERECHA - MARGEN,
-    8.5,
-  )) {
-    doc.texto(renglon, MARGEN, y, { tam: 8.5, color: TENUE });
-    y += 11;
   }
 
   if (liq.notas) {

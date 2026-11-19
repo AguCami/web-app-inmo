@@ -104,6 +104,11 @@ interface EstadoApp {
   eliminarPago: (pagoId: ID) => void;
 
   generarLiquidaciones: (periodo: Periodo) => number;
+  /**
+   * Rearma solas las liquidaciones del mes: los borradores se vuelven a
+   * calcular con lo último cobrado; lo aprobado o transferido no se toca.
+   */
+  actualizarLiquidaciones: (periodo: Periodo) => void;
   cambiarEstadoLiquidacion: (id: ID, estado: Liquidacion['estado']) => void;
   eliminarLiquidacion: (id: ID) => void;
 }
@@ -452,6 +457,56 @@ export const useApp = create<EstadoApp>((set, get) => {
         };
       });
       return nuevas.length;
+    },
+
+    actualizarLiquidaciones: (periodo) => {
+      const db = get().db;
+      const borradores = db.liquidaciones.filter((l) => l.periodo === periodo && l.estado === 'borrador');
+      const idsBorrador = new Set(borradores.map((l) => l.id));
+      // Sin los borradores, lo que tenían vuelve a quedar pendiente de rendir.
+      const base: BaseDatos = {
+        ...db,
+        liquidaciones: db.liquidaciones.filter((l) => !idsBorrador.has(l.id)),
+        cuotas: db.cuotas.map((c) => (c.liquidacionId && idsBorrador.has(c.liquidacionId) ? { ...c, liquidacionId: undefined } : c)),
+        gastos: db.gastos.map((g) => (g.liquidacionId && idsBorrador.has(g.liquidacionId) ? { ...g, liquidacionId: undefined } : g)),
+      };
+
+      const propietarios = [...new Set(base.propiedades.map((p) => p.propietarioId))];
+      let n = db.liquidaciones.length + 1;
+      const nuevas: Liquidacion[] = [];
+      for (const propietarioId of propietarios) {
+        const vieja = borradores.find((l) => l.propietarioId === propietarioId);
+        const numero = vieja?.numero ?? `LIQ-${periodo.replace('-', '')}-${String(n).padStart(3, '0')}`;
+        const liq = armarLiquidacion(propietarioId, periodo, base, numero);
+        if (!liq) continue;
+        // El mismo borrador sigue siendo el mismo: conserva su número y su id.
+        nuevas.push(vieja ? { ...liq, id: vieja.id, fecha: vieja.fecha } : liq);
+        if (!vieja) n += 1;
+      }
+
+      // Si quedó igual, no se escribe nada (ni se sincroniza).
+      const firma = (ls: Liquidacion[]) =>
+        JSON.stringify(
+          [...ls].sort((a, b) => a.id.localeCompare(b.id)).map((l) => [l.id, l.propietarioId, l.neto, l.items]),
+        );
+      if (firma(nuevas) === firma(borradores)) return;
+
+      mutar(() => {
+        const referencias = new Map<ID, ID>();
+        for (const liq of nuevas) {
+          for (const item of liq.items) if (item.referenciaId) referencias.set(item.referenciaId, liq.id);
+        }
+        return {
+          ...base,
+          liquidaciones: [...base.liquidaciones, ...nuevas],
+          cuotas: base.cuotas.map((c) =>
+            referencias.has(c.id) && !c.liquidacionId ? { ...c, liquidacionId: referencias.get(c.id) } : c,
+          ),
+          gastos: base.gastos.map((g) =>
+            referencias.has(g.id) ? { ...g, liquidacionId: referencias.get(g.id) } : g,
+          ),
+        };
+      });
     },
 
     cambiarEstadoLiquidacion: (id, estado) =>

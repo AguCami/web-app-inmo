@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Encabezado } from '../components/Encabezado';
 import { SelectorPeriodo } from '../components/SelectorPeriodo';
 import { Avatar, Dato, Item, Modal, Panel, Pastilla, Segmentos, Vacio } from '../components/ui';
@@ -33,14 +33,19 @@ const textoEstado = (l: Liquidacion) =>
 
 export default function Liquidaciones() {
   const db = useDb();
-  const generar = useApp((e) => e.generarLiquidaciones);
+  const actualizar = useApp((e) => e.actualizarLiquidaciones);
   const cambiarEstado = useApp((e) => e.cambiarEstadoLiquidacion);
   const eliminarLiq = useApp((e) => e.eliminarLiquidacion);
 
   const [periodo, setPeriodo] = useState(periodoActual());
+
+  // Las liquidaciones se arman solas: al entrar, al cambiar de mes y cada
+  // vez que entra un cobro o un gasto. Si no cambió nada, no escribe nada.
+  useEffect(() => {
+    actualizar(periodo);
+  }, [actualizar, periodo, db.pagos, db.gastos, db.contratos]);
   const [filtro, setFiltro] = useState<'todas' | 'pendientes'>('todas');
   const [detalle, setDetalle] = useState<Liquidacion | null>(null);
-  const [aviso, setAviso] = useState('');
 
   const personaDe = (id: string) => db.personas.find((p) => p.id === id);
 
@@ -68,23 +73,9 @@ export default function Liquidaciones() {
         bajada="Lo que hay que rendirle a cada propietario de lo que se cobró"
       >
         <SelectorPeriodo valor={periodo} opciones={ultimosPeriodos(periodoActual(), 18).reverse()} onCambio={setPeriodo} />
-        <button
-          className="btn btn--primario no-imprimir"
-          onClick={() => {
-            const n = generar(periodo);
-            setAviso(
-              n
-                ? `Se generó ${plural(n, 'liquidación', 'liquidaciones')}.`
-                : 'No quedan cobranzas sin rendir en este mes.',
-            );
-          }}
-        >
-          Generar
-        </button>
       </Encabezado>
 
       <div className="contenido">
-        {aviso && <div className="nota nota--ok"><span>{aviso}</span></div>}
 
         <div className="grid grid--resumen">
           <Dato
@@ -123,7 +114,7 @@ export default function Liquidaciones() {
             <Vacio
               icono={<IconoLiquidaciones tam={24} />}
               titulo="No hay liquidaciones de este mes"
-              detalle="Generalas cuando hayas registrado las cobranzas."
+              detalle="Aparecen solas cuando se registran cobranzas del mes."
             />
           ) : (
             lista.map((l) => {
@@ -301,8 +292,8 @@ function DetalleLiquidacion({
       </div>
 
       <p className="mini tenue">
-        Se liquida lo que entró, no lo que se facturó. Si después entra una cobranza tardía, «Generar» arma una
-        liquidación complementaria por la diferencia.
+        Se liquida lo que entró, no lo que se facturó. Mientras está en borrador se actualiza sola con cada cobro;
+        si entra una cobranza después de aprobarla, sale otra liquidación por la diferencia.
       </p>
     </Modal>
   );

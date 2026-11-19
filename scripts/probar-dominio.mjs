@@ -70,8 +70,8 @@ ok('y conserva el número y el nombre',
 
 const liq = nombreArchivoLiquidacion('LIQ-202610-003', 'Panadería La Esquina');
 ok('la liquidación también', ASCII.test(liq), liq);
-ok('incluida la palabra Liquidacion, que lleva tilde',
-  liq === 'Liquidacion LIQ-202610-003 - Panaderia La Esquina.pdf');
+ok('se baja como recibo, sin acentos en el nombre',
+  liq === 'Recibo LIQ-202610-003 - Panaderia La Esquina.pdf');
 
 ok('sin nombre de persona igual queda un archivo válido',
   nombreArchivoRecibo('REC-1') === 'Recibo REC-1.pdf');

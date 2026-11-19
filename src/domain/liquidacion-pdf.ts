@@ -171,7 +171,7 @@ export function construirLiquidacion(d: DatosLiquidacion): Uint8Array {
 /** «Liquidacion LIQ-202610-003 - Marta Suarez.pdf» */
 export function nombreArchivoLiquidacion(numero: string, propietario?: string): string {
   const limpio = nombreDeArchivo(propietario ?? '');
-  return nombreDeArchivo(`Liquidacion ${numero}${limpio ? ` - ${limpio}` : ''}`) + '.pdf';
+  return nombreDeArchivo(`Recibo ${numero}${limpio ? ` - ${limpio}` : ''}`) + '.pdf';
 }
 
 /**

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Encabezado } from '../components/Encabezado';
 import { SelectorPeriodo } from '../components/SelectorPeriodo';
 import { Avatar, Dato, Item, Modal, Panel, Pastilla, Segmentos, Vacio } from '../components/ui';
-import { emitirLiquidacion, emitirReciboLiquidacion } from '../data/documentos';
+import { emitirLiquidacion } from '../data/documentos';
 import { IconoLiquidaciones } from '../components/iconos';
 import { useApp, useDb } from '../data/store';
 import { ETIQUETA_ITEM_LIQUIDACION, sentidoLiquidacion } from '../domain/liquidaciones';
@@ -208,21 +208,8 @@ function DetalleLiquidacion({
               setBajando(false);
             }}
           >
-            {bajando ? 'Armando el PDF…' : 'Detalle PDF'}
+            {bajando ? 'Armando el PDF…' : 'Recibo'}
           </button>
-          {liquidacion.estado !== 'borrador' && (
-            <button
-              className="btn"
-              disabled={bajando}
-              onClick={async () => {
-                setBajando(true);
-                await emitirReciboLiquidacion(db, liquidacion);
-                setBajando(false);
-              }}
-            >
-              Recibo
-            </button>
-          )}
           {liquidacion.estado === 'borrador' && (
             <button className="btn btn--primario" onClick={() => onCambiarEstado('aprobada')}>
               Aprobar

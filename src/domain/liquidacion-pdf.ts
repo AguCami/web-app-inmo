@@ -27,6 +27,8 @@ export interface DatosLiquidacion {
   emisor: Configuracion;
   propietario?: Persona;
   logo?: ImagenJPEG;
+  /** El sello y la firma de la inmobiliaria, si se cargó en Ajustes. */
+  sello?: ImagenJPEG;
 }
 
 const totalDe = (items: ItemLiquidacion[], tipo: ItemLiquidacion['tipo']) =>
@@ -193,7 +195,7 @@ export function construirLiquidacion(d: DatosLiquidacion): Uint8Array {
     }
   }
 
-  firma(doc, d.emisor, Math.max(y + 60, 600));
+  firma(doc, d.emisor, Math.max(y + 60, 600), d.sello);
   return doc.aBytes();
 }
 
@@ -258,7 +260,7 @@ export function construirReciboLiquidacion(d: DatosLiquidacion): Uint8Array {
 
   const yFirma = Math.max(y + 90, 420);
   if (cobrar) {
-    firma(doc, d.emisor, yFirma);
+    firma(doc, d.emisor, yFirma, d.sello);
   } else {
     // Lo firma el dueño, que es quien recibe la plata.
     doc.linea(DERECHA - 220, yFirma, DERECHA, yFirma, RAYA, 1);

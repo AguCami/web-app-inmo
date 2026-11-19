@@ -98,11 +98,17 @@ export function titulo(doc: Documento, texto: string, numero: string, y: number)
   return y;
 }
 
-/** La línea de firma, siempre al pie de la última página. */
-export function firma(doc: Documento, emisor: Configuracion, y: number): void {
-  doc.linea(DERECHA - 190, y, DERECHA, y, RAYA, 1);
-  doc.texto('Firma y sello', DERECHA - 95, y + 13, { tam: 8.5, color: TENUE, alinear: 'centro' });
-  doc.texto(emisor.nombre, MARGEN, y + 13, { tam: 8.5, color: TENUE });
+/**
+ * El sello y la firma de la inmobiliaria, al pie y a la derecha. Es la
+ * imagen que se sube en Ajustes; sin ella el lugar queda en blanco.
+ */
+export function firma(doc: Documento, _emisor: Configuracion, y: number, sello?: ImagenJPEG): void {
+  if (!sello) return;
+  const alto = 92;
+  const ancho = Math.min(200, (sello.ancho / sello.alto) * alto);
+  const altoFinal = (sello.alto / sello.ancho) * ancho;
+  // Arranca un poco arriba de `y` y baja: así no pisa el texto de arriba.
+  doc.ponerImagen(sello, DERECHA - ancho, y - 24, ancho, altoFinal);
 }
 
 /**

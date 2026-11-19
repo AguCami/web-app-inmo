@@ -158,7 +158,7 @@ export class Documento {
   private paginas: Pagina[] = [];
   private actual: Pagina;
   /** JPEG del logo, si se cargó. Se comparte entre todas las páginas. */
-  private imagen?: ImagenJPEG;
+  private imagenes: ImagenJPEG[] = [];
 
   constructor() {
     this.actual = { contenido: [] };
@@ -204,10 +204,11 @@ export class Documento {
     this.op(`${col(relleno)} rg ${num(x)} ${num(A4.alto - y - alto)} ${num(ancho)} ${num(alto)} re f\n`);
   }
 
-  /** Coloca el JPEG ya cargado. Un documento lleva una sola imagen: el logo. */
+  /** Coloca un JPEG ya cargado (el logo, el sello). Si se repite, se embebe una sola vez. */
   ponerImagen(jpeg: ImagenJPEG, x: number, y: number, ancho: number, alto: number): void {
-    this.imagen = jpeg;
-    this.op(`q ${num(ancho)} 0 0 ${num(alto)} ${num(x)} ${num(A4.alto - y - alto)} cm /Im1 Do Q\n`);
+    let i = this.imagenes.indexOf(jpeg);
+    if (i === -1) i = this.imagenes.push(jpeg) - 1;
+    this.op(`q ${num(ancho)} 0 0 ${num(alto)} ${num(x)} ${num(A4.alto - y - alto)} cm /Im${i + 1} Do Q\n`);
   }
 
   /** Arma el archivo: objetos numerados, tabla de posiciones y tráiler. */
@@ -231,7 +232,9 @@ export class Documento {
 
     const recursos =
       `<< /Font << /F1 ${idFuente1} 0 R /F2 ${idFuente2} 0 R /F3 ${idFuente3} 0 R >>` +
-      (this.imagen ? ` /XObject << /Im1 ${idImagen} 0 R >>` : '') +
+      (this.imagenes.length
+        ? ` /XObject << ${this.imagenes.map((_, i) => `/Im${i + 1} ${idImagen + i} 0 R`).join(' ')} >>`
+        : '') +
       ' >>';
 
     agregar(bytesDeASCII(`<< /Type /Catalog /Pages ${idPaginas} 0 R >>`));
@@ -263,17 +266,17 @@ export class Documento {
       );
     }
 
-    if (this.imagen) {
+    for (const imagen of this.imagenes) {
       const flujo: number[] = [];
       empujar(
         flujo,
         bytesDeASCII(
-          `<< /Type /XObject /Subtype /Image /Width ${this.imagen.ancho} /Height ${this.imagen.alto} ` +
+          `<< /Type /XObject /Subtype /Image /Width ${imagen.ancho} /Height ${imagen.alto} ` +
             `/ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode ` +
-            `/Length ${this.imagen.datos.length} >>\nstream\n`,
+            `/Length ${imagen.datos.length} >>\nstream\n`,
         ),
       );
-      empujar(flujo, this.imagen.datos);
+      empujar(flujo, imagen.datos);
       empujar(flujo, bytesDeASCII('\nendstream'));
       agregar(flujo);
     }

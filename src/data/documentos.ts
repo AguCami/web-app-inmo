@@ -16,7 +16,7 @@ import {
 } from '../domain/liquidacion-pdf';
 import { construirRecibo, nombreArchivoRecibo } from '../domain/recibo';
 import type { BaseDatos, Liquidacion, Pago } from '../domain/types';
-import { logoParaPdf } from './logoPdf';
+import { logoParaPdf, selloParaPdf } from './logoPdf';
 
 export async function emitirRecibo(db: BaseDatos, pago: Pago): Promise<boolean> {
   const cuota = db.cuotas.find((c) => c.id === pago.cuotaId);
@@ -37,6 +37,7 @@ export async function emitirRecibo(db: BaseDatos, pago: Pago): Promise<boolean> 
     inquilino,
     saldoPosterior: saldoTrasPago(cuota, db.pagos, pago.id),
     logo: await logoParaPdf(),
+    sello: await selloParaPdf(),
   });
 
   descargar(pdf, nombreArchivoRecibo(numero, inquilino?.nombre));
@@ -51,6 +52,7 @@ export async function emitirLiquidacion(db: BaseDatos, liquidacion: Liquidacion)
     emisor: db.configuracion,
     propietario,
     logo: await logoParaPdf(),
+    sello: await selloParaPdf(),
   });
 
   descargar(pdf, nombreArchivoLiquidacion(liquidacion.numero, propietario?.nombre));
@@ -64,6 +66,7 @@ export async function emitirReciboLiquidacion(db: BaseDatos, liquidacion: Liquid
     emisor: db.configuracion,
     propietario,
     logo: await logoParaPdf(),
+    sello: await selloParaPdf(),
   });
   descargar(pdf, nombreArchivoReciboLiquidacion(liquidacion.numero, propietario?.nombre));
 }

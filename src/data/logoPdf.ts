@@ -57,3 +57,33 @@ export async function logoParaPdf(): Promise<ImagenJPEG | undefined> {
 
   return cache ?? undefined;
 }
+
+let cacheSello: ImagenJPEG | null | undefined;
+
+/**
+ * El sello y la firma de la inmobiliaria (public/sello.jpg), para el pie de
+ * los recibos. Ya viene en JPEG sobre blanco; se pasa por el canvas solo
+ * para saber su tamaño. Si falla, el recibo sale sin sello.
+ */
+export async function selloParaPdf(): Promise<ImagenJPEG | undefined> {
+  if (cacheSello !== undefined) return cacheSello ?? undefined;
+  try {
+    const img = await cargarImagen(`${import.meta.env.BASE_URL}sello.jpg`);
+    const lienzo = document.createElement('canvas');
+    lienzo.width = img.naturalWidth;
+    lienzo.height = img.naturalHeight;
+    const ctx = lienzo.getContext('2d');
+    if (!ctx) throw new Error('el navegador no dio contexto 2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, lienzo.width, lienzo.height);
+    ctx.drawImage(img, 0, 0);
+    cacheSello = {
+      datos: bytesDeDataURL(lienzo.toDataURL('image/jpeg', 0.9)),
+      ancho: lienzo.width,
+      alto: lienzo.height,
+    };
+  } catch {
+    cacheSello = null;
+  }
+  return cacheSello ?? undefined;
+}

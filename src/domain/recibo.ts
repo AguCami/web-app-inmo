@@ -36,6 +36,8 @@ export interface DatosRecibo {
   /** Lo que queda debiendo de esta cuota después de este pago. */
   saldoPosterior: number;
   logo?: ImagenJPEG;
+  /** El sello y la firma de la inmobiliaria, si se cargó en Ajustes. */
+  sello?: ImagenJPEG;
 }
 
 export function construirRecibo(d: DatosRecibo): Uint8Array {
@@ -192,7 +194,7 @@ export function construirRecibo(d: DatosRecibo): Uint8Array {
 
   // La firma va debajo del texto, no clavada al pie: un recibo corto no tiene
   // por qué dejar media hoja en blanco. Igual nunca sube más de cierto punto.
-  firma(doc, d.emisor, Math.max(y + 76, 560));
+  firma(doc, d.emisor, Math.max(y + 76, 560), d.sello);
 
   return doc.aBytes();
 }

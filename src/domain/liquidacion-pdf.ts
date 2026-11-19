@@ -36,7 +36,7 @@ export function construirLiquidacion(d: DatosLiquidacion): Uint8Array {
   let y = membrete(doc, d.emisor, d.logo);
 
   y += 26;
-  titulo(doc, 'LIQUIDACIÓN AL PROPIETARIO', liq.numero, y);
+  titulo(doc, 'RECIBO', liq.numero, y);
 
   y += 16;
   doc.texto(`Emitida el ${formatearFecha(liq.fecha)}`, MARGEN, y, { tam: 9, color: TENUE });

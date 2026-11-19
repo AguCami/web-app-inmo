@@ -441,7 +441,7 @@ export function FormularioContrato({
             onClick={() =>
               set('conceptosFijos', [
                 ...f.conceptosFijos,
-                { id: nuevoId('cf'), descripcion: '', monto: 0, aCuentaDelPropietario: false },
+                { id: nuevoId('cf'), descripcion: '', monto: 0, aCuentaDelPropietario: true },
               ])
             }
           >
@@ -468,18 +468,6 @@ export function FormularioContrato({
                     set('conceptosFijos', copia);
                   }}
                 />
-                <label className="mini tenue fila" style={{ gap: 6, flex: 'none' }}>
-                  <input
-                    type="checkbox"
-                    checked={cf.aCuentaDelPropietario}
-                    onChange={(e) => {
-                      const copia = [...f.conceptosFijos];
-                      copia[i] = { ...cf, aCuentaDelPropietario: e.target.checked };
-                      set('conceptosFijos', copia);
-                    }}
-                  />
-                  se le rinde
-                </label>
                 <button
                   className="btn btn--fantasma btn--chico"
                   aria-label="Quitar concepto"

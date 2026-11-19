@@ -114,10 +114,8 @@ export function armarLiquidacion(
     const contrato = porContrato.get(cuota.contratoId)!;
     const propiedad = propiedades.find((p) => p.id === contrato.propiedadId);
 
-    // Lo que le corresponde al propietario: el alquiler y los conceptos marcados a su cuenta.
-    const conceptosPropietario = new Set(
-      contrato.conceptosFijos.filter((cf) => cf.aCuentaDelPropietario).map((cf) => cf.descripcion),
-    );
+    // Lo que le corresponde al propietario: el alquiler y todo lo que se cobró
+    // junto con él (los servicios). Los honorarios, solo sobre el alquiler.
     const baseAlquiler = redondear(
       sumar(
         cuota.items.filter((i) => i.tipo === 'alquiler'),
@@ -126,7 +124,7 @@ export function armarLiquidacion(
     );
     const baseOtros = redondear(
       sumar(
-        cuota.items.filter((i) => i.tipo !== 'alquiler' && conceptosPropietario.has(i.descripcion)),
+        cuota.items.filter((i) => i.tipo !== 'alquiler'),
         (i) => i.monto,
       ) * proporcion,
     );

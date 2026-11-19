@@ -413,10 +413,6 @@ export default function ContratoDetalle() {
                       <div className="fila" key={cf.id} style={{ justifyContent: 'space-between' }}>
                         <span className="mini">
                           {cf.descripcion}
-                          <span className="tenue">
-                            {' '}
-                            — {cf.aCuentaDelPropietario ? 'se le rinde al propietario' : 'a cargo del inquilino'}
-                          </span>
                         </span>
                         <span className="mini tenue">importe al cobrar</span>
                       </div>

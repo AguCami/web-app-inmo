@@ -14,7 +14,7 @@ import type {
   Propiedad,
   ValorIndice,
 } from '../domain/types';
-import { completarItems, generarCuotasFaltantes, siguienteNumeroRecibo } from '../domain/cobranzas';
+import { completarItems, generarCuotasFaltantes, pagosDeSaldoPrevio, siguienteNumeroRecibo } from '../domain/cobranzas';
 import { armarLiquidacion } from '../domain/liquidaciones';
 import { sanear, type ColeccionBorrable } from '../domain/integridad';
 import { hoy, nuevoId, periodoActual } from '../domain/util';
@@ -97,6 +97,8 @@ interface EstadoApp {
   anularCuota: (cuotaId: ID) => void;
   /** Pone los importes de los servicios que se completan al cobrar (por posición del ítem). */
   completarCuota: (cuotaId: ID, montos: Map<number, number>) => void;
+  /** Da por pagadas todas las cuotas hasta ese mes (sin recibo ni liquidación). Devuelve cuántas. */
+  saldarHasta: (periodo: Periodo) => number;
   /** Devuelve el pago ya creado, con su número de recibo, para poder emitirlo. */
   registrarPago: (pago: Omit<Pago, 'id' | 'recibo'>) => Pago;
   eliminarPago: (pagoId: ID) => void;
@@ -377,6 +379,12 @@ export const useApp = create<EstadoApp>((set, get) => {
         ),
         pagos: db.pagos.filter((p) => p.cuotaId !== cuotaId),
       })),
+
+    saldarHasta: (periodo) => {
+      const nuevos = pagosDeSaldoPrevio(get().db.cuotas, get().db.pagos, periodo);
+      if (nuevos.length) mutar((db) => ({ ...db, pagos: [...db.pagos, ...nuevos] }));
+      return nuevos.length;
+    },
 
     completarCuota: (cuotaId, montos) =>
       mutar((db) => ({

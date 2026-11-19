@@ -9,7 +9,7 @@ import type {
   Periodo,
   Propiedad,
 } from './types';
-import { cobradoDeCuota } from './cobranzas';
+import { cobradoDeCuota, SALDADO_PREVIO } from './cobranzas';
 import { formatearPeriodo, hoy, nuevoId, redondear, sumar } from './util';
 
 export interface ContextoLiquidacion {
@@ -47,7 +47,9 @@ export function proporcionPendiente(
   liquidaciones: Liquidacion[],
 ): number {
   if (cuota.estado === 'anulada' || cuota.total <= 0) return 0;
-  const cobrada = Math.min(1, cobradoDeCuota(cuota, pagos) / cuota.total);
+  // Lo saldado al empezar a usar la app ya se le rindió al dueño por fuera.
+  const aRendir = pagos.filter((p) => p.notas !== SALDADO_PREVIO);
+  const cobrada = Math.min(1, cobradoDeCuota(cuota, aRendir) / cuota.total);
   return Math.max(0, cobrada - proporcionLiquidada(cuota.id, liquidaciones));
 }
 

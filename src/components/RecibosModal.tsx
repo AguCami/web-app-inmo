@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Item, Modal, Vacio } from './ui';
-import { useDb } from '../data/store';
+import { useApp, useDb } from '../data/store';
 import { emitirRecibo } from '../data/documentos';
-import { pagosOrdenados } from '../domain/cobranzas';
+import { pagosOrdenados, SALDADO_PREVIO } from '../domain/cobranzas';
 import type { Cuota } from '../domain/types';
 import { formatearFecha, formatearMoneda, formatearPeriodo } from '../domain/util';
 
@@ -19,6 +19,7 @@ export function RecibosModal({ cuota, onCerrar }: { cuota: Cuota; onCerrar: () =
   const [bajando, setBajando] = useState('');
 
   const pagos = pagosOrdenados(db.pagos, cuota.id);
+  const eliminarPago = useApp((e) => e.eliminarPago);
 
   return (
     <Modal
@@ -34,9 +35,9 @@ export function RecibosModal({ cuota, onCerrar }: { cuota: Cuota; onCerrar: () =
           {pagos.map((p) => (
             <Item
               key={p.id}
-              titulo={p.recibo ?? 'Sin número'}
+              titulo={p.notas === SALDADO_PREVIO ? 'Pagado antes de usar la app' : p.recibo ?? 'Sin número'}
               sub={
-                <>
+                p.notas === SALDADO_PREVIO ? 'Sin recibo: se cobró por fuera de la app' : <>
                   {formatearFecha(p.fecha)} · {MEDIOS[p.medio] ?? p.medio}
                   {p.comprobante && ` · ${p.comprobante}`}
                   {p.punitorios ? ` · incluye ${formatearMoneda(p.punitorios, p.moneda)} de punitorios` : ''}
@@ -44,7 +45,11 @@ export function RecibosModal({ cuota, onCerrar }: { cuota: Cuota; onCerrar: () =
               }
               monto={formatearMoneda(p.monto + (p.punitorios ?? 0), p.moneda)}
               fin={
-                <button
+                p.notas === SALDADO_PREVIO ? (
+                  <button className="btn btn--fantasma btn--chico" onClick={() => eliminarPago(p.id)}>
+                    Quitar
+                  </button>
+                ) : <button
                   className="btn btn--chico"
                   disabled={bajando === p.id}
                   onClick={async () => {

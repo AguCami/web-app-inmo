@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { Encabezado } from '../components/Encabezado';
 import { Campo, Dato, Nota, Panel, Pastilla, Segmentos } from '../components/ui';
 import { Confirmar } from '../components/Confirmar';
+import { SelectorPeriodo } from '../components/SelectorPeriodo';
+import { cuotasASaldar, saldoDeCuota } from '../domain/cobranzas';
 import { useApp, useDb } from '../data/store';
 import { exportarJSON, importarJSON } from '../data/db';
 import {
@@ -12,7 +14,7 @@ import {
 import { ETIQUETA_INDICE, INDICES_CON_SERIE } from '../domain/contratos';
 import type { IndiceConSerie } from '../domain/contratos';
 import type { ValorIndice } from '../domain/types';
-import { formatearFecha, formatearPeriodo, formatearPeriodoLargo, periodoActual, plural, redondear, sumarPeriodos } from '../domain/util';
+import { formatearFecha, formatearMoneda, formatearPeriodo, formatearPeriodoLargo, periodoActual, plural, redondear, sumarPeriodos } from '../domain/util';
 
 type Vista = 'datos' | 'indices' | 'respaldo';
 
@@ -86,6 +88,7 @@ export default function Ajustes() {
         </div>
 
         {vista === 'datos' && (
+          <>
           <div className="grid grid--2">
             <Panel titulo="Quién administra" subtitulo="Sale impreso en las liquidaciones">
               <div className="grid grid--form">
@@ -135,6 +138,8 @@ export default function Ajustes() {
               </div>
             </Panel>
           </div>
+          <SaldarAnteriores />
+          </>
         )}
 
         {vista === 'indices' && (
@@ -454,5 +459,64 @@ export default function Ajustes() {
         </Confirmar>
       )}
     </>
+  );
+}
+
+/**
+ * Para cuando se empieza a usar la app con contratos que ya venían de antes:
+ * las cuotas viejas quedan como impagas aunque se hayan cobrado. Esto las da
+ * por pagadas hasta el mes que se elija, sin recibo y sin liquidación.
+ */
+function SaldarAnteriores() {
+  const db = useDb();
+  const saldar = useApp((e) => e.saldarHasta);
+  const meses = Array.from({ length: 24 }, (_, i) => sumarPeriodos(periodoActual(), -1 - i));
+  const [hasta, setHasta] = useState(meses[0]);
+  const [confirmando, setConfirmando] = useState(false);
+  const [aviso, setAviso] = useState('');
+
+  const cuotas = cuotasASaldar(db.cuotas, db.pagos, hasta);
+  const total = cuotas.reduce((t, c) => t + saldoDeCuota(c, db.pagos), 0);
+
+  return (
+    <Panel
+      titulo="Cuotas de antes de usar la app"
+      subtitulo="Si los contratos ya venían de antes, las cuotas viejas figuran impagas aunque se cobraron"
+    >
+      <div className="fila" style={{ gap: 12, flexWrap: 'wrap' }}>
+        <span className="mini">Dar por pagado todo hasta</span>
+        <SelectorPeriodo valor={hasta} opciones={meses} onCambio={setHasta} />
+        <span className="mini tenue crece">
+          {cuotas.length
+            ? `${plural(cuotas.length, 'cuota impaga', 'cuotas impagas')} por ${formatearMoneda(total)}`
+            : 'No queda nada impago hasta ese mes'}
+        </span>
+        <button className="btn btn--primario" disabled={!cuotas.length} onClick={() => setConfirmando(true)}>
+          Marcar como pagadas
+        </button>
+      </div>
+      <p className="mini tenue" style={{ marginTop: 10 }}>
+        No genera recibos ni entra en las liquidaciones: se entiende que se cobró y se le rindió al dueño por fuera
+        de la app.
+      </p>
+      {aviso && <div style={{ marginTop: 10 }}><Nota tono="ok">{aviso}</Nota></div>}
+      {confirmando && (
+        <Confirmar
+          titulo={`¿Dar por pagado todo hasta ${formatearPeriodo(hasta, true)}?`}
+          textoAccion={`Marcar ${plural(cuotas.length, 'cuota', 'cuotas')} como pagadas`}
+          onCerrar={() => setConfirmando(false)}
+          onConfirmar={() => {
+            const n = saldar(hasta);
+            setConfirmando(false);
+            setAviso(`Listo: ${plural(n, 'cuota quedó pagada', 'cuotas quedaron pagadas')} hasta ${formatearPeriodo(hasta, true)}.`);
+          }}
+        >
+          <p>
+            Las {cuotas.length} cuotas impagas hasta {formatearPeriodo(hasta, true)} van a figurar como cobradas. Si
+            alguna en realidad se debe, en el contrato, en «Recibos» de esa cuota, se puede quitar.
+          </p>
+        </Confirmar>
+      )}
+    </Panel>
   );
 }

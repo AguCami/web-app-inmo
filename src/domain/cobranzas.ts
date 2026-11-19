@@ -290,3 +290,30 @@ export function completarItems(cuota: Cuota, montos: Map<number, number>): Cuota
   );
   return { ...cuota, items, total: redondear(sumar(items, (i) => i.monto)) };
 }
+
+/**
+ * Marca de los pagos que se cargan al empezar a usar la app: meses que ya se
+ * cobraron y se rindieron por fuera. No llevan recibo y no entran en las
+ * liquidaciones (ya se le rindieron al dueño).
+ */
+export const SALDADO_PREVIO = 'Saldado antes de usar la app';
+
+/** Las cuotas hasta `hasta` inclusive que todavía tienen saldo. */
+export function cuotasASaldar(cuotas: Cuota[], pagos: Pago[], hasta: Periodo): Cuota[] {
+  return cuotas.filter(
+    (c) => c.estado !== 'anulada' && c.periodo <= hasta && saldoDeCuota(c, pagos) > 0.01,
+  );
+}
+
+/** Un pago por el saldo de cada cuota, fechado en su vencimiento. */
+export function pagosDeSaldoPrevio(cuotas: Cuota[], pagos: Pago[], hasta: Periodo): Pago[] {
+  return cuotasASaldar(cuotas, pagos, hasta).map((c) => ({
+    id: nuevoId('pa'),
+    cuotaId: c.id,
+    fecha: c.vencimiento,
+    monto: redondear(saldoDeCuota(c, pagos)),
+    moneda: c.moneda,
+    medio: 'efectivo',
+    notas: SALDADO_PREVIO,
+  }));
+}

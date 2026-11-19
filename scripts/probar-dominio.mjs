@@ -317,6 +317,12 @@ const porTransf = liqs.armarLiquidacion('d1', '2026-10', ctxLiq('transferencia')
 ok('por transferencia al dueño queda a cobrarle los honorarios', porTransf.neto === -10000, String(porTransf.neto));
 ok('y dice que lo cobró él', porTransf.items.some((i) => i.tipo === 'cobrado_propietario' && i.monto === -100000));
 
+/* ── Lo saldado al empezar no se vuelve a liquidar ── */
+const ctxPrevio = ctxLiq('efectivo');
+ctxPrevio.pagos = cobranzas.pagosDeSaldoPrevio(ctxPrevio.cuotas, [], '2026-10');
+ok('saldar hasta octubre paga la cuota de octubre', ctxPrevio.pagos.length === 1 && ctxPrevio.pagos[0].monto === 100000);
+ok('y no se vuelve a liquidar', liqs.armarLiquidacion('d1', '2026-10', ctxPrevio, 'L3') === null);
+
 /* ── Los servicios se completan al cobrar ── */
 const cuotaServ = cobranzas.armarCuota(
   { ...viejo, conceptosFijos: [
